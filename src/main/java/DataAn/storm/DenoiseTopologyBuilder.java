@@ -2,6 +2,7 @@ package DataAn.storm;
 
 import java.util.List;
 
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.BaseAggregator;
@@ -14,14 +15,13 @@ import org.apache.storm.tuple.Fields;
 import DataAn.storm.interfece.IDenoiseFilterNodeProcessor;
 
 
-public class DenoiseTopology {
+public class DenoiseTopologyBuilder {
 
-	public static void main(String[] args) {
+	public StormTopology build(DenoiseConfig denoiseConfig) throws Exception {
 		
-		DenoiseConfig denoiseConfig=new DenoiseConfig();
+		TridentTopology tridentTopology=new TridentTopology();
 		
-		new TridentTopology()
-		.newStream("denoise-task", new TestBatchSpout(100,new Fields("record","batchContext")))
+		tridentTopology.newStream("denoise-task-stream", new TestBatchSpout(100,new Fields("record","batchContext")))
 		.shuffle()
 		.each(new Fields("record","batchContext"), new BaseFunction() {
 			@Override
@@ -74,7 +74,7 @@ public class DenoiseTopology {
 			
 		}, null);
 		
-		
+		return tridentTopology.build();
 	}
 	
 }
