@@ -1,0 +1,107 @@
+package DataAn.storm;
+
+
+public class DefaultDeviceRecord implements IDeviceRecord {
+
+	private Long  sequence;
+	
+	private String id;
+	
+	private String name;
+	
+	private String series;
+	
+	private String star;
+	
+	private String time;
+	
+	private String[] properties;
+	
+	private String[] propertyVals;
+	
+	private BatchContext batchContext;
+
+	private boolean isPersist;
+	
+	public Long getSequence() {
+		return sequence;
+	}
+
+	public void setSequence(Long sequence) {
+		this.sequence = sequence;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getSeries() {
+		return series;
+	}
+
+	public void setSeries(String series) {
+		this.series = series;
+	}
+
+	public String getStar() {
+		return star;
+	}
+
+	public void setStar(String star) {
+		this.star = star;
+	}
+
+	public String getTime() {
+		return time;
+	}
+
+	public void setTime(String time) {
+		this.time = time;
+	}
+
+	public String[] getProperties() {
+		return properties;
+	}
+
+	public void setProperties(String[] properties) {
+		this.properties = properties;
+	}
+
+	public String[] getPropertyVals() {
+		return propertyVals;
+	}
+
+	public void setPropertyVals(String[] propertyVals) {
+		this.propertyVals = propertyVals;
+	}
+
+	public BatchContext getBatchContext() {
+		return batchContext;
+	}
+
+	public void setBatchContext(BatchContext batchContext) {
+		this.batchContext = batchContext;
+	}
+
+	public boolean isPersist() {
+		return isPersist;
+	}
+
+	public void setPersist(boolean isPersist) {
+		this.isPersist = isPersist;
+	}
+
+	
+}
