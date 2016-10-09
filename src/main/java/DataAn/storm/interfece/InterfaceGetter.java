@@ -1,5 +1,14 @@
 package DataAn.storm.interfece;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bson.Document;
+
+import DataAn.common.utils.DateUtil;
+import DataAn.dto.ParamExceptionDto;
+import DataAn.mongo.client.MongodbUtil;
+import DataAn.mongo.init.InitMongo;
 import DataAn.storm.IDeviceRecord;
 
 public class InterfaceGetter {
@@ -9,8 +18,6 @@ public class InterfaceGetter {
 		return new IDeviceRecordPersit() {
 			@Override
 			public void persist(IDeviceRecord... deviceRecords) throws Exception {
-				// TODO Auto-generated method stub
-				
 			}
 		};
 	}
@@ -19,6 +26,11 @@ public class InterfaceGetter {
 		return new IDenoiseFilterNodeProcessor() {
 			@Override
 			public boolean isKeep(IDeviceRecord deviceRecord) {
+				for(String paramValue :deviceRecord.getPropertyVals()){
+					if (paramValue.indexOf("#") >= 0){
+						return false;
+					}
+				}
 				return true;
 			}
 		} ;
@@ -26,10 +38,11 @@ public class InterfaceGetter {
 	
 	public static IExceptionCheckNodeProcessor getExceptionCheckNodeProcessor(){
 		return new IExceptionCheckNodeProcessor() {
-			
+									
 			@Override
 			public Object process(IDeviceRecord deviceRecord) {
 				return null;
+			
 			}
 			
 			@Override

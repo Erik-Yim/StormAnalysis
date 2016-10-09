@@ -53,12 +53,15 @@ public class DenoiseTopologyBuilder {
 				}
 				DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
 				List<Long> sequences= defaultDeviceRecord.getBatchContext().getSequences();
-				for(Long sequence:sequences){
-					if(defaultDeviceRecord.getSequence()<(sequence+3)
-							&&defaultDeviceRecord.getSequence()>(sequence-3)){
-						defaultDeviceRecord.setPersist(false);
+	
+					for(Long sequence:sequences){					
+						if(defaultDeviceRecord.getSequence()<(sequence+3)
+								&&defaultDeviceRecord.getSequence()>(sequence-3)){
+							defaultDeviceRecord.setPersist(false);
+						}
 					}
-				}
+				
+				
 				val.getDefaultDeviceRecords().add(defaultDeviceRecord);
 			}
 
@@ -70,8 +73,7 @@ public class DenoiseTopologyBuilder {
 					throw new FailedException(e);
 				}
 			}
-			
-			
+						
 		}, null);
 		
 		return tridentTopology.build();
