@@ -13,6 +13,18 @@ import DataAn.storm.interfece.IDeviceRecordPersit;
 
 public class IDeviceRecordPersitImpl implements IDeviceRecordPersit {
 
+	private IDeviceRecordPersitImpl(){};
+	
+	public static  IDeviceRecordPersitImpl IDPI =null;
+	
+	public static  IDeviceRecordPersitImpl  getInstence(){
+		if(IDPI==null){
+			IDPI= new IDeviceRecordPersitImpl();			
+		}
+		return IDPI;
+	}
+	
+	
 	@Override
 	public void persist(IDeviceRecord... deviceRecords) throws Exception {
 		List<Document> tempList = new ArrayList<Document>();
@@ -40,5 +52,6 @@ public class IDeviceRecordPersitImpl implements IDeviceRecordPersit {
 		MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName, tempList);
 				
 	}
+
 
 }

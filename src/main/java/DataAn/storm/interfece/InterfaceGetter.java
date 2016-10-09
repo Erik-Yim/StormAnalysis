@@ -10,6 +10,8 @@ import DataAn.dto.ParamExceptionDto;
 import DataAn.mongo.client.MongodbUtil;
 import DataAn.mongo.init.InitMongo;
 import DataAn.storm.IDeviceRecord;
+import DataAn.storm.impl.IDeviceRecordPersitImpl;
+import DataAn.storm.impl.IExceptionCheckNodeProcessorImpl;
 
 public class InterfaceGetter {
 
@@ -18,6 +20,8 @@ public class InterfaceGetter {
 		return new IDeviceRecordPersit() {
 			@Override
 			public void persist(IDeviceRecord... deviceRecords) throws Exception {
+				IDeviceRecordPersitImpl IDRP =  IDeviceRecordPersitImpl.getInstence();
+				IDRP.persist(deviceRecords);
 			}
 		};
 	}
@@ -38,16 +42,17 @@ public class InterfaceGetter {
 	
 	public static IExceptionCheckNodeProcessor getExceptionCheckNodeProcessor(){
 		return new IExceptionCheckNodeProcessor() {
-									
+			IExceptionCheckNodeProcessorImpl ICNP =  new IExceptionCheckNodeProcessorImpl();
+			
 			@Override
 			public Object process(IDeviceRecord deviceRecord) {
-				return null;
+				return ICNP.process(deviceRecord);
 			
 			}
 			
 			@Override
 			public void persist() throws Exception {
-				
+				ICNP.persist();
 			}
 		};
 	}
