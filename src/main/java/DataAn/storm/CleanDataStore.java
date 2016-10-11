@@ -46,6 +46,11 @@ public class CleanDataStore implements Serializable {
 		List<DefaultDeviceRecord> persists=new ArrayList<DefaultDeviceRecord>();
 		for(DefaultDeviceRecord defaultDeviceRecord:defaultDeviceRecords){
 			if(defaultDeviceRecord.isPersist()){
+				if(batchContext.getSequences().contains(defaultDeviceRecord.getSequence())){
+					defaultDeviceRecord.setPersist(false);
+				}
+			}
+			if(defaultDeviceRecord.isPersist()){
 				persists.add(defaultDeviceRecord);
 			}
 		}

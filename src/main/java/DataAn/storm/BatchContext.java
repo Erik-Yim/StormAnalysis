@@ -1,6 +1,8 @@
 package DataAn.storm;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -13,7 +15,7 @@ public class BatchContext extends HashMap<String,Object>{
 
 	private long batchId;
 
-	private List<Long> sequences=new ArrayList<Long>();
+	private Collection<Long> sequences=Collections.synchronizedCollection(new ArrayList<Long>());
 	
 	private IDenoiseFilterNodeProcessor denoiseFilterNodeProcessor;
 	
@@ -39,14 +41,22 @@ public class BatchContext extends HashMap<String,Object>{
 		this.deviceRecordPersit = deviceRecordPersit;
 	}
 
-	public List<Long> getSequences() {
+	Collection<Long> getSequences() {
 		return sequences;
 	}
 
-	public void setSequences(List<Long> sequences) {
+	private void setSequences(List<Long> sequences) {
 		this.sequences = sequences;
 	}
 
+	public void addSequence(Long sequence){
+		sequences.add(sequence);
+	}
+	
+	public void addSequences(Collection<Long> sequences){
+		sequences.addAll(sequences);
+	}
+	
 	public long getBatchId() {
 		return batchId;
 	}

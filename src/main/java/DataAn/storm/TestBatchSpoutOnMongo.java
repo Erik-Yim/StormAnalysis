@@ -1,13 +1,10 @@
 package DataAn.storm;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.storm.Config;
@@ -16,10 +13,18 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.IBatchSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
+import org.bson.Document;
+
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+
+import DataAn.common.utils.DateUtil;
+import DataAn.mongo.client.MongodbUtil;
+import DataAn.mongo.init.InitMongo;
 
 @SuppressWarnings({ "rawtypes", "serial" })
-public class TestBatchSpout implements IBatchSpout {
+public class TestBatchSpoutOnMongo implements IBatchSpout {
 
 	private List<DefaultDeviceRecord> defaultDeviceRecords=new ArrayList<>(10000);
 	
@@ -33,9 +38,7 @@ public class TestBatchSpout implements IBatchSpout {
 	
 	private AtomicLong atomicLong=new AtomicLong(0);
 	
-	private Random random;
-	
-	public TestBatchSpout(int count,Fields fields) {
+	public TestBatchSpoutOnMongo(int count,Fields fields) {
 		this.count=count;
 		this.fields=fields;
 	}
@@ -44,30 +47,24 @@ public class TestBatchSpout implements IBatchSpout {
 	@Override
 	public void open(Map conf, TopologyContext context) {
 		index=0;
-		random=ThreadLocalRandom.current();
-		
-		for(int i=0;i<100000;i++){
+	MongoCollection<Document> collection =  MongodbUtil.getInstance().getCollection(InitMongo.DATABASE_TEST, "star2");
+	FindIterable<Document> document = collection.find();
+		int i = 0;
+		for (Document doc:document) {
+			if(i==10000)break;
 			DefaultDeviceRecord  ddr =  new DefaultDeviceRecord();
-			ddr.setSeries("series1");
+			ddr.setSeries(InitMongo.DATABASE_TEST);
 			ddr.setStar("star2");
-			Calendar calendar=Calendar.getInstance();
-			calendar.add(Calendar.SECOND, i);
-			ddr.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime()));
-			List<String> paramKeys =  new ArrayList<String>();
-			for(int j=0;j<10;j++){
-				paramKeys.add("param"+j);
-			}
-			ddr.setProperties(paramKeys.toArray(new String[]{}));
+			Set<String> key_set = doc.keySet();
+			ddr.setProperties((String[])key_set.toArray());
 			List<String> paramValues =  new ArrayList<String>();
-			for(int j=0;j<10;j++){
-				
-				paramValues.add(
-						((random.nextInt(10)==j)?"#":"")
-				+random.nextInt(10)+random.nextInt(10)+random.nextInt(10)+random.nextInt(10));
+			for(String key:key_set){
+				paramValues.add(doc.getString(key));
 			}
-			ddr.setPropertyVals(paramValues.toArray(new String[]{}));
+			ddr.setPropertyVals((String[])paramValues.toArray());
 			defaultDeviceRecords.add(ddr);
-		}
+			i++;
+		}			 
 	}
 
 	@Override
@@ -85,10 +82,6 @@ public class TestBatchSpout implements IBatchSpout {
 				batch.add(defaultDeviceRecords.get(index));
 			}
 			batches.put(batchId, batch);
-		}
-		
-		if(batch.isEmpty()){
-			Utils.sleep(10000);
 		}
 		
 		for(int i=0;i<batch.size();i++){
