@@ -9,11 +9,22 @@ import DataAn.common.utils.DateUtil;
 import DataAn.dto.ParamExceptionDto;
 import DataAn.mongo.client.MongodbUtil;
 import DataAn.mongo.init.InitMongo;
+import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
+import DataAn.storm.exceptioncheck.ExceptionConfigModel;
 import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
 
+/**
+ * 根据配置信息 {@link ExceptionConfigModel} 计算异常和特殊作业 {@link #process(IDeviceRecord)}
+ * ,然后持久化{@link #persist()}到mogodb里面
+ * @author JIAZJ
+ */
+@SuppressWarnings("serial")
 public class IExceptionCheckNodeProcessorImpl implements
 		IExceptionCheckNodeProcessor {
+	
+	private BatchContext batchContext;
+	
 	List<ParamExceptionDto> paramEs =  new ArrayList<ParamExceptionDto>();
 	
 	@Override
@@ -56,6 +67,16 @@ public class IExceptionCheckNodeProcessorImpl implements
 			documentList.add(doc);
 		}
 		MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_Exception", documentList);
+	}
+
+	@Override
+	public void setBatchContext(BatchContext batchContext) {
+		this.batchContext=batchContext;
+	}
+
+	@Override
+	public BatchContext getBatchContext() {
+		return batchContext;
 	}
 
 }

@@ -17,9 +17,7 @@ import org.bson.Document;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
 
-import DataAn.common.utils.DateUtil;
 import DataAn.mongo.client.MongodbUtil;
 import DataAn.mongo.init.InitMongo;
 

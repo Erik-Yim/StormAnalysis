@@ -2,6 +2,7 @@ package DataAn.storm.interfece;
 
 import java.io.Serializable;
 
+import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
 
 /**
@@ -20,4 +21,7 @@ public interface IExceptionCheckNodeProcessor extends Serializable {
 	 */
 	void persist() throws Exception;
 	
+	void setBatchContext(BatchContext batchContext);
+	
+	BatchContext getBatchContext();
 }

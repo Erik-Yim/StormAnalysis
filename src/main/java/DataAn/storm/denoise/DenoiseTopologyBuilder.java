@@ -1,4 +1,4 @@
-package DataAn.storm;
+package DataAn.storm.denoise;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -17,9 +17,13 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
+import DataAn.storm.BatchContext;
+import DataAn.storm.DefaultDeviceRecord;
+import DataAn.storm.TestBatchSpout;
 import DataAn.storm.interfece.IDenoiseFilterNodeProcessor;
 
 
+@SuppressWarnings("serial")
 public class DenoiseTopologyBuilder implements Serializable {
 
 	public StormTopology build(DenoiseConfig denoiseConfig) throws Exception {

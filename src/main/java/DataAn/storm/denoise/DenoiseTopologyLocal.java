@@ -1,7 +1,9 @@
-package DataAn.storm;
+package DataAn.storm.denoise;
 
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
+
+import DataAn.storm.StormRunner;
 
 
 public class DenoiseTopologyLocal {
@@ -13,7 +15,7 @@ public class DenoiseTopologyLocal {
 		Config conf=new Config();
 		conf.setMessageTimeoutSecs(10000);
 		int runtimeInSeconds=100000;
-		StormRunner.runTopologyLocally(stormTopology, "denoise-task", conf, runtimeInSeconds);
+		StormRunner.runTopologyLocally(stormTopology, denoiseConfig.getName(), conf, runtimeInSeconds);
 		
 	}
 	

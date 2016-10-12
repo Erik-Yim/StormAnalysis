@@ -1,4 +1,4 @@
-package DataAn.storm;
+package DataAn.storm.denoise;
 
 public class DenoiseConfigParser  {
 
