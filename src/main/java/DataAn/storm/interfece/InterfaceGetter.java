@@ -9,6 +9,7 @@ import DataAn.common.utils.DateUtil;
 import DataAn.dto.ParamExceptionDto;
 import DataAn.mongo.client.MongodbUtil;
 import DataAn.mongo.init.InitMongo;
+import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.impl.IDeviceRecordPersitImpl;
 import DataAn.storm.impl.IExceptionCheckNodeProcessorImpl;
@@ -53,6 +54,18 @@ public class InterfaceGetter {
 			@Override
 			public void persist() throws Exception {
 				ICNP.persist();
+			}
+
+			@Override
+			public void setBatchContext(BatchContext batchContext) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public BatchContext getBatchContext() {
+				// TODO Auto-generated method stub
+				return null;
 			}
 		};
 	}

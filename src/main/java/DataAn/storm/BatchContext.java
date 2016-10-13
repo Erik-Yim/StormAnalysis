@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 
 import DataAn.storm.interfece.IDenoiseFilterNodeProcessor;
 import DataAn.storm.interfece.IDeviceRecordPersit;
@@ -41,12 +40,12 @@ public class BatchContext extends HashMap<String,Object>{
 		this.deviceRecordPersit = deviceRecordPersit;
 	}
 
-	Collection<Long> getSequences() {
-		return sequences;
-	}
-
-	private void setSequences(List<Long> sequences) {
-		this.sequences = sequences;
+	/**
+	 * the returned collection cannot be modify.
+	 * @return
+	 */
+	public Collection<Long> getSequences() {
+		return Collections.unmodifiableCollection(sequences);
 	}
 
 	public void addSequence(Long sequence){

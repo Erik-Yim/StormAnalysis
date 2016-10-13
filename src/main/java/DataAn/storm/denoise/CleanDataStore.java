@@ -1,8 +1,11 @@
-package DataAn.storm;
+package DataAn.storm.denoise;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import DataAn.storm.BatchContext;
+import DataAn.storm.DefaultDeviceRecord;
 
 public class CleanDataStore implements Serializable {
 

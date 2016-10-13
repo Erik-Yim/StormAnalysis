@@ -15,6 +15,8 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 	
 	private String time;
 	
+	private long _time;
+	
 	private String[] properties;
 	
 	private String[] propertyVals;
@@ -23,6 +25,14 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 
 	private boolean isPersist;
 	
+	public long get_time() {
+		return _time;
+	}
+
+	public void set_time(long _time) {
+		this._time = _time;
+	}
+
 	public Long getSequence() {
 		return sequence;
 	}

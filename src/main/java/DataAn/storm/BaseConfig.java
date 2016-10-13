@@ -3,7 +3,7 @@ package DataAn.storm;
 import java.io.Serializable;
 import java.util.HashMap;
 
-public class DenoiseConfig extends HashMap<String, Object> implements Serializable {
+public class BaseConfig extends HashMap<String, Object> implements Serializable{
 	
 	private String name;
 	
@@ -27,5 +27,7 @@ public class DenoiseConfig extends HashMap<String, Object> implements Serializab
 	
 	
 	
+	
+
 	
 }
