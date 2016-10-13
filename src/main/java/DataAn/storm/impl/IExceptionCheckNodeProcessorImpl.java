@@ -53,6 +53,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 			doc.append("star", peDto.getStar());
 			doc.append("deviceName", peDto.getDeviceName());	
 			doc.append("paramName", peDto.getParamName());	
+			doc.append("value", peDto.getValue());	
 			documentList.add(doc);
 		}
 		MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_Exception", documentList);

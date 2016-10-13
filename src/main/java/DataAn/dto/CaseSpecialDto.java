@@ -11,10 +11,50 @@ public class CaseSpecialDto {
 	//特殊工况所针对的参数
 	private  String paramName;
 	
+	//特殊工况所针对的参数
+	private  String value;
+	
 	//特殊工况所针对的时间
 	private  String  dateTime;
 	
+	private String series;
 	
+	private String star;
+	
+	private String deviceName;
+		
+	public String getSeries() {
+		return series;
+	}
+
+	public void setSeries(String series) {
+		this.series = series;
+	}
+	
+	
+	public String getValue() {
+		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	public String getStar() {
+		return star;
+	}
+
+	public void setStar(String star) {
+		this.star = star;
+	}
+
+	public String getDeviceName() {
+		return deviceName;
+	}
+
+	public void setDeviceName(String deviceName) {
+		this.deviceName = deviceName;
+	}
 
 	public float getLimitValue() {
 		return limitValue;
