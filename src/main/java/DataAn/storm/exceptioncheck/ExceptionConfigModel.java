@@ -1,38 +1,28 @@
 package DataAn.storm.exceptioncheck;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public class ExceptionConfigModel implements Serializable{
-
-	private long delayTime;
 	
-	private double max;
+	private Map<String, ExceptionJobConfig> exceptionJobConfigs;
 	
-	private int count;
+	private Map<String, ExceptionPointConfig> exceptionPointConfigs;
 
-	public long getDelayTime() {
-		return delayTime;
+	public Map<String, ExceptionJobConfig> getExceptionJobConfigs() {
+		return exceptionJobConfigs;
 	}
 
-	public void setDelayTime(long delayTime) {
-		this.delayTime = delayTime;
-	}
-	
-
-	public double getMax() {
-		return max;
+	public void setExceptionJobConfigs(Map<String, ExceptionJobConfig> exceptionJobConfigs) {
+		this.exceptionJobConfigs = exceptionJobConfigs;
 	}
 
-	public void setMax(double max) {
-		this.max = max;
+	public Map<String, ExceptionPointConfig> getExceptionPointConfigs() {
+		return exceptionPointConfigs;
 	}
 
-	public int getCount() {
-		return count;
-	}
-
-	public void setCount(int count) {
-		this.count = count;
+	public void setExceptionPointConfigs(Map<String, ExceptionPointConfig> exceptionPointConfigs) {
+		this.exceptionPointConfigs = exceptionPointConfigs;
 	}
 	
 }
