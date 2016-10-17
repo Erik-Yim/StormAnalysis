@@ -19,7 +19,7 @@ import org.apache.storm.tuple.Values;
 
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
-import DataAn.storm.TestBatchSpout;
+import DataAn.storm.SpecialKafakaSpout;
 import DataAn.storm.interfece.IDenoiseFilterNodeProcessor;
 
 
@@ -30,7 +30,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 		
 		TridentTopology tridentTopology=new TridentTopology();
 		
-		tridentTopology.newStream("denoise-task-stream", new TestBatchSpout(denoiseConfig.getCount(),new Fields("record","batchContext")))
+		tridentTopology.newStream("denoise-task-stream", new SpecialKafakaSpout(new Fields("record","batchContext")))
 		.shuffle()
 		.each(new Fields("record","batchContext"), new BaseFunction() {
 			@Override
