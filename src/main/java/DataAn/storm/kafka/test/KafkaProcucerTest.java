@@ -1,4 +1,4 @@
-package DataAn.storm.kafka;
+package DataAn.storm.kafka.test;
 
 import java.util.Properties;
 

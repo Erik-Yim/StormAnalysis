@@ -8,5 +8,9 @@ public  class BaseFetchObj implements FetchObj {
 	public long offset() {
 		return offset;
 	}
-
+	
+	public void setOffset(long offset) {
+		this.offset = offset;
+	}
+	
 }

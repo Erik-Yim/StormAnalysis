@@ -13,6 +13,8 @@ import org.apache.storm.tuple.Values;
 import DataAn.storm.BatchMeta.Scope;
 import DataAn.storm.kafka.Beginning;
 import DataAn.storm.kafka.BoundConsumer;
+import DataAn.storm.kafka.BoundConsumer.FetchObjIterator;
+import DataAn.storm.kafka.BoundConsumer.FetchObjs;
 import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
@@ -45,12 +47,28 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		}
 		FetchObj fetchObj=null;
 		int count=0;
-		while(!((fetchObj=consumer.next(timeout)) instanceof Ending)){
-			if(fetchObj instanceof Beginning) continue;
-			if(fetchObj instanceof Null) continue;
-			fetchObjs.add((DefaultFetchObj) fetchObj);
-			if(count>this.count) break;
-			count++;
+		while(true){
+			FetchObjs fetchObjs2=consumer.next(timeout);
+			if(!fetchObjs2.isEmpty()){
+				FetchObjIterator fetchObjIterator= fetchObjs2.iterator();
+				boolean breakOut=false;
+				while(fetchObjIterator.hasNext()){
+					if(!((fetchObj=fetchObjIterator.next()) instanceof Ending)){
+						if(fetchObj instanceof Beginning) continue;
+						if(fetchObj instanceof Null) continue;
+						fetchObjs.add((DefaultFetchObj) fetchObj);
+						coordinatorMeta.setTopicPartitionOffsetEnd(fetchObj.offset());
+						if(count>this.count) {
+							breakOut=true;
+							break;
+						}
+						count++;
+					}
+				}
+				if(breakOut){
+					break;
+				}
+			}
 		}
 		
 		for(int i=0;i<fetchObjs.size();i++){
@@ -63,17 +81,27 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){
 		DefaultDeviceRecord defaultDeviceRecord=new DefaultDeviceRecord();
+		
+		defaultDeviceRecord.setId(defaultFetchObj.getId());
+		defaultDeviceRecord.setName(defaultFetchObj.getName());
+		defaultDeviceRecord.setProperties(defaultFetchObj.getProperties());
+		defaultDeviceRecord.setPropertyVals(defaultFetchObj.getPropertyVals());
+		defaultDeviceRecord.setSeries(defaultFetchObj.getSeries());
+		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
+		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
+		defaultDeviceRecord.set_time(defaultFetchObj.get_time());
+		
 		return defaultDeviceRecord;
 	}
 
 	@Override
 	public void success(TransactionAttempt tx) {
-		System.out.println("----------------");
+		System.out.println("-------SpecialEmitter  success ---------");
 	}
 
 	@Override
 	public void close() {
-		System.out.println("----------------");
+		System.out.println("------SpecialEmitter  close ----------");
 	}
 
 }

@@ -1,8 +1,11 @@
 package DataAn.storm.kafka;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -10,6 +13,7 @@ import java.util.Properties;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 
 @SuppressWarnings({"serial","rawtypes"})
@@ -121,6 +125,15 @@ public class InnerConsumer implements Serializable {
 		
 		public void seek(String topic, int partition,long offset){
 			consumer.seek(new TopicPartition(topic, partition), offset);
+		}
+		
+		public void commitSync(String topic, int partition,long offset){
+			TopicPartition topicPartition=new TopicPartition(topic, partition);
+			OffsetAndMetadata offsetAndMetadata=new OffsetAndMetadata(offset,
+					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+			Map<TopicPartition, OffsetAndMetadata> map=new HashMap<>();
+			map.put(topicPartition, offsetAndMetadata);
+			consumer.commitSync(map);
 		}
 		
 		public InnerConsumer outer(){

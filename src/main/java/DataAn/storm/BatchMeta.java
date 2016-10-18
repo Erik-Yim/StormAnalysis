@@ -2,6 +2,7 @@ package DataAn.storm;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BatchMeta implements Serializable {
@@ -64,9 +65,20 @@ public class BatchMeta implements Serializable {
 		}
 	}
 
+	public void setTopicPartitionOffsetEnd(long offset){
+		for(Entry<String, Scope> entry:getTopicPartitionOffset().entrySet()){
+			entry.getValue().end=offset;
+		}
+	}
 	
 	
+	public long getOffsetStart(String topicPartition){
+		return getTopicPartitionOffset().get(topicPartition).start;
+	}
 	
+	public long getOffsetStartEnd(String topicPartition){
+		return getTopicPartitionOffset().get(topicPartition).end;
+	}
 	
 	
 	
