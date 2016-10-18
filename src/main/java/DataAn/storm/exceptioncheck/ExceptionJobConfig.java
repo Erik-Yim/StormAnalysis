@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 public class ExceptionJobConfig implements Serializable {
 
-
 	private long delayTime;
 	
 	private double max;
@@ -35,6 +34,8 @@ public class ExceptionJobConfig implements Serializable {
 	public void setCount(int count) {
 		this.count = count;
 	}
+
+
 	
 
 }
