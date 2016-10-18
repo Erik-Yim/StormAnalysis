@@ -1,5 +1,7 @@
 package DataAn.dto;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class ParamExceptionDto {
 	
 	//参数名称
@@ -16,7 +18,18 @@ public class ParamExceptionDto {
 	private String star;
 	
 	private String deviceName;
-		
+	
+	private long sequence;
+	
+	
+	public long getSequence() {
+		return sequence;
+	}
+
+	public void setSequence(long sequence) {
+		this.sequence = sequence;
+	}
+
 	public String getDeviceName() {
 		return deviceName;
 	}

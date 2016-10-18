@@ -7,6 +7,9 @@ public class DenoiseConfigParser  {
 		if(args.length>0){
 			denoiseConfig.setName(args[0]);
 			denoiseConfig.setCount(Integer.parseInt(args[1]));
+		
+		
+		
 		}
 		else{
 			denoiseConfig.setName("denoise-task");
