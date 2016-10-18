@@ -21,9 +21,9 @@ public class KafkaConsumerTest {
 	     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 	     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 	     KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
-	     consumer.assign(Arrays.asList(new org.apache.kafka.common.TopicPartition("bound-replicated-1",0)));
+	     consumer.assign(Arrays.asList(new org.apache.kafka.common.TopicPartition("bound-replicated-2",0)));
 	     while (true) {
-	    	 consumer.seek(new org.apache.kafka.common.TopicPartition("bound-replicated-1",0), 0);
+//	    	 consumer.seek(new org.apache.kafka.common.TopicPartition("bound-replicated-3",0), 0);
 	         ConsumerRecords<String, String> records = consumer.poll(100);
 	         for (ConsumerRecord<String, String> record : records)
 	             System.out.printf("\noffset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());

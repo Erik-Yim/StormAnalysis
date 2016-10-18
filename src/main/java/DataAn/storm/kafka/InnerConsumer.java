@@ -14,6 +14,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 
 @SuppressWarnings({"serial","rawtypes"})
@@ -136,14 +137,23 @@ public class InnerConsumer implements Serializable {
 			consumer.commitSync(map);
 		}
 		
+		public void commitSync(){
+			consumer.commitSync();
+		}
+		
+		
+		public List<PartitionInfo> partitionsFor(String topic){
+			return consumer.partitionsFor(topic);
+		}
+		
 		public InnerConsumer outer(){
 			return this.innerConsumer;
 		}
 		
 	}
 	
-	public String topicPartition(){
-		return partitions[0];
+	public String[] topicPartition(){
+		return partitions;
 	}
 	
 }

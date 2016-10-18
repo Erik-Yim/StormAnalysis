@@ -13,7 +13,7 @@ import org.apache.storm.tuple.Fields;
 
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
-import DataAn.storm.TestBatchSpout;
+import DataAn.storm.SpecialKafakaSpout;
 import DataAn.storm.interfece.IDenoiseFilterNodeProcessor;
 import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
 import DataAn.storm.interfece.InterfaceGetter;
@@ -26,7 +26,7 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 		
 		TridentTopology tridentTopology=new TridentTopology();
 		
-		tridentTopology.newStream("exception-check-task-stream", new TestBatchSpout(exceptionCheckConfig.getCount(),new Fields("record","batchContext")))
+		tridentTopology.newStream("exception-check-task-stream", new SpecialKafakaSpout(new Fields("record","batchContext")))
 		.each(new Fields("record","batchContext"), new BaseFilter() {
 			@Override
 			public boolean isKeep(TridentTuple tuple) {

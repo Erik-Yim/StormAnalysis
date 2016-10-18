@@ -4,36 +4,26 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import DataAn.common.utils.JJSON;
 import DataAn.storm.kafka.InnerConsumer.ConsumerExecutor;
 
 @SuppressWarnings("serial")
-public class BoundConsumer<K> implements Serializable {
+public class SimpleConsumer<K> implements Serializable {
 
 	private ConsumerExecutor<K, String> executor;
 
-	public BoundConsumer(InnerConsumer consumer) {
+	public SimpleConsumer(InnerConsumer consumer) {
 		this.executor = consumer.build();
 	}
 	
 	public void clear(){
 		executor=null;
 	}
-	
-	public static final String _TYPE="type";
-	public static final String _TYPE_MIDDLE="middle";
-	public static final String _TYPE_BEGINNING="beginning";
-	public static final String _TYPE_ENDING="ending";
-	
-	public static final String _VAL="val";
-	
+
 	public class FetchObjs implements Iterable<FetchObj>{
 		
 		private List<ConsumerRecord<K, String>>  consumerRecords;
@@ -72,17 +62,11 @@ public class BoundConsumer<K> implements Serializable {
 		public FetchObj next() {
 			ConsumerRecord<K, String> consumerRecord=  consumerRecords.get(count++);
 			String value=consumerRecord.value();
-			Map<String, String> map= JJSON.get().parse(value, 
-					new TypeReference<Map<String, String>>() {} );
-			if(_TYPE_BEGINNING.equals(map.get(_TYPE))){
-				return new Beginning();
-			}else if(_TYPE_ENDING.equals(map.get(_TYPE))){
-				return new Ending();
-			}else if(_TYPE_MIDDLE.equals(map.get(_TYPE))){
-				String val=map.get(_VAL);
-				DefaultFetchObj defaultFetchObj=  JJSON.get().parse(val, DefaultFetchObj.class);
+			if(value!=null&&value.length()>0){
+				DefaultFetchObj defaultFetchObj=  JJSON.get().parse(value, 
+						DefaultFetchObj.class);
 				defaultFetchObj.setOffset(consumerRecord.offset());
-				return defaultFetchObj;
+				return defaultFetchObj;				
 			}
 			else{
 				throw new RuntimeException("the passing data  is invalid.");
@@ -93,9 +77,6 @@ public class BoundConsumer<K> implements Serializable {
 	
 	public FetchObjs next(int timeout){
 		ConsumerRecords<K, String>  consumerRecords= executor.poll(timeout);
-		String[] topicPartitions=getTopicPartition().split(":");
-		long nextOffset=executor.position(topicPartitions[0], Integer.parseInt(topicPartitions[1]));
-		System.out.println("next offset : "+nextOffset);
 		List<ConsumerRecord<K, String>>  _consumerRecords=new ArrayList<>();
 		if(!consumerRecords.isEmpty()){
 			for(ConsumerRecord<K, String> consumerRecord:consumerRecords){
@@ -106,8 +87,8 @@ public class BoundConsumer<K> implements Serializable {
 	}
 	
 	
-	public String getTopicPartition(){
-		return executor.outer().topicPartition()[0];
+	public String[] getTopicPartition(){
+		return executor.outer().topicPartition();
 	}
 	
 	public void seek(String topicPartition,long offset){
@@ -118,6 +99,10 @@ public class BoundConsumer<K> implements Serializable {
 	public void commitSync(String topicPartition,long offset){
 		String[] topicPartitions=topicPartition.split(":");
 		executor.commitSync(topicPartitions[0], Integer.parseInt(topicPartitions[1]), offset);
+	}
+	
+	public void commitSync(){
+		executor.commitSync();
 	}
 	
 }
