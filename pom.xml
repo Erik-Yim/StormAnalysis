@@ -13,17 +13,13 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-
 	<dependencies>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>3.8.1</version>
 			<scope>test</scope>
 		</dependency>
-
-
 		<dependency>
 			<groupId>org.apache.storm</groupId>
 			<artifactId>storm-core</artifactId>
@@ -71,26 +67,30 @@
 		</dependency>
 
 
+		<!-- https://mvnrepository.com/artifact/org.apache.storm/storm-kafka 
+		<dependency>
+			<groupId>org.apache.storm</groupId>
+			<artifactId>storm-kafka</artifactId>
+			<version>1.0.2</version>
+		</dependency>
+		-->
+		<!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients -->
+		<dependency>
+		    <groupId>org.apache.kafka</groupId>
+		    <artifactId>kafka-clients</artifactId>
+		    <version>0.10.0.1</version>
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.apache.storm/storm-kafka -->
 		<dependency>
 			<groupId>org.apache.storm</groupId>
 			<artifactId>storm-kafka</artifactId>
 			<version>1.0.2</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.6.5</version>
 		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
-		<dependency>
-		    <groupId>org.apache.httpcomponents</groupId>
-		    <artifactId>httpclient</artifactId>
-		    <version>4.5.2</version>
-		</dependency>-->
-		
 		 <!-- net.sf.json -->		    
 	   	<dependency>
 		    <groupId>net.sf.json-lib</groupId>
@@ -98,12 +98,9 @@
 		    <version>2.4</version>
 		    <classifier>jdk15</classifier>
 		</dependency>
-
 	</dependencies>
 
-
 	<build>
-
 		<resources>
 			<resource>
 				<directory>src/main/java</directory>
@@ -114,7 +111,6 @@
 		</resources>
 
 		<plugins>
-
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.3.2</version>
@@ -150,25 +146,7 @@
 				</executions>
 			</plugin>
 
-
-
-
-
 		</plugins>
 	</build>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </project>
+
