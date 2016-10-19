@@ -1,19 +1,20 @@
 package DataAn.storm.zookeeper.test;
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.storm.utils.Utils;
+import org.apache.kafka.common.utils.Utils;
 
+import DataAn.storm.zookeeper.NodeSelecter;
+import DataAn.storm.zookeeper.NodeWorker;
 import DataAn.storm.zookeeper.ZooKeeperClient;
-import DataAn.storm.zookeeper.ZooKeeperClient.Node;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
-public class ZooKeeperTest {
+public class DistrLockTest {
 
-	public static void main(String[] args) throws UnsupportedEncodingException {
+	@SuppressWarnings("unused")
+	public static void main(String[] args) {
 		
 		Map conf=new HashMap<>();
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
@@ -23,17 +24,24 @@ public class ZooKeeperTest {
 		.namespace(ZooKeeperNameKeys.getNamespace(conf))
 		.build();
 		
-		executor.createPath("/sssaagg", "a-b-v".getBytes("utf-8"));
+		NodeSelecter nodeSelecter=new NodeSelecter("default", executor);
 		
-		executor.watchPath("/sssaagg", new ZooKeeperClient.NodeCallback() {
-			
-			@Override
-			public void call(Node node) {
-				System.out.println("dd");
-			}
-		});
+		NodeWorker nodeWorker=new NodeWorker(1, "id-1", nodeSelecter);
 		
-		Utils.sleep(1000000);
+		
+		
+		Utils.sleep(10000);
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 	}
 	
 	

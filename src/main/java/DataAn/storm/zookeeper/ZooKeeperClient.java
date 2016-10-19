@@ -1,14 +1,22 @@
 package DataAn.storm.zookeeper;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.NodeCacheListener;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache.StartMode;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -64,6 +72,12 @@ public class ZooKeeperClient implements Serializable {
 		
 	}
 	
+	public interface NodeChildrenCallback extends Serializable {
+		
+		public void call(List<Node> nodes);
+		
+	}
+	
 	public class ZookeeperExecutor implements Serializable{
 		
 		private CuratorFramework curatorFramework;
@@ -94,7 +108,11 @@ public class ZooKeeperClient implements Serializable {
 		}
 		
 		public String createPath(String path){
-			return createPath(path,new byte[]{});
+			return createPath(path,new byte[]{},CreateMode.PERSISTENT);
+		}
+		
+		public String createEphSequencePath(String path){
+			return createPath(path,new byte[]{},CreateMode.EPHEMERAL_SEQUENTIAL);
 		}
 		
 		public String createPath(String path,byte[] data){
@@ -102,6 +120,18 @@ public class ZooKeeperClient implements Serializable {
 				return curatorFramework.create()
 				.creatingParentContainersIfNeeded()
 				.withMode(CreateMode.PERSISTENT)
+				.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+				.forPath(path,data);
+			}catch (Exception e) {
+				throw new CustomZooKeeperException(e);
+			}
+		}
+		
+		public String createPath(String path,byte[] data,CreateMode createMode){
+			try{
+				return curatorFramework.create()
+				.creatingParentContainersIfNeeded()
+				.withMode(createMode)
 				.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
 				.forPath(path,data);
 			}catch (Exception e) {
@@ -136,7 +166,7 @@ public class ZooKeeperClient implements Serializable {
 			}
 		}
 		
-		public void watchPath(final String path,final NodeCallback nodeCallback){
+		public NodeCache watchPath(final String path,final NodeCallback nodeCallback){
 			try{
 				ExecutorService pool = Executors.newFixedThreadPool(2);
 				final NodeCache nodeCache = new NodeCache(curatorFramework, path, false);
@@ -151,12 +181,71 @@ public class ZooKeeperClient implements Serializable {
 						nodeCallback.call(node);
 					}
 				}, pool);
-				nodeCache.close();
+				return nodeCache;
 			}catch (Exception e) {
 				throw new CustomZooKeeperException(e);
 			}
 		}
 		
+		public PathChildrenCache watchChildrenPath(final String path,final NodeChildrenCallback nodeChildrenCallback,PathChildrenCacheEvent.Type... types){
+			try{
+				final Type[] _types;
+				if(types.length==0){
+					_types=new PathChildrenCacheEvent.Type[]{PathChildrenCacheEvent.Type.CHILD_ADDED,
+							PathChildrenCacheEvent.Type.CHILD_REMOVED};
+				}
+				else{
+					_types=types;
+				}
+				ExecutorService pool = Executors.newFixedThreadPool(2);
+				final PathChildrenCache childrenCache=
+						new PathChildrenCache(curatorFramework, path,false,false, pool);
+						
+				childrenCache.start(StartMode.NORMAL);
+				childrenCache.getListenable().addListener(new PathChildrenCacheListener() {
+					
+					@Override
+					public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
+						boolean done=false;
+						for(Type type:_types){
+							if(type==event.getType()){
+								done=true;
+								break;
+							}
+						}
+						if(!done) return;
+						
+						List<ChildData> childDatas= childrenCache.getCurrentData();
+						List<Node> nodes=new ArrayList<>();
+						for(ChildData childData:childDatas){
+							Node node=new Node();
+							node.path=childData.getPath();
+							node.data=childData.getData();
+							nodes.add(node);
+						}
+						nodeChildrenCallback.call(nodes);
+					}
+				}, pool);
+				return childrenCache;
+			}catch (Exception e) {
+				throw new CustomZooKeeperException(e);
+			}
+		}
+		
+		
+		public boolean exists(final String path){
+			try{
+				return curatorFramework.checkExists()
+				.forPath(path)!=null;
+			}catch (Exception e) {
+				throw new CustomZooKeeperException(e);
+			}
+		}
+		
+		
+		CuratorFramework backend(){
+			return curatorFramework;
+		}
 		
 	}
 	
