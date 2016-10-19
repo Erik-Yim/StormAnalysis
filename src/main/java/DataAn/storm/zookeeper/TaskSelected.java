@@ -10,11 +10,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings("serial")
 public class TaskSelected implements  Serializable{
 
-	private final String id;
+	private final int id;
 	
 	private final ExecutorService executorService; 
 	
-	private TaskSequenceGuarantee guarantee=null;
+	private NodeWorker nodeWorker=null;
 
 	public class SelectedThread extends Thread{
 		
@@ -24,15 +24,15 @@ public class TaskSelected implements  Serializable{
 		
 	}
 	
-	TaskSelected(final String id,TaskSequenceGuarantee guarantee) {
-		this.id = id;
+	TaskSelected(NodeWorker nodeWorker) {
+		this.id = nodeWorker.getId();
 		executorService=Executors.newFixedThreadPool(1,new ThreadFactory() {
 			@Override
 			public Thread newThread(Runnable r) {
 				return new SelectedThread(r,"task-selected-"+id);
 			}
 		});
-		this.guarantee=guarantee;
+		this.nodeWorker=nodeWorker;
 	}
 
 	public void release(){
@@ -40,7 +40,7 @@ public class TaskSelected implements  Serializable{
 			@Override
 			public void run() {
 				try {
-					guarantee.release();
+					nodeWorker.release();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -53,7 +53,7 @@ public class TaskSelected implements  Serializable{
 			@Override
 			public void run() {
 				try {
-					guarantee.acquire();
+					nodeWorker.acquire();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}finally{
@@ -79,7 +79,7 @@ public class TaskSelected implements  Serializable{
 			@Override
 			public void run() {
 				try {
-					if(guarantee.acquire(time,unit)){
+					if(nodeWorker.acquire(time,unit)){
 						atomicBoolean.set(true);
 					}
 				} catch (Exception e) {
@@ -107,11 +107,6 @@ public class TaskSelected implements  Serializable{
 		synchronized (this) {
 			notifyAll();
 		}
-	}
-	
-	
-	public String getId() {
-		return id;
 	}
 	
 }

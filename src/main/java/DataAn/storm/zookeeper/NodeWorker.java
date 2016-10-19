@@ -2,6 +2,7 @@ package DataAn.storm.zookeeper;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.TimeUnit;
 
 import DataAn.common.utils.JJSON;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
@@ -76,5 +77,53 @@ public class NodeWorker implements Serializable {
 			}
 		});
 	}
+	
+	
+	public int getId() {
+		return id;
+	}
+	
+	public void acquire() throws Exception{
+		
+		while(true){
+			try{
+				if(nodeSelecter.isLockByMe(id)){
+					break;
+				}
+				wait();
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	public boolean acquire(long time, TimeUnit unit) throws Exception{
+		int count=0;
+		while(true){
+			try{
+				if(nodeSelecter.isLockByMe(id)){
+					return true;
+				}
+				else{
+					if(count>0){
+						return false;
+					}
+				}
+				wait(unit.toMillis(time));
+				count++;
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void release() throws Exception{
+	}
+	
+	
+	
+	
+	
 	
 }

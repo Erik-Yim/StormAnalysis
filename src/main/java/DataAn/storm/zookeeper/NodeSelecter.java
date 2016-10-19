@@ -122,4 +122,23 @@ public class NodeSelecter implements Serializable{
 	ZookeeperExecutor getExecutor() {
 		return executor;
 	}
+	
+	SNodeData nodeData(){
+		byte[] bytes=executor.getPath(path());
+		try{
+			return JJSON.get().parse(new String(bytes,"utf-8"), SNodeData.class);
+		}catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	boolean isLockByMe(int workerId){
+		SNodeData nodeData=nodeData();
+		if(nodeData==null){
+			return false;
+		}
+		return nodeData().now==workerId;
+	}
+	
 }
