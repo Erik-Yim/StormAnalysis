@@ -12,7 +12,7 @@ import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
-public class DistrLockTest {
+public class DistrLockTest2 {
 
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
@@ -26,10 +26,9 @@ public class DistrLockTest {
 		.build();
 		
 		SingleMonitor.startup(executor);
-		
 		final NodeSelecter nodeSelecter=new NodeSelecter("default", executor);
 		
-		for(int i=0;i<3;i++){
+		for(int i=0;i<6;i++){
 			final int _i=i;
 			new Thread(new Runnable() {
 				
@@ -61,6 +60,14 @@ public class DistrLockTest {
 		}
 		
 		Utils.sleep(10000);
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		
 		

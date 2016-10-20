@@ -1,12 +1,16 @@
 package DataAn.storm.zookeeper;
 
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.zookeeper.CreateMode;
+
 import DataAn.common.utils.JJSON;
+import DataAn.storm.zookeeper.NodeSelecter.SNodeData;
 import DataAn.storm.zookeeper.NodeSelecter.SNodeData.NodeStatus;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
@@ -71,7 +75,18 @@ public class NodeWorker implements Serializable {
 	
 	private void init(){
 		if(!executor.exists(path())){
-			executor.createPath(path());
+			WNodeData nodeData=new WNodeData();
+			nodeData.id=id;
+			nodeData.time=new Date().getTime();
+			
+			SNodeData selecterData=nodeSelecter.nodeSelecterData();
+			if(selecterData.getNow()==id){
+				nodeData.status=selecterData.getStatus();
+			}
+			else{
+				nodeData.status=NodeStatus.ONLINE;
+			}
+			executor.createPath(path(),JJSON.get().formatObject(nodeData).getBytes(Charset.forName("utf-8")),CreateMode.EPHEMERAL);
 		}
 		executor.watchPath(path(), new ZooKeeperClient.NodeCallback () {
 			
@@ -80,16 +95,28 @@ public class NodeWorker implements Serializable {
 			@Override
 			public void call(Node node) {
 				try {
-					String data=new String(node.getData(),"utf-8");
+					String data=new String(node.getData(),Charset.forName("utf-8"));
 					WNodeData nodeData= JJSON.get().parse(data, WNodeData.class);
-					if(NodeStatus.READING.equals(nodeData.status)){
+					System.out.println(" worker ["+id+"] data status : "+nodeData.getStatus());
+					if(NodeStatus.READY.equals(nodeData.status)){
 						if(nodeData.time>time){
-							wakeup();
 							time=nodeData.time;
 							nodeSelecter.processing(id);
+							while(true){
+								try{
+									WNodeData wnodeData= nodeSelecter.nodeWorkerData(path());
+									if(NodeStatus.PROCESSING.equals(wnodeData.getStatus())){
+										wakeup();
+										break;
+									}
+									wait(1000);
+								}catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
 						}
 					}
-				} catch (UnsupportedEncodingException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -113,7 +140,16 @@ public class NodeWorker implements Serializable {
 				if(nodeSelecter.isLockByMe(id)){
 					break;
 				}
-				wait();
+			}catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			try{
+				synchronized (this) {
+					System.out.println(" ["+id+"]  go to wait .... ");
+					wait();
+					System.out.println(" wake up ["+id+"] .... ");
+					break;
+				}
 			}catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -125,16 +161,26 @@ public class NodeWorker implements Serializable {
 		int count=0;
 		while(true){
 			try{
-				if(nodeSelecter.isLockByMe(id)){
-					return true;
+				try{
+					if(nodeSelecter.isLockByMe(id)){
+						return true;
+					}
+					else{
+						if(count>0){
+							return false;
+						}
+					}
+				}catch (Exception e) {
+					throw new RuntimeException(e);
 				}
-				else{
-					if(count>0){
-						return false;
+				synchronized (this) {
+					try{
+						wait(unit.toMillis(time));
+						return true;
+					}catch (Exception e) {
+						count++;
 					}
 				}
-				wait(unit.toMillis(time));
-				count++;
 			}catch (Exception e) {
 				e.printStackTrace();
 			}

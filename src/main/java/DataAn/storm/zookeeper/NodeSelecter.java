@@ -2,6 +2,7 @@ package DataAn.storm.zookeeper;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,7 +31,8 @@ public class NodeSelecter implements Serializable{
 	public static class SNodeData implements Serializable{
 		
 		public interface NodeStatus{
-			String READING="READING";
+			String ONLINE="ONLINE";
+			String READY="READY";
 			String PROCESSING="PROCESSING";
 			String COMPLETE="COMPLETE";
 		}
@@ -42,6 +44,38 @@ public class NodeSelecter implements Serializable{
 		private String status;
 		
 		private long time;
+
+		public int getPre() {
+			return pre;
+		}
+
+		public void setPre(int pre) {
+			this.pre = pre;
+		}
+
+		public int getNow() {
+			return now;
+		}
+
+		public void setNow(int now) {
+			this.now = now;
+		}
+
+		public String getStatus() {
+			return status;
+		}
+
+		public void setStatus(String status) {
+			this.status = status;
+		}
+
+		public long getTime() {
+			return time;
+		}
+
+		public void setTime(long time) {
+			this.time = time;
+		}
 	}
 	
 	
@@ -77,10 +111,10 @@ public class NodeSelecter implements Serializable{
 					WNodeData nodeData=null;;
 					try {
 						if(node.getData()!=null){
-							nodeData = JJSON.get().parse(new String(node.getData(),"utf-8"),WNodeData.class);
+							nodeData = JJSON.get().parse(new String(node.getData(),Charset.forName("utf-8")),WNodeData.class);
 							tasks.add(nodeData.getId());
 						}
-					} catch (UnsupportedEncodingException e) {
+					} catch (Exception e) {
 						e.printStackTrace();
 					} 
 				}
@@ -104,14 +138,15 @@ public class NodeSelecter implements Serializable{
 			@Override
 			public void call(Node node) {
 				try {
-					String data=new String(name.getBytes(),"utf-8");
+					String data=new String(node.getData(),Charset.forName("utf-8"));
 					
 					SNodeData nodeData= JJSON.get().parse(data, SNodeData.class);
 					if(NodeStatus.COMPLETE.equals(nodeData.status)){
 						int next=next(nodeData.now);
 						String nextPath=nextPath(nodeData.now);
 						if(!executor.exists(nextPath)){
-							//TODO waiting....
+							//TODO waiting..  DUO TO the worker is not active...
+							System.out.println("waiting..  DUO TO the worker["+next+"] is not active...");
 						}
 						else{
 							
@@ -120,7 +155,7 @@ public class NodeSelecter implements Serializable{
 								singleMonitor.acquire();
 								long time=new Date().getTime();
 								WNodeData wNodeData=nodeWorkerData(nextPath);
-								if(!NodeStatus.COMPLETE.equals(wNodeData.getStatus())){
+								if(NodeStatus.READY.equals(wNodeData.getStatus())){
 									return ;
 								}
 								
@@ -128,17 +163,20 @@ public class NodeSelecter implements Serializable{
 								if(nodeData2.now==next&&time<nodeData2.time){
 									return ;
 								}
-								WNodeData wNodeData2=new WNodeData();
-								wNodeData2.setTime(time);
-								wNodeData2.setStatus(NodeStatus.READING);
-								executor.setPath(nextPath, JJSON.get().formatObject(wNodeData2));
 								
 								nodeData.pre=nodeData.now;
 								nodeData.now=next;
-								nodeData.status=NodeStatus.READING;
+								nodeData.status=NodeStatus.READY;
 								nodeData.time=time;
 								setTracking(nodeData);
-								setNodeData(nodeData);
+								setNodeSelecterData(nodeData);
+								
+								WNodeData wNodeData2=new WNodeData();
+								wNodeData2.setTime(time);
+								wNodeData2.setStatus(NodeStatus.READY);
+								wNodeData2.setId(next);
+								executor.setPath(nextPath, JJSON.get().formatObject(wNodeData2));
+								
 								
 							}catch (Exception e) {
 								e.printStackTrace();
@@ -151,7 +189,7 @@ public class NodeSelecter implements Serializable{
 							}
 						}
 					}
-				} catch (UnsupportedEncodingException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -169,6 +207,10 @@ public class NodeSelecter implements Serializable{
 	
 	private String nextPath(int id){
 		return path()+"/worker-"+next(id);
+	}
+	
+	private String workPath(int id){
+		return path()+"/worker-"+id;
 	}
 	
 	ZookeeperExecutor getExecutor() {
@@ -195,13 +237,13 @@ public class NodeSelecter implements Serializable{
 		}
 	}
 	
-	private void setNodeData(SNodeData nodeData){
+	private void setNodeSelecterData(SNodeData nodeData){
 		executor.setPath(path(), JJSON.get().formatObject(nodeData));
 	}
 	
 	private void setTracking(SNodeData nodeData){
 		try {
-			executor.createPath(simpleTrackingPath()+"/"+nodeData.now+"-"+nodeData.status, JJSON.get().formatObject(nodeData).getBytes("utf-8"), CreateMode.PERSISTENT_SEQUENTIAL);
+			executor.createPath(simpleTrackingPath()+"/"+nodeData.now+"-"+nodeData.status+"-", JJSON.get().formatObject(nodeData).getBytes("utf-8"), CreateMode.PERSISTENT_SEQUENTIAL);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -212,7 +254,8 @@ public class NodeSelecter implements Serializable{
 		if(nodeData==null){
 			return false;
 		}
-		return nodeSelecterData().now==workerId;
+		return nodeSelecterData().now==workerId
+				&&NodeStatus.PROCESSING.equals(nodeData.getStatus());
 	}
 	
 	void complete(int workerId){
@@ -225,20 +268,58 @@ public class NodeSelecter implements Serializable{
 		}
 		nodeData.status=SNodeData.NodeStatus.COMPLETE;
 		nodeData.time=new Date().getTime();
-		setNodeData(nodeData);
+		setNodeSelecterData(nodeData);
+		setTracking(nodeData);
+		
+		WNodeData data=getWorkerData(workerId);
+		if(!NodeStatus.PROCESSING.equals(data.getStatus())){
+			throw new RuntimeException("the work ["+workerId+"] is not in progressing status{"+data.getStatus()+"}");
+		}
+		data.setStatus(NodeStatus.COMPLETE);
+		executor.setPath(workPath(workerId), JJSON.get().formatObject(data));
+		
+		
+		
 	}
 
+	WNodeData getWorkerData(int workerId){
+		byte[] data=executor.getPath(workPath(workerId));
+		return JJSON.get().parse(new String(data,Charset.forName("utf-8")), WNodeData.class);
+	}
+	
+	
 	void processing(int workerId){
 		SNodeData nodeData=nodeSelecterData();
 		if(nodeData==null){
-			throw new RuntimeException("the worker is not in processing");
+			throw new RuntimeException("the worker ["+workerId+"] is not in processing  on selecter ");
 		}
 		if(workerId!=nodeData.now){
-			throw new RuntimeException("the worker is not in processing, in["+nodeData.now+"]");
+			throw new RuntimeException("the worker ["+workerId+"] is not in processing, selecter on ["+nodeData.now+"]");
 		}
-		nodeData.status=SNodeData.NodeStatus.COMPLETE;
+		nodeData.status=SNodeData.NodeStatus.PROCESSING;
 		nodeData.time=new Date().getTime();
-		setNodeData(nodeData);
+		setNodeSelecterData(nodeData);
+		setTracking(nodeData);
+		
+		WNodeData data=getWorkerData(workerId);
+		if(!NodeStatus.READY.equals(data.getStatus())){
+			throw new RuntimeException("the work ["+workerId+"] is not ready status{"+data.getStatus()+"}");
+		}
+		data.setStatus(NodeStatus.PROCESSING);
+		executor.setPath(workPath(workerId), JJSON.get().formatObject(data));
+	}
+	
+	int previous(int workerId){
+		return --workerId;
+	}
+	
+	public void start(int workerId){
+		SNodeData nodeData=new SNodeData();
+		nodeData.pre=previous(previous(workerId));
+		nodeData.now=previous(workerId);
+		nodeData.status=NodeStatus.COMPLETE;
+		nodeData.time=new Date().getTime();
+		setNodeSelecterData(nodeData);
 	}
 	
 }

@@ -22,7 +22,7 @@ public class SingleMonitor implements Serializable{
 	private static ConcurrentMap<String, SingleMonitor> map=Maps.newConcurrentMap();
 	
 	public synchronized static void startup(ZookeeperExecutor executor){
-		if(executor==null){
+		if(SingleMonitor.executor==null){
 			SingleMonitor.executor=executor;
 		}
 	}

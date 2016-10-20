@@ -175,10 +175,16 @@ public class ZooKeeperClient implements Serializable {
 					
 					@Override
 					public void nodeChanged() throws Exception {
-						Node node=new Node();
-						node.setPath(path);
-						node.setData(nodeCache.getCurrentData().getData());
-						nodeCallback.call(node);
+						try{
+							Node node=new Node();
+							node.setPath(path);
+							ChildData childData= nodeCache.getCurrentData();
+							if(childData==null) return ;
+							node.setData(childData.getData());
+							nodeCallback.call(node);
+						}catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
 				}, executor);
 				return nodeCache;
@@ -217,24 +223,29 @@ public class ZooKeeperClient implements Serializable {
 					
 					@Override
 					public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-						boolean done=false;
-						for(Type type:_types){
-							if(type==event.getType()){
-								done=true;
-								break;
-							}
-						}
-						if(!done) return;
 						
-						List<ChildData> childDatas= childrenCache.getCurrentData();
-						List<Node> nodes=new ArrayList<>();
-						for(ChildData childData:childDatas){
-							Node node=new Node();
-							node.path=childData.getPath();
-							node.data=childData.getData();
-							nodes.add(node);
+						try{
+							boolean done=false;
+							for(Type type:_types){
+								if(type==event.getType()){
+									done=true;
+									break;
+								}
+							}
+							if(!done) return;
+							
+							List<ChildData> childDatas= childrenCache.getCurrentData();
+							List<Node> nodes=new ArrayList<>();
+							for(ChildData childData:childDatas){
+								Node node=new Node();
+								node.path=childData.getPath();
+								node.data=childData.getData();
+								nodes.add(node);
+							}
+							nodeChildrenCallback.call(nodes);
+						}catch (Exception e) {
+							e.printStackTrace();
 						}
-						nodeChildrenCallback.call(nodes);
 					}
 				}, executor);
 				return childrenCache;
