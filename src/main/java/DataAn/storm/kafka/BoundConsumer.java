@@ -88,6 +88,12 @@ public class BoundConsumer<K> implements Serializable {
 				throw new RuntimeException("the passing data  is invalid.");
 			}
 		}
+
+		@Override
+		public void remove() {
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 	

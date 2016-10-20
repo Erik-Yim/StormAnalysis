@@ -10,6 +10,7 @@ import DataAn.storm.kafka.BoundConsumer;
 import DataAn.storm.kafka.InnerConsumer;
 import DataAn.storm.kafka.KafkaNameKeys;
 
+//OpaqueTridentKafkaSpout 
 public class SpecialKafakaSpout implements ITridentSpout<BatchMeta> {
 	
 	private Fields fields;

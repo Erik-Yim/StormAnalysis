@@ -112,7 +112,8 @@ public class IExceptionCheckNodeProcessorImpl implements
 						finalCaseDtos.add(cDtos.get(j));
 						finalCaseDtosequence.add(cDtos.get(j).getSequence());
 					}
-					Document doc = new Document();				
+					Document doc = new Document();
+					doc.append("datestime", DateUtil.format(cDtos.get(i).getDateTime()));
 					doc.append("year", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy"));
 					doc.append("year_month", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy-MM"));
 					doc.append("year_month_day", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy-MM-dd"));
@@ -121,8 +122,9 @@ public class IExceptionCheckNodeProcessorImpl implements
 					doc.append("deviceName", cDtos.get(i).getDeviceName());
 					doc.append("paramName", cDtos.get(i).getParamName());	
 					doc.append("value", cDtos.get(i).getValue());	
+					doc.append("hadRead", "0");	
 					documentList.add(doc);
-					i=i+limitTime;
+					i=i+limitTime;	
 				}else{i++;}				
 			}
 			MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_SpecialCase", documentList);
@@ -138,6 +140,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 					for(ParamExceptionDto ped:paramEs){
 						if(!(paramSe.contains(ped.getSequence()))){
 							Document doc = new Document();	
+							doc.append("datetime", DateUtil.format(ped.getTime()));
 							doc.append("year", DateUtil.format(ped.getTime(), "yyyy"));
 							doc.append("year_month", DateUtil.format(ped.getTime(), "yyyy-MM"));
 							doc.append("year_month_day", DateUtil.format(ped.getTime(), "yyyy-MM-dd"));
@@ -145,7 +148,8 @@ public class IExceptionCheckNodeProcessorImpl implements
 							doc.append("star", ped.getStar());
 							doc.append("deviceName", ped.getDeviceName());	
 							doc.append("paramName", ped.getParamName());	
-							doc.append("value", ped.getValue());	
+							doc.append("value", ped.getValue());
+							doc.append("hadRead", "0");	
 							documentList.add(doc);
 						}
 					}
@@ -167,3 +171,9 @@ public class IExceptionCheckNodeProcessorImpl implements
 	}
 
 }
+
+
+
+
+
+

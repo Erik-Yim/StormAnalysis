@@ -12,7 +12,7 @@ public abstract class KafkaNameKeys implements Serializable  {
 	public static final String KAFKA_SERVER="KAFKA_SERVER";
 	
 	public static final String KAFKA_CONSUMER_GROUP="KAFKA_CONSUMER_GROUP";
-	
+		
 	/**
 	 * session.timeout.ms
 	 */
