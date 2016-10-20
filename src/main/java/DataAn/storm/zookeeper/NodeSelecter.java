@@ -7,6 +7,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
+import org.apache.zookeeper.CreateMode;
 
 import DataAn.common.utils.JJSON;
 import DataAn.storm.zookeeper.NodeSelecter.SNodeData.NodeStatus;
@@ -16,8 +20,8 @@ import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
 @SuppressWarnings("serial")
 public class NodeSelecter implements Serializable{
-
-	private String basePath="/node-locks";
+	
+	private String basePath="/locks/node-locks";
 	
 	private String name;
 	
@@ -26,6 +30,7 @@ public class NodeSelecter implements Serializable{
 	public static class SNodeData implements Serializable{
 		
 		public interface NodeStatus{
+			String READING="READING";
 			String PROCESSING="PROCESSING";
 			String COMPLETE="COMPLETE";
 		}
@@ -53,6 +58,10 @@ public class NodeSelecter implements Serializable{
 
 	String path(){
 		return basePath+"/"+name;
+	}
+	
+	String simpleTrackingPath(){
+		return basePath+"-tasks-tracking/sequence";
 	}
 	
 	private void init(){
@@ -85,7 +94,12 @@ public class NodeSelecter implements Serializable{
 					
 				});
 			}
-		});
+		},Executors.newFixedThreadPool(1, new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, path()+"{watch children}");
+			}
+		}));
 		executor.watchPath(path(), new ZooKeeperClient.NodeCallback () {
 			@Override
 			public void call(Node node) {
@@ -94,21 +108,59 @@ public class NodeSelecter implements Serializable{
 					
 					SNodeData nodeData= JJSON.get().parse(data, SNodeData.class);
 					if(NodeStatus.COMPLETE.equals(nodeData.status)){
+						int next=next(nodeData.now);
 						String nextPath=nextPath(nodeData.now);
 						if(!executor.exists(nextPath)){
 							//TODO waiting....
 						}
 						else{
-							WNodeData nodeData2=new WNodeData();
-							nodeData2.setTime(new Date().getTime());
-							executor.setPath(nextPath, JJSON.get().formatObject(nodeData2));
+							
+							SingleMonitor singleMonitor=SingleMonitor.get("/locks/selecter-notify");
+							try{
+								singleMonitor.acquire();
+								long time=new Date().getTime();
+								WNodeData wNodeData=nodeWorkerData(nextPath);
+								if(!NodeStatus.COMPLETE.equals(wNodeData.getStatus())){
+									return ;
+								}
+								
+								SNodeData nodeData2=nodeSelecterData();
+								if(nodeData2.now==next&&time<nodeData2.time){
+									return ;
+								}
+								WNodeData wNodeData2=new WNodeData();
+								wNodeData2.setTime(time);
+								wNodeData2.setStatus(NodeStatus.READING);
+								executor.setPath(nextPath, JJSON.get().formatObject(wNodeData2));
+								
+								nodeData.pre=nodeData.now;
+								nodeData.now=next;
+								nodeData.status=NodeStatus.READING;
+								nodeData.time=time;
+								setTracking(nodeData);
+								setNodeData(nodeData);
+								
+							}catch (Exception e) {
+								e.printStackTrace();
+							}finally {
+								try {
+									singleMonitor.release();
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
 						}
 					}
 				} catch (UnsupportedEncodingException e) {
 					e.printStackTrace();
 				}
 			}
-		});
+		},Executors.newFixedThreadPool(1, new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, path()+"{watch itself}");
+			}
+		}));
 	}
 
 	private int next(int id){
@@ -123,7 +175,7 @@ public class NodeSelecter implements Serializable{
 		return executor;
 	}
 	
-	SNodeData nodeData(){
+	SNodeData nodeSelecterData(){
 		byte[] bytes=executor.getPath(path());
 		try{
 			return JJSON.get().parse(new String(bytes,"utf-8"), SNodeData.class);
@@ -133,12 +185,60 @@ public class NodeSelecter implements Serializable{
 		}
 	}
 	
+	WNodeData nodeWorkerData(String path){
+		byte[] bytes=executor.getPath(path);
+		try{
+			return JJSON.get().parse(new String(bytes,"utf-8"), WNodeData.class);
+		}catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	private void setNodeData(SNodeData nodeData){
+		executor.setPath(path(), JJSON.get().formatObject(nodeData));
+	}
+	
+	private void setTracking(SNodeData nodeData){
+		try {
+			executor.createPath(simpleTrackingPath()+"/"+nodeData.now+"-"+nodeData.status, JJSON.get().formatObject(nodeData).getBytes("utf-8"), CreateMode.PERSISTENT_SEQUENTIAL);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	boolean isLockByMe(int workerId){
-		SNodeData nodeData=nodeData();
+		SNodeData nodeData=nodeSelecterData();
 		if(nodeData==null){
 			return false;
 		}
-		return nodeData().now==workerId;
+		return nodeSelecterData().now==workerId;
+	}
+	
+	void complete(int workerId){
+		SNodeData nodeData=nodeSelecterData();
+		if(nodeData==null){
+			throw new RuntimeException("the worker is not in processing");
+		}
+		if(workerId!=nodeData.now){
+			throw new RuntimeException("the worker is not in processing, in["+nodeData.now+"]");
+		}
+		nodeData.status=SNodeData.NodeStatus.COMPLETE;
+		nodeData.time=new Date().getTime();
+		setNodeData(nodeData);
+	}
+
+	void processing(int workerId){
+		SNodeData nodeData=nodeSelecterData();
+		if(nodeData==null){
+			throw new RuntimeException("the worker is not in processing");
+		}
+		if(workerId!=nodeData.now){
+			throw new RuntimeException("the worker is not in processing, in["+nodeData.now+"]");
+		}
+		nodeData.status=SNodeData.NodeStatus.COMPLETE;
+		nodeData.time=new Date().getTime();
+		setNodeData(nodeData);
 	}
 	
 }

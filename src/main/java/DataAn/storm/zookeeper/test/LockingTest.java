@@ -5,9 +5,9 @@ import java.util.Map;
 
 import org.apache.storm.utils.Utils;
 
+import DataAn.storm.zookeeper.NodeSelecter;
 import DataAn.storm.zookeeper.TaskSelected;
 import DataAn.storm.zookeeper.TaskSelecteds;
-import DataAn.storm.zookeeper.TaskSequenceGuarantee;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
@@ -25,11 +25,12 @@ public class LockingTest {
 		.namespace(ZooKeeperNameKeys.getNamespace(conf))
 		.build();
 		
-		TaskSequenceGuarantee guarantee=new TaskSequenceGuarantee(executor);
-		TaskSelecteds.startup(guarantee);
+		NodeSelecter nodeSelecter=new NodeSelecter("default", executor);
+		
+		TaskSelecteds.startup(nodeSelecter);
 		
 		for(int i=0;i<3;i++){
-			final TaskSelected taskSelected =TaskSelecteds.get(String.valueOf(i));
+			final TaskSelected taskSelected =TaskSelecteds.get(i);
 			new Thread(new Runnable() {
 				
 				@Override

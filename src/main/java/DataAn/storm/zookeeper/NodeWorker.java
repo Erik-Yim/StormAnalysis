@@ -2,12 +2,16 @@ package DataAn.storm.zookeeper;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import DataAn.common.utils.JJSON;
+import DataAn.storm.zookeeper.NodeSelecter.SNodeData.NodeStatus;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
+@SuppressWarnings("serial")
 public class NodeWorker implements Serializable {
 
 	private String prefix="worker-";
@@ -37,6 +41,8 @@ public class NodeWorker implements Serializable {
 		
 		private int id;
 		
+		private String status;
+		
 		public void setTime(long time) {
 			this.time = time;
 		}
@@ -52,7 +58,16 @@ public class NodeWorker implements Serializable {
 		public long getTime() {
 			return time;
 		}
+
+		public String getStatus() {
+			return status;
+		}
+
+		public void setStatus(String status) {
+			this.status = status;
+		}
 	}
+	
 	
 	private void init(){
 		if(!executor.exists(path())){
@@ -65,17 +80,25 @@ public class NodeWorker implements Serializable {
 			@Override
 			public void call(Node node) {
 				try {
-					String data=new String(name.getBytes(),"utf-8");
+					String data=new String(node.getData(),"utf-8");
 					WNodeData nodeData= JJSON.get().parse(data, WNodeData.class);
-					
-					if(nodeData.time>time){
-						
+					if(NodeStatus.READING.equals(nodeData.status)){
+						if(nodeData.time>time){
+							wakeup();
+							time=nodeData.time;
+							nodeSelecter.processing(id);
+						}
 					}
 				} catch (UnsupportedEncodingException e) {
 					e.printStackTrace();
 				}
 			}
-		});
+		},Executors.newFixedThreadPool(1, new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, path());
+			}
+		}));
 	}
 	
 	
@@ -119,9 +142,14 @@ public class NodeWorker implements Serializable {
 	}
 	
 	public void release() throws Exception{
+		nodeSelecter.complete(id);
 	}
 	
-	
+	private void wakeup(){
+		synchronized (this) {
+			notifyAll();
+		}
+	}
 	
 	
 	
