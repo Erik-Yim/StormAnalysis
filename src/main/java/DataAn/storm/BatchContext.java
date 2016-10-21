@@ -4,14 +4,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
-import DataAn.storm.interfece.IDenoiseFilterNodeProcessor;
+import DataAn.storm.denoise.IDenoiseFilterNodeProcessor;
 import DataAn.storm.interfece.IDeviceRecordPersit;
 import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
 import DataAn.storm.interfece.InterfaceGetter;
 
 public class BatchContext extends HashMap<String,Object>{
 
+	private Map conf;
+	
 	private long batchId;
 
 	private Collection<Long> sequences=Collections.synchronizedCollection(new ArrayList<Long>());
@@ -89,9 +92,12 @@ public class BatchContext extends HashMap<String,Object>{
 		}
 		return exceptionCheckNodeProcessor;
 	}
-	
-	
-	
-	
-	
+
+	public Map getConf() {
+		return conf;
+	}
+
+	public void setConf(Map conf) {
+		this.conf = conf;
+	}
 }

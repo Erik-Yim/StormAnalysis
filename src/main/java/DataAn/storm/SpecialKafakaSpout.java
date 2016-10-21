@@ -6,7 +6,8 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.ITridentSpout;
 import org.apache.storm.tuple.Fields;
 
-import DataAn.storm.kafka.BoundConsumer;
+import DataAn.storm.kafka.BaseConsumer;
+import DataAn.storm.kafka.BaseConsumer.BoundConsumer;
 import DataAn.storm.kafka.InnerConsumer;
 import DataAn.storm.kafka.KafkaNameKeys;
 
@@ -35,8 +36,8 @@ public class SpecialKafakaSpout implements ITridentSpout<BatchMeta> {
 		String topicPartition=KafkaNameKeys.getKafkaTopicPartition(conf);
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
 				.manualPartitionAssign(topicPartition.split(","));
-		BoundConsumer<String> consumer=new BoundConsumer<>(innerConsumer);
-		return new SpecialCoordinator(consumer);
+		BoundConsumer consumer=BaseConsumer.boundConsumer(innerConsumer);
+		return new SpecialCoordinator(consumer,conf);
 	}
 
 	@Override
@@ -45,8 +46,8 @@ public class SpecialKafakaSpout implements ITridentSpout<BatchMeta> {
 		String topicPartition=KafkaNameKeys.getKafkaTopicPartition(conf);
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
 				.manualPartitionAssign(topicPartition.split(","));
-		BoundConsumer<String> consumer=new BoundConsumer<>(innerConsumer);
-		return new SpecialEmitter(consumer);
+		BoundConsumer consumer=BaseConsumer.boundConsumer(innerConsumer);
+		return new SpecialEmitter(consumer,conf);
 	}
 
 }

@@ -261,10 +261,10 @@ public class NodeSelecter implements Serializable{
 	void complete(int workerId){
 		SNodeData nodeData=nodeSelecterData();
 		if(nodeData==null){
-			throw new RuntimeException("the worker is not in processing");
+			throw new RuntimeException("the worker ["+workerId+"] is not in processing");
 		}
 		if(workerId!=nodeData.now){
-			throw new RuntimeException("the worker is not in processing, in["+nodeData.now+"]");
+			throw new RuntimeException("the worker ["+workerId+"] is not in processing, latest is ["+nodeData.now+"]");
 		}
 		nodeData.status=SNodeData.NodeStatus.COMPLETE;
 		nodeData.time=new Date().getTime();

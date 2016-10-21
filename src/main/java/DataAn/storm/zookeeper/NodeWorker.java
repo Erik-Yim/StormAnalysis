@@ -80,7 +80,7 @@ public class NodeWorker implements Serializable {
 			nodeData.time=new Date().getTime();
 			
 			SNodeData selecterData=nodeSelecter.nodeSelecterData();
-			if(selecterData.getNow()==id){
+			if(selecterData!=null&&selecterData.getNow()==id){
 				nodeData.status=selecterData.getStatus();
 			}
 			else{

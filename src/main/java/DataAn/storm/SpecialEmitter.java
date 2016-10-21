@@ -1,7 +1,9 @@
 package DataAn.storm;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -11,10 +13,9 @@ import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.tuple.Values;
 
 import DataAn.storm.BatchMeta.Scope;
+import DataAn.storm.kafka.BaseConsumer.BoundConsumer;
+import DataAn.storm.kafka.BaseConsumer.FetchObjs;
 import DataAn.storm.kafka.Beginning;
-import DataAn.storm.kafka.BoundConsumer;
-import DataAn.storm.kafka.BoundConsumer.FetchObjIterator;
-import DataAn.storm.kafka.BoundConsumer.FetchObjs;
 import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
@@ -22,16 +23,19 @@ import DataAn.storm.kafka.Null;
 
 public class SpecialEmitter implements Emitter<BatchMeta> {
 	
+	private Map conf;
+	
 	private AtomicLong atomicLong=new AtomicLong(0);
 	
-	private BoundConsumer<String> consumer;
+	private BoundConsumer consumer;
 	
 	private int timeout=30000;
 	
 	private int count=10000;
 	
-	public SpecialEmitter(BoundConsumer<String> consumer) {
+	public SpecialEmitter(BoundConsumer consumer,Map conf) {
 		this.consumer = consumer;
+		this.conf=conf;
 	}
 
 	@Override
@@ -41,6 +45,8 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 
 		BatchContext batchContext=new BatchContext();
 		batchContext.setBatchId(batchId);
+		batchContext.setConf(conf);
+		
 		List<DefaultFetchObj> fetchObjs=new ArrayList<>();
 		for(Entry<String, Scope> entry:coordinatorMeta.getTopicPartitionOffset().entrySet()){
 			consumer.seek(entry.getKey(), entry.getValue().start);
@@ -50,7 +56,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		while(true){
 			FetchObjs fetchObjs2=consumer.next(timeout);
 			if(!fetchObjs2.isEmpty()){
-				FetchObjIterator fetchObjIterator= fetchObjs2.iterator();
+				Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
 				boolean breakOut=false;
 				while(fetchObjIterator.hasNext()){
 					if(!((fetchObj=fetchObjIterator.next()) instanceof Ending)){

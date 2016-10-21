@@ -32,6 +32,17 @@ public class InnerConsumer implements Serializable {
 	 */
 	private String[] topics=new String[]{};
 	
+	private String group;
+	
+	public String getGroup() {
+		return group;
+	}
+
+	public InnerConsumer group(String group) {
+		this.group = group;
+		return this;
+	}
+
 	public InnerConsumer(Map context) {
 		this.context = context;
 	}
@@ -79,7 +90,7 @@ public class InnerConsumer implements Serializable {
 
 			 Properties props = new Properties();
 		     props.put("bootstrap.servers", KafkaNameKeys.getKafkaServer(context));
-		     props.put("group.id", KafkaNameKeys.getConsumerGroup(context));
+		     props.put("group.id", getGroup());
 		     props.put("enable.auto.commit", "false");
 		     props.put("auto.commit.interval.ms", "1000");
 		     props.put("session.timeout.ms", KafkaNameKeys.getMessageTimeout(context));
