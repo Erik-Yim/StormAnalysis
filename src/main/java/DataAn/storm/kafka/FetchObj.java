@@ -6,4 +6,7 @@ public interface FetchObj extends Serializable {
 
 	public long offset();
 	
+	public long recordTime();
+	
+	
 }

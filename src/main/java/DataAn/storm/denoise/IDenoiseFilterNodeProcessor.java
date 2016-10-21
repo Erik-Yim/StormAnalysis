@@ -1,4 +1,4 @@
-package DataAn.storm.interfece;
+package DataAn.storm.denoise;
 
 import java.io.Serializable;
 

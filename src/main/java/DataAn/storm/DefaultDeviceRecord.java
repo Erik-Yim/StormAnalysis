@@ -1,8 +1,11 @@
 package DataAn.storm;
 
+import DataAn.storm.kafka.Notify;
 
 public class DefaultDeviceRecord implements IDeviceRecord {
 
+	private Notify notify;
+	
 	private Long  sequence;
 	
 	private String id;
@@ -113,5 +116,18 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 		this.isPersist = isPersist;
 	}
 
+	public Notify getNotify() {
+		return notify;
+	}
+
+	public void setNotify(Notify notify) {
+		this.notify = notify;
+	}
+
+	@Override
+	public String getCollection() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

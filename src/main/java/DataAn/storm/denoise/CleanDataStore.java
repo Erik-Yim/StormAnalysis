@@ -57,7 +57,7 @@ public class CleanDataStore implements Serializable {
 				persists.add(defaultDeviceRecord);
 			}
 		}
-		batchContext.getDeviceRecordPersit().persist(persists.toArray(new DefaultDeviceRecord[]{}));
+		batchContext.getDeviceRecordPersit().persist(batchContext.getConf(),batchContext,persists.toArray(new DefaultDeviceRecord[]{}));
 	}
 	
 }

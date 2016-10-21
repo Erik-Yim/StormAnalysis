@@ -20,7 +20,6 @@ import org.apache.storm.tuple.Values;
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.SpecialKafakaSpout;
-import DataAn.storm.interfece.IDenoiseFilterNodeProcessor;
 
 
 @SuppressWarnings("serial")

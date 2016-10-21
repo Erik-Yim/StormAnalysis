@@ -1,30 +1,16 @@
 package DataAn.storm.interfece;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bson.Document;
-
-import DataAn.common.utils.DateUtil;
-import DataAn.dto.ParamExceptionDto;
-import DataAn.mongo.client.MongodbUtil;
-import DataAn.mongo.init.InitMongo;
 import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
-import DataAn.storm.impl.IDeviceRecordPersitImpl;
+import DataAn.storm.denoise.IDenoiseFilterNodeProcessor;
+import DataAn.storm.denoise.KafkaDeviceRecordPersitImpl;
 import DataAn.storm.impl.IExceptionCheckNodeProcessorImpl;
 
 public class InterfaceGetter {
 
 	public static IDeviceRecordPersit getDeviceRecordPersit(){
 	
-		return new IDeviceRecordPersit() {
-			@Override
-			public void persist(IDeviceRecord... deviceRecords) throws Exception {
-				IDeviceRecordPersitImpl IDRP =  IDeviceRecordPersitImpl.getInstence();
-				IDRP.persist(deviceRecords);
-			}
-		};
+		return new KafkaDeviceRecordPersitImpl();
 	}
 	
 	public static IDenoiseFilterNodeProcessor getDenoiseFilterNodeProcessor(){

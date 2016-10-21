@@ -53,4 +53,7 @@ public interface IDeviceRecord extends Serializable{
 	 * @return
 	 */
 	BatchContext getBatchContext();
+	
+	String getCollection();
+	
 }

@@ -14,7 +14,7 @@ import org.apache.storm.tuple.Fields;
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.SpecialKafakaSpout;
-import DataAn.storm.interfece.IDenoiseFilterNodeProcessor;
+import DataAn.storm.denoise.IDenoiseFilterNodeProcessor;
 import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
 import DataAn.storm.interfece.InterfaceGetter;
 
