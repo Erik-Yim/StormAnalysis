@@ -5,9 +5,7 @@ import java.util.Map;
 
 import org.apache.kafka.common.utils.Utils;
 
-import DataAn.storm.zookeeper.NodeSelecter;
-import DataAn.storm.zookeeper.NodeWorker;
-import DataAn.storm.zookeeper.SingleMonitor;
+import DataAn.storm.zookeeper.NodeWorkers;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
@@ -25,51 +23,10 @@ public class DistrLockTest2 {
 		.namespace(ZooKeeperNameKeys.getNamespace(conf))
 		.build();
 		
-		SingleMonitor.startup(executor);
-		final NodeSelecter nodeSelecter=new NodeSelecter("default", executor);
-		
-		for(int i=0;i<6;i++){
-			final int _i=i;
-			new Thread(new Runnable() {
-				
-				@Override
-				public void run() {
-
-					while(true){
-						NodeWorker nodeWorker=new NodeWorker(_i, "id"+_i, nodeSelecter);
-						try{
-							nodeWorker.acquire();
-							System.out.println(nodeWorker.getId()+ " get lock , wait some time.");
-							Utils.sleep(10000);
-							
-							
-						}catch (Exception e) {
-							e.printStackTrace();
-						}finally {
-							try {
-								nodeWorker.release();
-								System.out.println(nodeWorker.getId()+ " release lock");
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-						}
-					}
-					
-				}
-			},"name - "+i).start();
-		}
+		NodeWorkers.startup(executor);
+		DistrLockTest.start(0, 5);
 		
 		Utils.sleep(10000);
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
 		
 	}
 	
