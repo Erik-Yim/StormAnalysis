@@ -29,6 +29,10 @@ public abstract class BaseFetchObjIterator<K, V> implements Iterator<FetchObj> {
 		return count<consumerRecords.size();
 	}
 	
+	@Override
+	public void remove() {
+		throw new UnsupportedOperationException("remove");
+	}
 	
 	
 	
