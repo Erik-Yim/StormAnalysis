@@ -12,12 +12,12 @@ public class NodeWorkers implements Serializable {
 
 	private static ConcurrentMap<Integer, NodeWorker> map=Maps.newConcurrentMap();
 	
-	private static NodeSelecter _nodeSelecter=null;
+	private static NodeSelector _nodeSelecter=null;
 	
 	public synchronized static void startup(ZookeeperExecutor executor){
 		if(_nodeSelecter==null){
 			SingleMonitor.startup(executor);
-			_nodeSelecter=new NodeSelecter("default", executor);
+			_nodeSelecter=NodeSelector.get("default", executor);
 		}
 	}
 	

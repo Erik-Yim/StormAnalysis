@@ -1,17 +1,22 @@
 package DataAn.storm.zookeeper;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.curator.framework.recipes.leader.LeaderLatch;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.zookeeper.CreateMode;
 
 import DataAn.common.utils.JJSON;
-import DataAn.storm.zookeeper.NodeSelecter.SNodeData;
-import DataAn.storm.zookeeper.NodeSelecter.SNodeData.NodeStatus;
+import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
@@ -24,20 +29,37 @@ public class NodeWorker implements Serializable {
 	
 	public String name;
 	
-	private NodeSelecter nodeSelecter;
+	private NodeSelector nodeSelecter;
 	
 	private ZookeeperExecutor executor;
 
-	public NodeWorker(int id, String name, NodeSelecter nodeSelecter) {
+	private LeaderLatch processorLeaderLatch;
+	
+	public NodeWorker(int id, String name, NodeSelector nodeSelecter) {
 		this.id = id;
 		this.name = name;
 		this.nodeSelecter = nodeSelecter;
 		this.executor=nodeSelecter.getExecutor();
+		processorLeaderLatch=new LeaderLatch(executor.backend(),
+				processorLeaderPath());
+		processorLeaderLatch.addListener(new LeaderLatchListener() {
+			
+			@Override
+			public void notLeader() {
+				System.out.println(" lose worker-processor eadership .... ");
+			}
+			
+			@Override
+			public void isLeader() {
+				
+			}
+		}, Executors.newFixedThreadPool(1));
+		
 		init();
 	}
 
 	private String path(){
-		return nodeSelecter.path()+"/"+prefix+String.valueOf(id);
+		return nodeSelecter.pluginWorkersPath()+"/"+prefix+String.valueOf(id);
 	}
 	
 	public static class WNodeData implements Serializable{
@@ -73,64 +95,95 @@ public class NodeWorker implements Serializable {
 	}
 	
 	
+	
 	private void init(){
-		if(!executor.exists(path())){
-			WNodeData nodeData=new WNodeData();
-			nodeData.id=id;
-			nodeData.time=new Date().getTime();
-			
-			SNodeData selecterData=nodeSelecter.nodeSelecterData();
-			if(selecterData!=null&&selecterData.getNow()==id){
-				nodeData.status=selecterData.getStatus();
+		final String path=path();
+		SingleMonitor singleMonitor=SingleMonitor.get(nodeSelecter.basePath()+"/worker-register-sync-lock"); 
+		try{
+			singleMonitor.acquire();
+			if(!executor.exists(path)){
+				WorkerPathVal workerPathVal=new WorkerPathVal();
+				workerPathVal.setId(id);
+				workerPathVal.setTime(new Date().getTime());
+				executor.createPath(path,JJSON.get().formatObject(workerPathVal).getBytes(Charset.forName("utf-8")),CreateMode.PERSISTENT);
 			}
-			else{
-				nodeData.status=NodeStatus.ONLINE;
-			}
-			executor.createPath(path(),JJSON.get().formatObject(nodeData).getBytes(Charset.forName("utf-8")),CreateMode.EPHEMERAL);
-		}
-		executor.watchPath(path(), new ZooKeeperClient.NodeCallback () {
+			executor.watchPath(path, new ZooKeeperClient.NodeCallback () {
+				@Override
+				public void call(Node node) {
+					try{
+						executor.createEphSequencePath(path+"/temp-");
+						wakeup();
+					}catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			},Executors.newFixedThreadPool(1, new ThreadFactory() {
+				@Override
+				public Thread newThread(Runnable r) {
+					return new Thread(r, path());
+				}
+			}));
 			
-			private long time;
-			
-			@Override
-			public void call(Node node) {
-				try {
-					String data=new String(node.getData(),Charset.forName("utf-8"));
-					WNodeData nodeData= JJSON.get().parse(data, WNodeData.class);
-					System.out.println(" worker ["+id+"] data status : "+nodeData.getStatus());
-					if(NodeStatus.READY.equals(nodeData.status)){
-						if(nodeData.time>time){
-							time=nodeData.time;
-							nodeSelecter.processing(id);
-							while(true){
-								try{
-									WNodeData wnodeData= nodeSelecter.nodeWorkerData(path());
-									if(NodeStatus.PROCESSING.equals(wnodeData.getStatus())){
-										wakeup();
-										break;
-									}
-									wait(1000);
-								}catch (Exception e) {
-									e.printStackTrace();
+			Executors.newFixedThreadPool(1, new ThreadFactory() {
+				
+				@Override
+				public Thread newThread(Runnable r) {
+					return new Thread(r, path+"{watch children}");
+				}
+			}).execute(new Runnable() {
+				
+				@Override
+				public void run() {
+					try{
+						processorLeaderLatch.start();
+						processorLeaderLatch.await();
+						
+						final PathChildrenCache cache= executor.watchChildrenPath(path, new ZooKeeperClient.NodeChildrenCallback() {
+							@Override
+							public void call(List<Node> nodes) {
+								if(nodes.isEmpty()){
+									
 								}
 							}
+							
+						}, Executors.newFixedThreadPool(1, new ThreadFactory() {
+							@Override
+							public Thread newThread(Runnable r) {
+								return new Thread(r, path+"{cache:watch children}");
+							}
+						}),PathChildrenCacheEvent.Type.CHILD_UPDATED);
+						
+						while(true){}
+						
+					}catch (Exception e) {
+						e.printStackTrace();
+					}finally {
+						try {
+							processorLeaderLatch.close();
+						} catch (IOException e) {
+							e.printStackTrace();
 						}
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
+			});
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			try {
+				singleMonitor.release();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		},Executors.newFixedThreadPool(1, new ThreadFactory() {
-			@Override
-			public Thread newThread(Runnable r) {
-				return new Thread(r, path());
-			}
-		}));
+		}
 	}
 	
 	
 	public int getId() {
 		return id;
+	}
+	
+	String processorLeaderPath(){
+		return nodeSelecter.basePath()+"/worker-processor-leader-latch";
 	}
 	
 	public void acquire() throws Exception{

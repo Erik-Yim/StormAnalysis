@@ -1,6 +1,7 @@
 package DataAn.storm.zookeeper;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -62,6 +63,10 @@ public class ZooKeeperClient implements Serializable {
 
 		public void setData(byte[] data) {
 			this.data = data;
+		}
+		
+		public String getStringData(){
+			return new String(getData(),Charset.forName("utf-8"));
 		}
 		
 	}

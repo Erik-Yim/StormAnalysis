@@ -7,7 +7,7 @@ import java.util.Map;
 import org.apache.storm.utils.Utils;
 
 import DataAn.common.utils.JJSON;
-import DataAn.storm.zookeeper.NodeSelecter.SNodeData;
+import DataAn.storm.zookeeper.NodeSelector.SNodeData;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
