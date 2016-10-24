@@ -2,12 +2,14 @@ package DataAn.storm.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.bson.Document;
 
 import DataAn.common.utils.DateUtil;
 import DataAn.mongo.client.MongodbUtil;
 import DataAn.mongo.init.InitMongo;
+import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.interfece.IDeviceRecordPersit;
 
@@ -26,7 +28,7 @@ public class IDeviceRecordPersitImpl implements IDeviceRecordPersit {
 	
 	
 	@Override
-	public void persist(IDeviceRecord... deviceRecords) throws Exception {
+	public void persist(Map context,BatchContext batchContext,IDeviceRecord... deviceRecords) throws Exception {
 		List<Document> tempList = new ArrayList<Document>();
 		String series = "";
 		String star = "";
