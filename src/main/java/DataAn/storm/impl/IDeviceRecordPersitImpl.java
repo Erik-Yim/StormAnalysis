@@ -28,7 +28,7 @@ public class IDeviceRecordPersitImpl implements IDeviceRecordPersit {
 	
 	
 	@Override
-	public void persist(IDeviceRecord... deviceRecords) throws Exception {
+	public void persist(Map context,BatchContext batchContext,IDeviceRecord... deviceRecords) throws Exception {
 		List<Document> tempList = new ArrayList<Document>();
 		String series = "";
 		String star = "";
