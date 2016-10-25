@@ -2,6 +2,8 @@ package DataAn.storm.kafka;
 
 public  class BaseFetchObj implements FetchObj {
 
+	private String id;
+	
 	private long offset;
 	
 	private long recordTime;
@@ -41,6 +43,17 @@ public  class BaseFetchObj implements FetchObj {
 	public void setRecordTime(long recordTime) {
 		this.recordTime = recordTime;
 	}
-	
+	@Override
+	public String id() {
+		return id;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
 	
 }

@@ -8,5 +8,6 @@ public interface FetchObj extends Serializable {
 	
 	public long recordTime();
 	
+	public String id();
 	
 }
