@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -20,6 +21,8 @@ import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.storm.shade.com.google.common.collect.Maps;
 
 import DataAn.common.utils.JJSON;
+import DataAn.storm.kafka.InnerProducer;
+import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
@@ -44,6 +47,10 @@ public class NodeSelector implements Serializable{
 	
 	private Master master;
 	
+	private SimpleProducer simpleProducer;
+	
+	private ExecutorService executorService=Executors.newFixedThreadPool(3);
+	
 	public static abstract class CacheType{
 		private static final String CHILD="patch_child";
 	}
@@ -67,6 +74,10 @@ public class NodeSelector implements Serializable{
 		if(nodeSelector==null){
 			nodeSelector=new NodeSelector(name, executor);
 			nodeSelector.conf=conf;
+			InnerProducer innerProducer=new InnerProducer(conf);
+			SimpleProducer simpleProducer =new SimpleProducer(innerProducer, 
+					"wokflow-instance", 0);
+			nodeSelector.simpleProducer=simpleProducer;
 			map.put(name, nodeSelector);
 		}
 		return nodeSelector;
@@ -421,10 +432,21 @@ public class NodeSelector implements Serializable{
 		}
 	}
 	
-	void complete(String path){
-		InstanceNodeVal instanceNodeVal=JJSON.get().parse(new String(executor.getPath(path),Charset.forName("utf-8")), InstanceNodeVal.class);
+	void complete(final String path){
+		final InstanceNodeVal instanceNodeVal=JJSON.get().parse(new String(executor.getPath(path),Charset.forName("utf-8")), InstanceNodeVal.class);
 		instanceNodeVal.status=NodeStatus.COMPLETE;
 		executor.setPath(path, JJSON.get().formatObject(instanceNodeVal));
+		executorService.execute(new Runnable() {
+			@Override
+			public void run() {
+				WorkTracking workTracking=new WorkTracking();
+				workTracking.setWorkerId(String.valueOf(instanceNodeVal.getId()));
+				workTracking.setInstancePath(path);
+				workTracking.setStatus(NodeStatus.COMPLETE);
+				workTracking.setRecordTime(new Date().getTime());
+				simpleProducer.send(workTracking);
+			}
+		});
 	}
 	
 	private long instanceSequence(String path){
@@ -438,14 +460,26 @@ public class NodeSelector implements Serializable{
 		return Integer.parseInt(lastStr.substring(lastStr.lastIndexOf("-")+1));
 	}
 	
-	private void start(int worker,String instancePath,Instance instance){
-		WorkerPathVal workerPathVal=new WorkerPathVal();
+	private void start(final int worker,final String instancePath,final Instance instance){
+		final WorkerPathVal workerPathVal=new WorkerPathVal();
 		workerPathVal.id=worker;
 		workerPathVal.time=new Date().getTime();
 		workerPathVal.sequence=instance.sequence;
 		workerPathVal.instancePath=instancePath;
 		executor.setPath(instance.workflow.workerPaths.get(worker),
 				JJSON.get().formatObject(workerPathVal));
+		executorService.execute(new Runnable() {
+			@Override
+			public void run() {
+				WorkTracking workTracking=new WorkTracking();
+				workTracking.setWorkerId(String.valueOf(worker));
+				workTracking.setInstancePath(instancePath);
+				workTracking.setStatus(NodeStatus.READY);
+				workTracking.setRecordTime(new Date().getTime());
+				simpleProducer.send(workTracking);
+			}
+		});
+		
 	}
 	
 	private void start(Instance instance){
@@ -654,5 +688,9 @@ public class NodeSelector implements Serializable{
 	
 	ZookeeperExecutor getExecutor() {
 		return executor;
+	}
+	
+	public Map getConf() {
+		return conf;
 	}
 }

@@ -5,6 +5,8 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +19,9 @@ import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.zookeeper.CreateMode;
 
 import DataAn.common.utils.JJSON;
+import DataAn.storm.kafka.InnerProducer;
+import DataAn.storm.kafka.SimpleProducer;
+import DataAn.storm.zookeeper.NodeSelector.NodeStatus;
 import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
@@ -24,6 +29,8 @@ import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 @SuppressWarnings("serial")
 public class NodeWorker implements Serializable {
 
+	private Map conf;
+	
 	private String prefix="worker-";
 	
 	private int id;
@@ -40,10 +47,19 @@ public class NodeWorker implements Serializable {
 	
 	private Master master;
 	
-	public NodeWorker(int id, String name, NodeSelector nodeSelecter) {
+	private SimpleProducer simpleProducer;
+	
+	private ExecutorService executorService=Executors.newFixedThreadPool(3);
+	
+	
+	public NodeWorker(int id, String name, NodeSelector nodeSelecter,Map conf) {
 		this.id = id;
 		this.name = name;
 		this.nodeSelecter = nodeSelecter;
+		this.conf=conf;
+		InnerProducer innerProducer=new InnerProducer(conf);
+		simpleProducer =new SimpleProducer(innerProducer, 
+				"wokflow-instance", 0);
 		this.executor=nodeSelecter.getExecutor();
 		processorLeaderLatch=new LeaderLatch(executor.backend(),
 				processorLeaderPath());
@@ -97,8 +113,21 @@ public class NodeWorker implements Serializable {
 				@Override
 				public void call(Node node) {
 					try{
-						String tempPath=executor.createEphSequencePath(path+"/temp-");
+						final WorkerPathVal workerPathVal=
+								JJSON.get().parse(node.getStringData(),WorkerPathVal.class);
+						final String tempPath=executor.createEphSequencePath(path+"/temp-");
 						setTempPath(tempPath);
+						executorService.execute(new Runnable() {
+							@Override
+							public void run() {
+								WorkTracking workTracking=new WorkTracking();
+								workTracking.setWorkerId(String.valueOf(workerPathVal.getId()));
+								workTracking.setInstancePath(tempPath);
+								workTracking.setStatus(NodeStatus.PROCESSING);
+								workTracking.setRecordTime(new Date().getTime());
+								simpleProducer.send(workTracking);
+							}
+						});
 						wakeup();
 					}catch (Exception e) {
 						e.printStackTrace();

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.apache.kafka.common.utils.Utils;
 
+import DataAn.storm.kafka.KafkaNameKeys;
 import DataAn.storm.zookeeper.NodeWorker;
 import DataAn.storm.zookeeper.NodeWorkers;
 import DataAn.storm.zookeeper.ZooKeeperClient;
@@ -17,6 +18,7 @@ public class DistrLockTest {
 	public static void main(String[] args) {
 		
 		Map conf=new HashMap<>();
+		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
 		ZooKeeperNameKeys.setNamespace(conf, "test-a");
 		ZookeeperExecutor executor=new ZooKeeperClient()
@@ -24,7 +26,7 @@ public class DistrLockTest {
 		.namespace(ZooKeeperNameKeys.getNamespace(conf))
 		.build();
 		
-		NodeWorkers.startup(executor);
+		NodeWorkers.startup(executor,conf);
 		start(0, 3);
 		Utils.sleep(10000);
 	}

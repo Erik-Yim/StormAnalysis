@@ -1,6 +1,7 @@
 package DataAn.storm.zookeeper;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import com.google.common.collect.Maps;
@@ -14,10 +15,10 @@ public class NodeWorkers implements Serializable {
 	
 	private static NodeSelector _nodeSelecter=null;
 	
-	public synchronized static void startup(ZookeeperExecutor executor){
+	public synchronized static void startup(ZookeeperExecutor executor,Map conf){
 		if(_nodeSelecter==null){
 			SingleMonitor.startup(executor);
-			_nodeSelecter=NodeSelector.get("default", executor);
+			_nodeSelecter=NodeSelector.get("default", executor,conf);
 		}
 	}
 	
@@ -32,7 +33,7 @@ public class NodeWorkers implements Serializable {
 		validate();
 		NodeWorker nodeWorker=  map.get(id);
 		if(nodeWorker==null){
-			nodeWorker=new NodeWorker(id, name, _nodeSelecter);
+			nodeWorker=new NodeWorker(id, name, _nodeSelecter,_nodeSelecter.getConf());
 			map.put(id, nodeWorker);
 		}
 		return nodeWorker;
