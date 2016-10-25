@@ -2,7 +2,6 @@ package DataAn.storm.zookeeper;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,28 +9,26 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.storm.shade.com.google.common.collect.Maps;
-import org.apache.zookeeper.CreateMode;
 
 import DataAn.common.utils.JJSON;
-import DataAn.storm.zookeeper.NodeSelector.SNodeData.NodeStatus;
-import DataAn.storm.zookeeper.NodeWorker.WNodeData;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
-@SuppressWarnings({"serial"})
+@SuppressWarnings({"serial","rawtypes"})
 public class NodeSelector implements Serializable{
 	
-	private String basePath="/locks/node-locks";
+	private Map conf;
+	
+	private String basePath="/locks/worker-schedule";
 	
 	private String name;
 	
@@ -39,71 +36,37 @@ public class NodeSelector implements Serializable{
 	
 	private LeaderLatch leaderLatch;
 	
-	public static class SNodeData implements Serializable{
-		
-		public interface NodeStatus{
-			String ONLINE="ONLINE";
-			String READY="READY";
-			String PROCESSING="PROCESSING";
-			String COMPLETE="COMPLETE";
-		}
-		
-		private int pre;
-		
-		private int now;
-		
-		private String status;
-		
-		private long time;
-
-		public int getPre() {
-			return pre;
-		}
-
-		public void setPre(int pre) {
-			this.pre = pre;
-		}
-
-		public int getNow() {
-			return now;
-		}
-
-		public void setNow(int now) {
-			this.now = now;
-		}
-
-		public String getStatus() {
-			return status;
-		}
-
-		public void setStatus(String status) {
-			this.status = status;
-		}
-
-		public long getTime() {
-			return time;
-		}
-
-		public void setTime(long time) {
-			this.time = time;
-		}
-	}
-	
-	private ExecutorService executorService=Executors.newFixedThreadPool(1, new ThreadFactory() {
-		@Override
-		public Thread newThread(Runnable r) {
-			return new Thread(r, "worker-selector");
-		}
-	});
+	private DisAtomicLong atomicLong;
 	
 	private Workflow workflow=null;
+
+	private NodeData.NodeDataGenerator nodeDataGenerator;
+	
+	private Master master;
+	
+	public static abstract class CacheType{
+		private static final String CHILD="patch_child";
+	}
+	
+	public interface NodeStatus{
+		String ONLINE="ONLINE";
+		String READY="READY";
+		String PROCESSING="PROCESSING";
+		String COMPLETE="COMPLETE";
+	}
+	
 	
 	private static Map<String, NodeSelector> map=Maps.newConcurrentMap();
 	
 	public synchronized static NodeSelector get(String name,ZookeeperExecutor executor){
+		return get(name, executor, Maps.newConcurrentMap());
+	}
+	
+	public synchronized static NodeSelector get(String name,ZookeeperExecutor executor,Map conf){
 		NodeSelector nodeSelector=map.get(name);
 		if(nodeSelector==null){
 			nodeSelector=new NodeSelector(name, executor);
+			nodeSelector.conf=conf;
 			map.put(name, nodeSelector);
 		}
 		return nodeSelector;
@@ -115,27 +78,52 @@ public class NodeSelector implements Serializable{
 		}
 		this.name=name;
 		this.executor = executor;
+		this.atomicLong=new DisAtomicLong(executor);
+		this.workflow=createWorkflow();
+		
 		leaderLatch=new LeaderLatch(executor.backend(),
 				leaderPath());
 		leaderLatch.addListener(new LeaderLatchListener() {
 			
 			@Override
 			public void notLeader() {
+				if(master==null) return;
 				System.out.println(" lose leadership .... ");
+				if(master.pluginWorkersPathCache!=null){
+					try {
+						master.pluginWorkersPathCache.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				if(master.workflowTriggerCache!=null){
+					try {
+						master.workflowTriggerCache.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				master.instances.clear();
+				master=null;
 			}
 			
 			@Override
 			public void isLeader() {
-				
+				createMasterMeta();
 			}
 		}, Executors.newFixedThreadPool(1));
-		executorService.execute(new Runnable() {
+		
+		Executors.newFixedThreadPool(1, new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, "worker-selector");
+			}
+		}).execute(new Runnable() {
 			@Override
 			public void run() {
-				init();
+				startLeader();
 			}
 		});
-		
 	}
 
 	String workflowPath(){
@@ -148,6 +136,10 @@ public class NodeSelector implements Serializable{
 	
 	String instancePath(String path,Instance instance){
 		return basePath+"/instance/"+name+"/"+instance.sequence+path;
+	}
+	
+	String workflowTrigger(){
+		return basePath+"/workflow-trigger/"+name;
 	}
 	
 	String leaderPath(){
@@ -163,15 +155,16 @@ public class NodeSelector implements Serializable{
 		return basePath+"-tasks-tracking/sequence";
 	}
 	
-	AtomicLong atomicLong=new AtomicLong(0);
 	private long getSequence(){
-		return atomicLong.incrementAndGet();
+		return atomicLong.getSequence();
 	}
 	
-	private ExecutorService clearExecutorService=Executors.newFixedThreadPool(1);
-	
-	
-	private class NodeData{
+	public static class NodeData{
+		
+		public interface NodeDataGenerator{
+			NodeData generate(String name,Map map);
+		}
+		
 		private int id;
 		private String name;
 		private String path;
@@ -184,15 +177,52 @@ public class NodeSelector implements Serializable{
 		private boolean hasChildren(){
 			return !nodes.isEmpty();
 		}
-		
-		private String path(){
+
+		public int getId() {
+			return id;
+		}
+
+		public void setId(int id) {
+			this.id = id;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+			this.path="/"+name;
+		}
+
+		public String getPath() {
 			return path;
 		}
+
+		public List<NodeData> getNodes() {
+			return nodes;
+		}
+
+		public void setNodes(List<NodeData> nodes) {
+			this.nodes = nodes;
+		}
+
+		public String getParallel() {
+			return parallel;
+		}
+
+		public void setParallel(String parallel) {
+			this.parallel = parallel;
+		}
 		
+		public void addParent(NodeData parent){
+			this.path=parent.getPath()+"/"+name;
+			parent.nodes.add(this);
+		}
 		
 	}
 	
-	private class InstanceNodeVal{
+	public static class InstanceNodeVal{
 		/**
 		 * 1 is parrallel, otherwise 0
 		 */
@@ -204,6 +234,7 @@ public class NodeSelector implements Serializable{
 		
 		private long time;
 
+		
 		public String getParallel() {
 			return parallel;
 		}
@@ -300,6 +331,8 @@ public class NodeSelector implements Serializable{
 		
 		private long sequence;
 		
+		private String rootPath;
+		
 		private Workflow workflow;
 		
 		private List<String> childPathWatcherPaths=new ArrayList<>();
@@ -310,28 +343,46 @@ public class NodeSelector implements Serializable{
 		
 	}
 	
+	private class Master{
+		
+		/**
+		 * watcher on {@link Workflow#pluginWorkersPath}
+		 */
+		private PathChildrenCache pluginWorkersPathCache;
+	
+		private NodeCache workflowTriggerCache;
+		
+		private Map<Long,Instance> instances=Maps.newConcurrentMap();
+	
+	
+	}
+	
 	
 	private class Workflow{
 		private String pluginWorkersPath=pluginWorkersPath();
 		
+		/**
+		 * automatically initialized later, watcher children updated on {@link #pluginWorkersPath}
+		 */
 		private Map<Integer,String> workerPaths=Maps.newConcurrentMap();
 		
 		private NodeData nodeData;
 		
-		private PathChildrenCache pluginWorkersPathCache;
-		
 	}
 	
-	private Map<Long,Instance> instances=Maps.newConcurrentMap();
-	
-	public static abstract class CacheType{
-		private static final String CHILD="patch_child";
+	private Workflow createWorkflow(){
+		Workflow workflow=new Workflow();
+		if(nodeDataGenerator==null){
+			nodeDataGenerator=DefaultNodeDataGenerator.INSTANCE;
+		}
+		workflow.nodeData=nodeDataGenerator.generate(name, conf);
+		return workflow;
 	}
 	
 	private void close(long sequence,String path,String cacheType){
 		if(path!=null){
 			try {
-				InstanceNode instanceNode=instances.get(sequence).instanceNodes.get(path);
+				InstanceNode instanceNode=master.instances.get(sequence).instanceNodes.get(path);
 				if(CacheType.CHILD.equals(cacheType)){
 					instanceNode.pathChildrenCache.close();
 				}
@@ -342,19 +393,21 @@ public class NodeSelector implements Serializable{
 	}
 	
 	private void createInstancePath(NodeData c,Instance instance){
-		while(c!=null){
+		if(c!=null){
 			String instancePath=instancePath(c.path,instance);
 			InstanceNodeVal instanceNodeVal=new InstanceNodeVal();
 			instanceNodeVal.id=c.id;
 			instanceNodeVal.parallel=c.parallel;
-			instanceNodeVal.status=SNodeData.NodeStatus.ONLINE;
-			executor.createPath(instancePath,JJSON.get().formatObject(instanceNodeVal).getBytes(Charset.forName("utf-8")));
+			instanceNodeVal.status=NodeStatus.ONLINE;
+			executor.createPath(instancePath
+					,JJSON.get().formatObject(instanceNodeVal).getBytes(Charset.forName("utf-8")));
 			
 			InstanceNode instanceNode=new InstanceNode();
 			instanceNode.sequence=instance.sequence;
 			instanceNode.path=instancePath;
 			instanceNode.instanceNodeVal=instanceNodeVal;
 			instanceNode.id=c.id;
+			instanceNode.nodeData=c;
 			instance.instanceNodes.put(instancePath, instanceNode);
 			
 			if(c.hasChildren()){
@@ -364,23 +417,25 @@ public class NodeSelector implements Serializable{
 				}
 			}else{
 				instance.workerPaths.add(instancePath);
-				break;
 			}
 		}
 	}
 	
-	private void complete(String path){
+	void complete(String path){
 		InstanceNodeVal instanceNodeVal=JJSON.get().parse(new String(executor.getPath(path),Charset.forName("utf-8")), InstanceNodeVal.class);
 		instanceNodeVal.status=NodeStatus.COMPLETE;
 		executor.setPath(path, JJSON.get().formatObject(instanceNodeVal));
 	}
 	
 	private long instanceSequence(String path){
-		return Long.parseLong(path.substring(path.lastIndexOf("/")).split("-")[1]);
+		String instancePrefix=basePath+"/instance/"+name+"/"; 
+		String tempStr=path.substring(instancePrefix.length());
+		return Long.parseLong(tempStr.substring(0,tempStr.indexOf("/")));
 	}
 	
-	private int pathId(String path){
-		return Integer.parseInt(path.substring(path.lastIndexOf("/")).split("-")[1]);
+	private int pathSequence(String path){
+		String lastStr=path.substring(path.lastIndexOf("/"));
+		return Integer.parseInt(lastStr.substring(lastStr.lastIndexOf("-")+1));
 	}
 	
 	private void start(int worker,String instancePath,Instance instance){
@@ -393,7 +448,11 @@ public class NodeSelector implements Serializable{
 				JJSON.get().formatObject(workerPathVal));
 	}
 	
-	private void attachChildPathWatcher(Instance instance){
+	private void start(Instance instance){
+		propagateWorkerPath(null, null, workflow.nodeData, instance);
+	}
+	
+	private void attachInstanceChildPathWatcher(Instance instance){
 		for(String path:instance.childPathWatcherPaths){
 			final String _path=path;
 			InstanceNode instanceNode=instance.instanceNodes.get(_path);
@@ -402,41 +461,62 @@ public class NodeSelector implements Serializable{
 				public void call(List<Node> nodes) {
 					boolean done=true;
 					for(Node node:nodes){
-						InstanceNodeVal instanceNodeVal=JJSON.get().parse(node.getStringData(), InstanceNodeVal.class);
+						byte[] bytes=node.getData();
+						if(bytes==null){
+							bytes=executor.getPath(node.getPath());
+						}
+						InstanceNodeVal instanceNodeVal=JJSON.get().parse(new String(bytes, Charset.forName("utf-8")),
+								InstanceNodeVal.class);
 						if(!NodeStatus.COMPLETE.equals(instanceNodeVal.status)){
 							done=false;
 						}
 					}
+					
+					long instanceId=instanceSequence(_path);
+					
 					if(done){
 						complete(_path);
-						close(0, _path, CacheType.CHILD);
+						close(instanceId, _path, CacheType.CHILD);
 					}
 					
 					Collections.sort(nodes, new Comparator<Node>() {
 						@Override
 						public int compare(Node o1, Node o2) {
-							return pathId(o1.getPath())-pathId(o2.getPath());
+							return pathSequence(o1.getPath())-pathSequence(o2.getPath());
 						}
 					});
 					
-					long instanceId=instanceSequence(_path);
-					Instance instance=instances.get(instanceId);
+					
+					Instance instance=master.instances.get(instanceId);
 					InstanceNode instanceNode=instance.instanceNodes.get(_path);
 					if("0".equals(instanceNode.nodeData.parallel)){
-						Node latestNode=null;
+						InstanceNodeVal latestNode=null;
 						for(int i=nodes.size()-1;i>-1;i--){
 							Node tempNode=nodes.get(i);
-							InstanceNodeVal instanceNodeVal=JJSON.get().parse(tempNode.getStringData(), InstanceNodeVal.class);
+							byte[] bytes=tempNode.getData();
+							if(bytes==null){
+								bytes=executor.getPath(tempNode.getPath());
+							}
+							InstanceNodeVal instanceNodeVal=JJSON.get().parse(
+									new String(bytes, Charset.forName("utf-8")),
+									InstanceNodeVal.class);
 							if(!NodeStatus.COMPLETE.equals(instanceNodeVal.status)){
-								latestNode=tempNode;
+								latestNode=instanceNodeVal;
 							}
 							else{
 								break;
 							}
 						}
 						if(latestNode!=null){
-							InstanceNodeVal instanceNodeVal=JJSON.get().parse(latestNode.getStringData(), InstanceNodeVal.class);
-							propagateWorkerPath(instanceNodeVal, instanceNode, instanceNode.nodeData,
+							NodeData nodeData=instanceNode.nodeData;
+							NodeData find=null;
+							for(NodeData temp:nodeData.nodes){
+								if(temp.id==latestNode.id){
+									find=temp;
+									break;
+								}
+							}
+							propagateWorkerPath(latestNode, instanceNode, find,
 									instance);
 						}
 					}
@@ -478,7 +558,50 @@ public class NodeSelector implements Serializable{
 				return new Thread(r, workflowPath()+"{watch works children}");
 			}
 		}),PathChildrenCacheEvent.Type.CHILD_ADDED,PathChildrenCacheEvent.Type.CHILD_REMOVED);
-		workflow.pluginWorkersPathCache=cache;
+		master.pluginWorkersPathCache=cache;
+	}
+	
+	private synchronized void createMasterMeta(){
+		if(master!=null) return;
+		master=new Master();
+		attachWorkersPathWatcher(workflow);
+		attachWorfkowTriggerWatcher();
+	}
+	
+	private Instance createInstance(){
+		Long sequence=getSequence();
+		Instance instance=new Instance();
+		instance.workflow=this.workflow;
+		instance.sequence=sequence;
+		
+		master.instances.put(sequence, instance);
+		
+		createInstancePath(instance.workflow.nodeData,instance);
+		
+		attachInstanceChildPathWatcher(instance);
+		
+		return instance;
+	}
+	
+	private void attachWorfkowTriggerWatcher(){
+		final String path=workflowTrigger();
+		if(!executor.exists(path)){
+			executor.createPath(path);
+		}
+		NodeCache cache=executor.watchPath(path, new ZooKeeperClient.NodeCallback() {
+			
+			@Override
+			public void call(Node node) {
+				Instance instance=createInstance();
+				start(instance);
+			}
+		}, Executors.newFixedThreadPool(1, new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, workflowPath()+"{watcher workflow trigger}");
+			}
+		}));
+		master.workflowTriggerCache=cache;
 	}
 	
 	private void propagateWorkerPath(InstanceNodeVal triggerInstanceNodeVal,
@@ -500,25 +623,21 @@ public class NodeSelector implements Serializable{
 		}
 	}
 	
-	private void init(){
+	private void startLeader(){
 		
 		try {
-			this.workflow=new Workflow();
-			
 			leaderLatch.start();
 			leaderLatch.await();
+			createMasterMeta();
 			
-			attachWorkersPathWatcher(workflow);
-			
-			Long sequence=getSequence();
-			Instance instance=new Instance();
-			instance.workflow=this.workflow;
-			
-			instances.put(sequence, instance);
-			
-			createInstancePath(instance.workflow.nodeData,instance);
-			
-			attachChildPathWatcher(instance);
+			while(true){
+				try{
+					synchronized (this) {
+						wait();
+					}
+				}catch (InterruptedException e) {
+				}
+			}
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -532,130 +651,8 @@ public class NodeSelector implements Serializable{
 			}
 		}
 	}
-
-	private int next(int id){
-		return ++id;
-	}
-	
-	private String nextPath(int id){
-		return workflowPath()+"/worker-"+next(id);
-	}
-	
-	private String workGroupPath(String name){
-		return basePath+"/worker-group/"+name;
-	}
-	
-	private String workPath(int id){
-		return workflowPath()+"/worker-"+id;
-	}
 	
 	ZookeeperExecutor getExecutor() {
 		return executor;
 	}
-	
-	SNodeData nodeSelecterData(){
-		byte[] bytes=executor.getPath(workflowPath());
-		try{
-			return JJSON.get().parse(new String(bytes,"utf-8"), SNodeData.class);
-		}catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	WNodeData nodeWorkerData(String path){
-		byte[] bytes=executor.getPath(path);
-		try{
-			return JJSON.get().parse(new String(bytes,"utf-8"), WNodeData.class);
-		}catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	private void setNodeSelecterData(SNodeData nodeData){
-		executor.setPath(workflowPath(), JJSON.get().formatObject(nodeData));
-	}
-	
-	private void setTracking(SNodeData nodeData){
-		try {
-			executor.createPath(simpleTrackingPath()+"/"+nodeData.now+"-"+nodeData.status+"-", JJSON.get().formatObject(nodeData).getBytes("utf-8"), CreateMode.PERSISTENT_SEQUENTIAL);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	boolean isLockByMe(int workerId){
-		SNodeData nodeData=nodeSelecterData();
-		if(nodeData==null){
-			return false;
-		}
-		return nodeSelecterData().now==workerId
-				&&NodeStatus.PROCESSING.equals(nodeData.getStatus());
-	}
-	
-	void complete(int workerId){
-		SNodeData nodeData=nodeSelecterData();
-		if(nodeData==null){
-			throw new RuntimeException("the worker ["+workerId+"] is not in processing");
-		}
-		if(workerId!=nodeData.now){
-			throw new RuntimeException("the worker ["+workerId+"] is not in processing, latest is ["+nodeData.now+"]");
-		}
-		nodeData.status=SNodeData.NodeStatus.COMPLETE;
-		nodeData.time=new Date().getTime();
-		setNodeSelecterData(nodeData);
-		setTracking(nodeData);
-		
-		WNodeData data=getWorkerData(workerId);
-		if(!NodeStatus.PROCESSING.equals(data.getStatus())){
-			throw new RuntimeException("the work ["+workerId+"] is not in progressing status{"+data.getStatus()+"}");
-		}
-		data.setStatus(NodeStatus.COMPLETE);
-		executor.setPath(workPath(workerId), JJSON.get().formatObject(data));
-		
-		
-		
-	}
-
-	WNodeData getWorkerData(int workerId){
-		byte[] data=executor.getPath(workPath(workerId));
-		return JJSON.get().parse(new String(data,Charset.forName("utf-8")), WNodeData.class);
-	}
-	
-	
-	void processing(int workerId){
-		SNodeData nodeData=nodeSelecterData();
-		if(nodeData==null){
-			throw new RuntimeException("the worker ["+workerId+"] is not in processing  on selecter ");
-		}
-		if(workerId!=nodeData.now){
-			throw new RuntimeException("the worker ["+workerId+"] is not in processing, selecter on ["+nodeData.now+"]");
-		}
-		nodeData.status=SNodeData.NodeStatus.PROCESSING;
-		nodeData.time=new Date().getTime();
-		setNodeSelecterData(nodeData);
-		setTracking(nodeData);
-		
-		WNodeData data=getWorkerData(workerId);
-		if(!NodeStatus.READY.equals(data.getStatus())){
-			throw new RuntimeException("the work ["+workerId+"] is not ready status{"+data.getStatus()+"}");
-		}
-		data.setStatus(NodeStatus.PROCESSING);
-		executor.setPath(workPath(workerId), JJSON.get().formatObject(data));
-	}
-	
-	int previous(int workerId){
-		return --workerId;
-	}
-	
-	public void start(int workerId){
-		SNodeData nodeData=new SNodeData();
-		nodeData.pre=previous(previous(workerId));
-		nodeData.now=previous(workerId);
-		nodeData.status=NodeStatus.COMPLETE;
-		nodeData.time=new Date().getTime();
-		setNodeSelecterData(nodeData);
-	}
-	
 }

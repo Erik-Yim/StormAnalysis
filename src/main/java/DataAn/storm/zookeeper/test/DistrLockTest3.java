@@ -24,7 +24,7 @@ public class DistrLockTest3 {
 		.build();
 		
 		NodeWorkers.startup(executor);
-		DistrLockTest.start(0, 10);
+		DistrLockTest.start(0, 3);
 		
 		Utils.sleep(10000);
 		

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -35,6 +36,10 @@ public class NodeWorker implements Serializable {
 
 	private LeaderLatch processorLeaderLatch;
 	
+	private String tempPath;
+	
+	private Master master;
+	
 	public NodeWorker(int id, String name, NodeSelector nodeSelecter) {
 		this.id = id;
 		this.name = name;
@@ -46,57 +51,38 @@ public class NodeWorker implements Serializable {
 			
 			@Override
 			public void notLeader() {
+				if(master==null) return;
 				System.out.println(" lose worker-processor eadership .... ");
+				if(master.processorsWather!=null){
+					try {
+						master.processorsWather.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				master=null;
 			}
 			
 			@Override
 			public void isLeader() {
-				
+				createMasterMeta();
 			}
 		}, Executors.newFixedThreadPool(1));
 		
-		init();
+		startWorker();
 	}
 
 	private String path(){
 		return nodeSelecter.pluginWorkersPath()+"/"+prefix+String.valueOf(id);
 	}
 	
-	public static class WNodeData implements Serializable{
-		private long time;
+	private class Master{
 		
-		private int id;
+		PathChildrenCache processorsWather;
 		
-		private String status;
-		
-		public void setTime(long time) {
-			this.time = time;
-		}
-
-		public int getId() {
-			return id;
-		}
-
-		public void setId(int id) {
-			this.id = id;
-		}
-
-		public long getTime() {
-			return time;
-		}
-
-		public String getStatus() {
-			return status;
-		}
-
-		public void setStatus(String status) {
-			this.status = status;
-		}
 	}
 	
-	
-	
-	private void init(){
+	private void startWorker(){
 		final String path=path();
 		SingleMonitor singleMonitor=SingleMonitor.get(nodeSelecter.basePath()+"/worker-register-sync-lock"); 
 		try{
@@ -111,7 +97,8 @@ public class NodeWorker implements Serializable {
 				@Override
 				public void call(Node node) {
 					try{
-						executor.createEphSequencePath(path+"/temp-");
+						String tempPath=executor.createEphSequencePath(path+"/temp-");
+						setTempPath(tempPath);
 						wakeup();
 					}catch (Exception e) {
 						e.printStackTrace();
@@ -128,7 +115,7 @@ public class NodeWorker implements Serializable {
 				
 				@Override
 				public Thread newThread(Runnable r) {
-					return new Thread(r, path+"{watch children}");
+					return new Thread(r, path+"{watch children(leader)}");
 				}
 			}).execute(new Runnable() {
 				
@@ -137,23 +124,17 @@ public class NodeWorker implements Serializable {
 					try{
 						processorLeaderLatch.start();
 						processorLeaderLatch.await();
+						createMasterMeta();
+						attachPluginWorkerPathWatcher(path);
 						
-						final PathChildrenCache cache= executor.watchChildrenPath(path, new ZooKeeperClient.NodeChildrenCallback() {
-							@Override
-							public void call(List<Node> nodes) {
-								if(nodes.isEmpty()){
-									
+						while(true){
+							try{
+								synchronized (this) {
+									wait();
 								}
+							}catch (InterruptedException e) {
 							}
-							
-						}, Executors.newFixedThreadPool(1, new ThreadFactory() {
-							@Override
-							public Thread newThread(Runnable r) {
-								return new Thread(r, path+"{cache:watch children}");
-							}
-						}),PathChildrenCacheEvent.Type.CHILD_UPDATED);
-						
-						while(true){}
+						}
 						
 					}catch (Exception e) {
 						e.printStackTrace();
@@ -177,30 +158,51 @@ public class NodeWorker implements Serializable {
 		}
 	}
 	
+	private synchronized void createMasterMeta(){
+		if(master!=null) return;
+		master=new Master();
+	}
+	
+	
+	private void attachPluginWorkerPathWatcher(final String path){
+		final PathChildrenCache cache= executor.watchChildrenPath(path, new ZooKeeperClient.NodeChildrenCallback() {
+			@Override
+			public void call(List<Node> nodes) {
+				if(nodes.isEmpty()){
+					WorkerPathVal workerPathVal= workerPathVal();
+					nodeSelecter.complete(workerPathVal.getInstancePath());
+				}
+			}
+		}, Executors.newFixedThreadPool(1, new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, path+"{cache:watch children}");
+			}
+		}),PathChildrenCacheEvent.Type.CHILD_REMOVED);
+		master.processorsWather=cache;
+	}
+	
+	private WorkerPathVal workerPathVal(){
+		byte[] bytes= executor.getPath(path());
+		return JJSON.get().parse(new String(bytes,Charset.forName("utf-8")),WorkerPathVal.class); 
+	}
 	
 	public int getId() {
 		return id;
 	}
 	
 	String processorLeaderPath(){
-		return nodeSelecter.basePath()+"/worker-processor-leader-latch";
+		return nodeSelecter.basePath()+"/worker-processor-leader-latch/"+id;
 	}
 	
 	public void acquire() throws Exception{
 		
 		while(true){
 			try{
-				if(nodeSelecter.isLockByMe(id)){
-					break;
-				}
-			}catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			try{
 				synchronized (this) {
-					System.out.println(" ["+id+"]  go to wait .... ");
+					System.out.println(" worker ["+id+"]  go to wait .... ");
 					wait();
-					System.out.println(" wake up ["+id+"] .... ");
+					System.out.println(" wake up worker ["+id+"] .... ");
 					break;
 				}
 			}catch (Exception e) {
@@ -214,17 +216,8 @@ public class NodeWorker implements Serializable {
 		int count=0;
 		while(true){
 			try{
-				try{
-					if(nodeSelecter.isLockByMe(id)){
-						return true;
-					}
-					else{
-						if(count>0){
-							return false;
-						}
-					}
-				}catch (Exception e) {
-					throw new RuntimeException(e);
+				if(count>3){
+					break;
 				}
 				synchronized (this) {
 					try{
@@ -238,10 +231,16 @@ public class NodeWorker implements Serializable {
 				e.printStackTrace();
 			}
 		}
+		throw new TimeoutException(" worker cannot be scheduled.");
 	}
 	
+	public void setTempPath(String tempPath) {
+		this.tempPath = tempPath;
+	}
+	
+	
 	public void release() throws Exception{
-		nodeSelecter.complete(id);
+		executor.deletePath(tempPath);
 	}
 	
 	private void wakeup(){
@@ -249,8 +248,5 @@ public class NodeWorker implements Serializable {
 			notifyAll();
 		}
 	}
-	
-	
-	
 	
 }
