@@ -1,6 +1,7 @@
 package DataAn.storm.denoise;
 
 import java.io.Serializable;
+import java.util.List;
 
 import DataAn.storm.IDeviceRecord;
  
@@ -11,6 +12,15 @@ import DataAn.storm.IDeviceRecord;
  */
 public interface IDenoiseFilterNodeProcessor extends Serializable {
 
-	boolean isKeep(IDeviceRecord deviceRecord);
+	void cleanup(List<? extends IDeviceRecord> deviceRecords);
+	
+	
+	class IDenoiseFilterNodeProcessorGetter{
+		
+		public static IDenoiseFilterNodeProcessor get(){
+			return null;
+		}
+		
+	}
 	
 }

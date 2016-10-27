@@ -27,15 +27,15 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 		TridentTopology tridentTopology=new TridentTopology();
 		
 		tridentTopology.newStream("exception-check-task-stream", new SpecialKafakaSpout(new Fields("record","batchContext")))
-		.each(new Fields("record","batchContext"), new BaseFilter() {
-			@Override
-			public boolean isKeep(TridentTuple tuple) {
-				DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
-				BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
-				IDenoiseFilterNodeProcessor denoiseFilterNodeProcessor=batchContext.getDenoiseFilterNodeProcessor();
-				return denoiseFilterNodeProcessor.isKeep(defaultDeviceRecord);
-			}
-		})
+//		.each(new Fields("record","batchContext"), new BaseFilter() {
+//			@Override
+//			public boolean isKeep(TridentTuple tuple) {
+//				DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
+//				BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
+//				IDenoiseFilterNodeProcessor denoiseFilterNodeProcessor=batchContext.getDenoiseFilterNodeProcessor();
+//				return denoiseFilterNodeProcessor.isKeep(defaultDeviceRecord);
+//			}
+//		})
 		.aggregate(new Fields("record","batchContext") , new BaseAggregator<IExceptionCheckNodeProcessor>() {
 
 			@Override

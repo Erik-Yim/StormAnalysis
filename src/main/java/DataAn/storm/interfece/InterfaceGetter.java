@@ -13,18 +13,20 @@ public class InterfaceGetter {
 		return new KafkaDeviceRecordPersitImpl();
 	}
 	
+	@Deprecated
 	public static IDenoiseFilterNodeProcessor getDenoiseFilterNodeProcessor(){
-		return new IDenoiseFilterNodeProcessor() {
-			@Override
-			public boolean isKeep(IDeviceRecord deviceRecord) {
-				for(String paramValue :deviceRecord.getPropertyVals()){
-					if (paramValue.indexOf("#") >= 0){
-						return false;
-					}
-				}
-				return true;
-			}
-		} ;
+//		return new IDenoiseFilterNodeProcessor() {
+//			@Override
+//			public boolean isKeep(IDeviceRecord deviceRecord) {
+//				for(String paramValue :deviceRecord.getPropertyVals()){
+//					if (paramValue.indexOf("#") >= 0){
+//						return false;
+//					}
+//				}
+//				return true;
+//			}
+//		} ;
+		return null;
 	}
 	
 	public static IExceptionCheckNodeProcessor getExceptionCheckNodeProcessor(){
