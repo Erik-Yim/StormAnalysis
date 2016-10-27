@@ -23,7 +23,7 @@ import DataAn.storm.kafka.InnerProducer;
 import DataAn.storm.kafka.SimpleProducer;
 
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial","unchecked","rawtypes"})
 public class DenoiseTopologyBuilder implements Serializable {
 
 	public StormTopology build(final DenoiseConfig denoiseConfig) throws Exception {
