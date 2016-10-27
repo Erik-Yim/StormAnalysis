@@ -67,12 +67,6 @@ public class SingleMonitor implements Serializable{
 	}
 	
 	
-	
-	
-	
-	
-	
-	
-	
+
 	
 }

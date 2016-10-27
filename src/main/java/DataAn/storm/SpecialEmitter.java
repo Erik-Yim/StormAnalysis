@@ -86,8 +86,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	}
 	
 	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){
-		DefaultDeviceRecord defaultDeviceRecord=new DefaultDeviceRecord();
-		
+		DefaultDeviceRecord defaultDeviceRecord=new DefaultDeviceRecord();		
 		defaultDeviceRecord.setId(defaultFetchObj.getId());
 		defaultDeviceRecord.setName(defaultFetchObj.getName());
 		defaultDeviceRecord.setProperties(defaultFetchObj.getProperties());
@@ -95,8 +94,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		defaultDeviceRecord.setSeries(defaultFetchObj.getSeries());
 		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
 		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
-		defaultDeviceRecord.set_time(defaultFetchObj.get_time());
-		
+		defaultDeviceRecord.set_time(defaultFetchObj.get_time());	
 		return defaultDeviceRecord;
 	}
 
