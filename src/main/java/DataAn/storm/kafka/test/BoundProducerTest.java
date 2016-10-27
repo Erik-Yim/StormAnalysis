@@ -28,15 +28,16 @@ public class BoundProducerTest {
 		List<DefaultDeviceRecord> defaultDeviceRecords=new ArrayList<>(10000);
 		
 		Random random=ThreadLocalRandom.current();
-		
-		for(int i=0;i<100000;i++){
+		Calendar calendar=Calendar.getInstance();
+		for(int i=0;i<10000;i++){
 			DefaultDeviceRecord  ddr =  new DefaultDeviceRecord();
 			ddr.setId(UUID.randomUUID().toString());
 			ddr.setName(ddr.getId()+"-NAME");
 			ddr.setSeries("series1");
 			ddr.setStar("star2");
-			Calendar calendar=Calendar.getInstance();
-			calendar.add(Calendar.SECOND, i);
+			if(i%5==0){
+				calendar=Calendar.getInstance();
+			}
 			ddr.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime()));
 			ddr.set_time(calendar.getTime().getTime());
 			List<String> paramKeys =  new ArrayList<String>();
@@ -59,7 +60,7 @@ public class BoundProducerTest {
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		InnerProducer innerProducer=new InnerProducer(conf);
 		BoundProducer boundProducer=new BoundProducer(innerProducer, 
-				"bound-replicated-1", 0);
+				"bound-replicated-12", 0);
 
 		boundProducer.send(new Beginning());
 		for(int i =0 ;i<defaultDeviceRecords.size();i++){
@@ -76,7 +77,7 @@ public class BoundProducerTest {
 			boundProducer.send(defaultFetchObj);
 		}
 		boundProducer.send(new Ending());
-		
+		System.out.println("end...");
 		Utils.sleep(10000000);
 	}
 	

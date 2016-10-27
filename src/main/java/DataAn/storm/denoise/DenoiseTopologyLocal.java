@@ -14,7 +14,7 @@ public class DenoiseTopologyLocal {
 		
 		StormTopology stormTopology=new DenoiseTopologyBuilder().build(denoiseConfig);
 		Config conf=new Config();
-		KafkaNameKeys.setKafkaTopicPartition(conf, "bound-replicated-1:0");
+		KafkaNameKeys.setKafkaTopicPartition(conf, "bound-replicated-12:0");
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		conf.setMessageTimeoutSecs(10000);
 		int runtimeInSeconds=100000;

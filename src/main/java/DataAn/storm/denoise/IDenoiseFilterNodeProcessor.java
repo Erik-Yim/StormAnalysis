@@ -18,7 +18,13 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 	class IDenoiseFilterNodeProcessorGetter{
 		
 		public static IDenoiseFilterNodeProcessor get(){
-			return null;
+			return new IDenoiseFilterNodeProcessor() {
+				
+				@Override
+				public void cleanup(List<? extends IDeviceRecord> deviceRecords) {
+					
+				}
+			};
 		}
 		
 	}
