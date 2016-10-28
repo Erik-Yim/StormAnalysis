@@ -60,7 +60,7 @@ public class BoundProducerTest {
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		InnerProducer innerProducer=new InnerProducer(conf);
 		BoundProducer boundProducer=new BoundProducer(innerProducer, 
-				"bound-replicated-12", 0);
+				"bound-replicated-13", 0);
 
 		boundProducer.send(new Beginning());
 		for(int i =0 ;i<defaultDeviceRecords.size();i++){

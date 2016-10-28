@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.TridentCollector;
@@ -33,13 +34,21 @@ public class DenoiseTopologyBuilder implements Serializable {
 		tridentTopology.newStream("denoise-task-stream", new KafkaDenoiseSpout())
 		.shuffle()
 		.each(new Fields("record","batchContext"), new BaseFunction() {
+			int i=0;
 			@Override
 			public void execute(TridentTuple tuple, TridentCollector collector) {
-				List<DefaultDeviceRecord> defaultDeviceRecords= (List<DefaultDeviceRecord>) tuple.getValueByField("record");
-				IDenoiseFilterNodeProcessor denoiseFilterNodeProcessor= IDenoiseFilterNodeProcessorGetter.get();
-				denoiseFilterNodeProcessor.cleanup(defaultDeviceRecords);
-				BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
-				collector.emit(new Values(defaultDeviceRecords,batchContext));
+				try{
+					List<DefaultDeviceRecord> defaultDeviceRecords= (List<DefaultDeviceRecord>) tuple.getValueByField("record");
+					IDenoiseFilterNodeProcessor denoiseFilterNodeProcessor= IDenoiseFilterNodeProcessorGetter.get();
+					denoiseFilterNodeProcessor.cleanup(defaultDeviceRecords);
+					BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
+					collector.emit(new Values(defaultDeviceRecords,batchContext));
+					if(i++%3==0){
+						throw new RuntimeException("dd");
+					}
+				}catch (Exception e) {
+					throw new FailedException(e);
+				}
 			}
 		},new Fields())
 		.each(new Fields("record"), new BaseFunction() {
