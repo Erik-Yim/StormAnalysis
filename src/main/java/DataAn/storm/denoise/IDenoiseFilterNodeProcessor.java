@@ -23,6 +23,7 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 	class IDenoiseFilterNodeProcessorGetter{
 		
 		public static IDenoiseFilterNodeProcessor get(){
+<<<<<<< HEAD
 			return new IDenoiseFilterNodeProcessor(){
 
 				private static final long serialVersionUID = 1L;
@@ -59,6 +60,14 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 					}
 				}
 				
+=======
+			return new IDenoiseFilterNodeProcessor() {
+				
+				@Override
+				public void cleanup(List<? extends IDeviceRecord> deviceRecords) {
+					
+				}
+>>>>>>> 3eab50c0913f9d6b3c3261bc3fc445f195305cc6
 			};
 		}
 		

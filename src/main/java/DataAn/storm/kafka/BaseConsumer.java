@@ -88,7 +88,7 @@ public abstract class BaseConsumer implements Serializable{
 		
 		@Override
 		public String[] getTopicPartition() {
-			return Arrays.copyOfRange(getTopicPartition(), 0, 0);
+			return Arrays.copyOfRange(super.getTopicPartition(), 0, 1);
 		}
 	}
 	

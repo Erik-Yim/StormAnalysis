@@ -1,6 +1,8 @@
 package DataAn.storm.denoise;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -13,9 +15,11 @@ import org.apache.storm.tuple.Values;
 
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.kafka.BaseConsumer;
+import DataAn.storm.kafka.Beginning;
+import DataAn.storm.kafka.BaseConsumer.BoundConsumer;
 import DataAn.storm.kafka.BaseConsumer.FetchObjs;
-import DataAn.storm.kafka.BaseConsumer.SimpleConsumer;
 import DataAn.storm.kafka.DefaultFetchObj;
+import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
 import DataAn.storm.kafka.InnerConsumer;
 import DataAn.storm.kafka.KafkaNameKeys;
@@ -27,7 +31,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	private SpoutOutputCollector collector;
 	
-	private SimpleConsumer consumer;
+	private BoundConsumer consumer;
 	
 	private int timeout=30000;
 	
@@ -36,8 +40,9 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		this.collector=collector;
 		String topicPartition=KafkaNameKeys.getKafkaTopicPartition(conf);
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
-				.manualPartitionAssign(topicPartition.split(","));
-		consumer=BaseConsumer.simpleConsumer(innerConsumer);
+				.manualPartitionAssign(topicPartition.split(","))
+				.group("data-comsumer");
+		consumer=BaseConsumer.boundConsumer(innerConsumer);
 		for(String string:consumer.getTopicPartition()){
 			consumer.seek(string, 0);
 		}
@@ -50,35 +55,54 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		while(true){
 			FetchObjs fetchObjs2=consumer.next(timeout);
 			if(!fetchObjs2.isEmpty()){
+				List<DefaultDeviceRecord> records=null;
+				long time=0;
 				Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
 				while(fetchObjIterator.hasNext()){
 					fetchObj=fetchObjIterator.next();
-//					DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
-//					defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
-//					collector.emit(new Values(defaultDeviceRecord));
+					if(Beginning.class.isInstance(fetchObj)) continue;
+					if(Ending.class.isInstance(fetchObj)) {
+						//TODO await.... 
+						continue;
+					}
+					DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
+					defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
+					if(time==0){
+						time=defaultDeviceRecord.get_time();
+						records=new ArrayList<>();
+						records.add(defaultDeviceRecord);
+					}else{
+						if(time!=defaultDeviceRecord.get_time()){
+							collector.emit(new Values(records,null));
+							records=new ArrayList<>();
+							records.add(defaultDeviceRecord);
+						}else{
+							records.add(defaultDeviceRecord);
+						}
+					}
 				}
 			}
 		}
 	}
 	
-//	private HierarchyDeviceRecord parse(DefaultFetchObj defaultFetchObj){
-//		HierarchyDeviceRecord defaultDeviceRecord=new HierarchyDeviceRecord();
-//		
-//		defaultDeviceRecord.setId(defaultFetchObj.getId());
-//		defaultDeviceRecord.setName(defaultFetchObj.getName());
-//		defaultDeviceRecord.setProperties(defaultFetchObj.getProperties());
-//		defaultDeviceRecord.setPropertyVals(defaultFetchObj.getPropertyVals());
-//		defaultDeviceRecord.setSeries(defaultFetchObj.getSeries());
-//		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
-//		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
-//		defaultDeviceRecord.set_time(defaultFetchObj.get_time());
-//		
-//		return defaultDeviceRecord;
-//	}
+	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){
+		DefaultDeviceRecord defaultDeviceRecord=new DefaultDeviceRecord();
+		
+		defaultDeviceRecord.setId(defaultFetchObj.getId());
+		defaultDeviceRecord.setName(defaultFetchObj.getName());
+		defaultDeviceRecord.setProperties(defaultFetchObj.getProperties());
+		defaultDeviceRecord.setPropertyVals(defaultFetchObj.getPropertyVals());
+		defaultDeviceRecord.setSeries(defaultFetchObj.getSeries());
+		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
+		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
+		defaultDeviceRecord.set_time(defaultFetchObj.get_time());
+		
+		return defaultDeviceRecord;
+	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("record"));
+		declarer.declare(new Fields("record","batchContext"));
 	}
 
 	@Override
