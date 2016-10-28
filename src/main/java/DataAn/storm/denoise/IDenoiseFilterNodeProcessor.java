@@ -4,9 +4,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
-import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.IDeviceRecord;
  
@@ -23,7 +21,6 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 	class IDenoiseFilterNodeProcessorGetter{
 		
 		public static IDenoiseFilterNodeProcessor get(){
-<<<<<<< HEAD
 			return new IDenoiseFilterNodeProcessor(){
 
 				private static final long serialVersionUID = 1L;
@@ -60,14 +57,6 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 					}
 				}
 				
-=======
-			return new IDenoiseFilterNodeProcessor() {
-				
-				@Override
-				public void cleanup(List<? extends IDeviceRecord> deviceRecords) {
-					
-				}
->>>>>>> 3eab50c0913f9d6b3c3261bc3fc445f195305cc6
 			};
 		}
 		
