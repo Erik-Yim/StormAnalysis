@@ -33,11 +33,12 @@ public class SpecialKafakaSpout implements ITridentSpout<BatchMeta> {
 	@Override
 	public org.apache.storm.trident.spout.ITridentSpout.BatchCoordinator<BatchMeta> getCoordinator(String txStateId,
 			Map conf, TopologyContext context) {
-		String topicPartition=KafkaNameKeys.getKafkaTopicPartition(conf);
-		InnerConsumer innerConsumer=new InnerConsumer(conf)
-				.manualPartitionAssign(topicPartition.split(","));
-		BoundConsumer consumer=BaseConsumer.boundConsumer(innerConsumer);
-		return new SpecialCoordinator(consumer,conf);
+//		String topicPartition=KafkaNameKeys.getKafkaTopicPartition(conf);
+//		InnerConsumer innerConsumer=new InnerConsumer(conf)
+//				.manualPartitionAssign(topicPartition.split(","))
+//				.group("data-comsumer");
+//		BoundConsumer consumer=BaseConsumer.boundConsumer(innerConsumer);
+		return new SpecialCoordinator(conf);
 	}
 
 	@Override
@@ -45,7 +46,8 @@ public class SpecialKafakaSpout implements ITridentSpout<BatchMeta> {
 			TopologyContext context) {
 		String topicPartition=KafkaNameKeys.getKafkaTopicPartition(conf);
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
-				.manualPartitionAssign(topicPartition.split(","));
+				.manualPartitionAssign(topicPartition.split(","))
+				.group("data-comsumer");
 		BoundConsumer consumer=BaseConsumer.boundConsumer(innerConsumer);
 		return new SpecialEmitter(consumer,conf);
 	}

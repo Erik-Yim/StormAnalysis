@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.storm.trident.operation.TridentCollector;
@@ -31,44 +32,70 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private int timeout=30000;
 	
-	private int count=10000;
+	private Map<Long, BatchMeta> store=new ConcurrentHashMap<>();
 	
 	public SpecialEmitter(BoundConsumer consumer,Map conf) {
 		this.consumer = consumer;
 		this.conf=conf;
 	}
 
+	private BatchMeta getLatest(long batchId){
+		BatchMeta latest=null;
+		while((latest=store.get(--batchId))!=null&&batchId>0){
+			return latest;
+		}
+		return null;
+	}
+	
 	@Override
-	public void emitBatch(TransactionAttempt tx, BatchMeta coordinatorMeta, TridentCollector collector) {
+	public void emitBatch(TransactionAttempt tx, BatchMeta nullMeta, TridentCollector collector) {
 
 		long batchId=(long) tx.getTransactionId();
-
+		BatchMeta currMetadata=null;
+		if(store.containsKey(batchId)){
+			currMetadata=store.get(batchId);
+		}
+		else{
+			currMetadata=new BatchMeta();
+			currMetadata.setBatchId(batchId);
+			BatchMeta prevMetadata=getLatest(batchId);
+			long offset=-1;
+			if(prevMetadata!=null){
+				if(prevMetadata!=null){
+					offset=prevMetadata.getOffsetStartEnd(consumer.getTopicPartition()[0]);
+				}
+			}
+			long offsetAdd=offset+1;
+			currMetadata.setTopicPartitionOffsetStart(consumer.getTopicPartition()[0],
+					offsetAdd);
+			currMetadata.setTopicPartitionOffsetEnd(consumer.getTopicPartition()[0],
+					offsetAdd);
+			store.put(batchId, currMetadata);
+		}
 		BatchContext batchContext=new BatchContext();
 		batchContext.setBatchId(batchId);
 		batchContext.setConf(conf);
 		
 		List<DefaultFetchObj> fetchObjs=new ArrayList<>();
-		for(Entry<String, Scope> entry:coordinatorMeta.getTopicPartitionOffset().entrySet()){
+		for(Entry<String, Scope> entry:currMetadata.getTopicPartitionOffset().entrySet()){
 			consumer.seek(entry.getKey(), entry.getValue().start);
 		}
 		FetchObj fetchObj=null;
-		int count=0;
 		while(true){
 			FetchObjs fetchObjs2=consumer.next(timeout);
 			if(!fetchObjs2.isEmpty()){
 				Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
-				boolean breakOut=false;
+				boolean breakOut=true;
 				while(fetchObjIterator.hasNext()){
 					if(!((fetchObj=fetchObjIterator.next()) instanceof Ending)){
 						if(fetchObj instanceof Beginning) continue;
 						if(fetchObj instanceof Null) continue;
-						fetchObjs.add((DefaultFetchObj) fetchObj);
-						coordinatorMeta.setTopicPartitionOffsetEnd(fetchObj.offset());
-						if(count>this.count) {
+						if(fetchObj instanceof Ending){
 							breakOut=true;
 							break;
 						}
-						count++;
+						fetchObjs.add((DefaultFetchObj) fetchObj);
+						currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
 					}
 				}
 				if(breakOut){
@@ -100,6 +127,10 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 
 	@Override
 	public void success(TransactionAttempt tx) {
+		BatchMeta batchMeta= store.get(tx.getTransactionId());
+		for(Entry<String, Scope> entry:batchMeta.getTopicPartitionOffset().entrySet()){
+			consumer.commitSync(entry.getKey(), entry.getValue().end);
+		}
 		System.out.println("-------SpecialEmitter  success ---------");
 	}
 

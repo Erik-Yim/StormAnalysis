@@ -7,26 +7,44 @@ import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
 public abstract class FlowUtils {
 
-	public static Communication getDenoise(ZookeeperExecutor executor){
-		if(executor.exists("/flow-communication-denoise")){
-			byte[] bytes=executor.getPath("/flow-communication-denoise");
+	public static Communication getDenoise(ZookeeperExecutor executor,long sequence){
+		String path="/flow/"+sequence+"/communication/denoise";
+		if(executor.exists(path)){
+			byte[] bytes=executor.getPath(path);
 			return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), Communication.class);
 		}
 		return null;
 	}
 	
 	public static void setDenoise(ZookeeperExecutor executor,Communication communication){
-		executor.setPath("/flow-communication-denoise", JJSON.get().formatObject(communication));
+		String path="/flow/"+communication.getSequence()+"/communication/denoise";
+		executor.setPath(path, JJSON.get().formatObject(communication));
 	}
 	
-	public static ErrorMsg get(ZookeeperExecutor executor,long sequence){
-		byte[] bytes=executor.getPath("/flow-error/"+sequence);
+	public static Communication getExcep(ZookeeperExecutor executor,long sequence){
+		String path="/flow/"+sequence+"/communication/excep";
+		if(executor.exists(path)){
+			byte[] bytes=executor.getPath(path);
+			return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), Communication.class);
+		}
+		return null;
+	}
+	
+	public static void setExcep(ZookeeperExecutor executor,Communication communication){
+		String path="/flow/"+communication.getSequence()+"/communication/excep";
+		executor.setPath(path, JJSON.get().formatObject(communication));
+	}
+	
+	public static ErrorMsg getError(ZookeeperExecutor executor,long sequence){
+		String path="/flow/"+sequence+"/error";
+		byte[] bytes=executor.getPath(path);
 		if(bytes==null) return null;
 		return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), ErrorMsg.class);
 	}
 	
-	public static void set(ZookeeperExecutor executor,ErrorMsg errorMsg){
-		executor.setPath("/flow-error/"+errorMsg.getSequence(), 
+	public static void setError(ZookeeperExecutor executor,ErrorMsg errorMsg){
+		String path="/flow/"+errorMsg.getSequence()+"/error";
+		executor.setPath(path, 
 				JJSON.get().formatObject(errorMsg));
 	}
 	

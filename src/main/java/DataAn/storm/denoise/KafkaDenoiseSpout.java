@@ -118,7 +118,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-		this.communication = FlowUtils.getDenoise(executor);
+		this.communication = FlowUtils.getDenoise(executor,workerPathVal.getSequence());
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
@@ -139,7 +139,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		errorMsg.setMsg(e.getMessage());
 		errorMsg.setWorkerId(workerId);
 		errorMsg.setSequence(sequence);
-		FlowUtils.set(executor, errorMsg);
+		FlowUtils.setError(executor, errorMsg);
 	}
 	
 	private void await(){

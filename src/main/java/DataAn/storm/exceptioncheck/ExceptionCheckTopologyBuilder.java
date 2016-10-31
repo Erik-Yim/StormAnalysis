@@ -53,7 +53,7 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 				}
 				DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
 				System.out.println("aggregate thread["+Thread.currentThread().getName() + "] tuple ["+defaultDeviceRecord.getTime()+","+defaultDeviceRecord.getSequence()+"] _ >  batch ["+defaultDeviceRecord.getBatchContext().getBatchId()+"]");
-				val.process(defaultDeviceRecord);
+				//val.process(defaultDeviceRecord);
 			}
 
 			@Override
