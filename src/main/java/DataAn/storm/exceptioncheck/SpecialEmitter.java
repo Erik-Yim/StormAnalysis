@@ -204,23 +204,18 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 			FetchObjs fetchObjs2=consumer.next(timeout);
 			if(!fetchObjs2.isEmpty()){
 				Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
-				boolean breakOut=true;
 				while(fetchObjIterator.hasNext()){
-					if(!((fetchObj=fetchObjIterator.next()) instanceof Ending)){
-						if(fetchObj instanceof Beginning) continue;
-						if(fetchObj instanceof Null) continue;
-						if(fetchObj instanceof Ending){
-							reachEnd=true;
-							breakOut=true;
-							break;
-						}
-						fetchObjs.add((DefaultFetchObj) fetchObj);
-						currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
+					fetchObj=fetchObjIterator.next();
+					if(fetchObj instanceof Beginning) continue;
+					if(fetchObj instanceof Null) continue;
+					if(fetchObj instanceof Ending){
+						reachEnd=true;
+						break;
 					}
+					fetchObjs.add((DefaultFetchObj) fetchObj);
+					currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
 				}
-				if(breakOut){
-					break;
-				}
+				break;
 			}
 		}
 		
