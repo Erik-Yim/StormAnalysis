@@ -30,7 +30,8 @@ public class TaskStartTrigger {
 		communication.setFileName("2016-10-31-flow.csv");
 		communication.setOffset(0);
 		communication.setTopicPartition("bound-replicated-13:0");
-		FlowUtils.setDenoise(executor, communication);
+		communication.setSequence(1000);
+		FlowUtils.setExcep(executor, communication);
 		
 		executor.setPath("/locks/worker-schedule/workflow-trigger/default",
 				JJSON.get().formatObject(DefaultNodeDataGenerator.INSTANCE.generate("", Maps.newConcurrentMap())));

@@ -1,8 +1,10 @@
-package DataAn.storm;
+package DataAn.storm.exceptioncheck;
 
 import java.util.Map;
 
 import org.apache.storm.trident.spout.ITridentSpout.BatchCoordinator;
+
+import DataAn.storm.BatchMeta;
 
 public class SpecialCoordinator
 		implements BatchCoordinator<BatchMeta> {

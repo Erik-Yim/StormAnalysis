@@ -15,7 +15,7 @@ public class ExceptionCheckTopologyLocal {
 		
 		StormTopology stormTopology=new ExceptionCheckTopologyBuilder().build(exceptionCheckConfig);
 		Config conf=new Config();
-		KafkaNameKeys.setKafkaTopicPartition(conf, "bound-replicated-13:0");
+		conf.put("storm.flow.worker.id", 1);
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		conf.setMessageTimeoutSecs(10000);

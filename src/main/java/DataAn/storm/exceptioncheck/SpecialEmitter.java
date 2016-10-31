@@ -1,5 +1,6 @@
-package DataAn.storm;
+package DataAn.storm.exceptioncheck;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -13,14 +14,30 @@ import org.apache.storm.trident.spout.ITridentSpout.Emitter;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.tuple.Values;
 
+import DataAn.common.utils.JJSON;
+import DataAn.storm.BatchContext;
+import DataAn.storm.BatchMeta;
 import DataAn.storm.BatchMeta.Scope;
+import DataAn.storm.Communication;
+import DataAn.storm.DefaultDeviceRecord;
+import DataAn.storm.ErrorMsg;
+import DataAn.storm.FlowUtils;
+import DataAn.storm.exceptioncheck.impl.IPropertyConfigStoreImpl;
+import DataAn.storm.kafka.BaseConsumer;
 import DataAn.storm.kafka.BaseConsumer.BoundConsumer;
 import DataAn.storm.kafka.BaseConsumer.FetchObjs;
 import DataAn.storm.kafka.Beginning;
 import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
+import DataAn.storm.kafka.InnerConsumer;
 import DataAn.storm.kafka.Null;
+import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
+import DataAn.storm.zookeeper.NodeWorker;
+import DataAn.storm.zookeeper.NodeWorkers;
+import DataAn.storm.zookeeper.ZooKeeperClient;
+import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
+import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
 public class SpecialEmitter implements Emitter<BatchMeta> {
 	
@@ -34,9 +51,29 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private Map<Long, BatchMeta> store=new ConcurrentHashMap<>();
 	
-	public SpecialEmitter(BoundConsumer consumer,Map conf) {
-		this.consumer = consumer;
+	protected ZookeeperExecutor executor;
+	
+	protected NodeWorker nodeWorker;
+	
+	private Communication communication;
+	
+	private boolean reachEnd;
+	
+	private boolean triggered;
+	
+	private int workerId;
+	
+	private long sequence;
+	
+	public SpecialEmitter(Map conf) {
 		this.conf=conf;
+		executor=new ZooKeeperClient()
+				.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
+				.namespace(ZooKeeperNameKeys.getNamespace(conf))
+				.build();
+		NodeWorkers.startup(executor,conf);
+		this.workerId=Integer.parseInt(String.valueOf(conf.get("storm.flow.worker.id")));
+		nodeWorker=NodeWorkers.get(workerId);
 	}
 
 	private BatchMeta getLatest(long batchId){
@@ -47,9 +84,91 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		return null;
 	}
 	
+	protected void cleanup(){
+		atomicLong=new AtomicLong(0);
+		reachEnd=false;
+		communication=null;
+		triggered=false;
+		sequence=-1;
+	}
+	
+	protected void wakeup() throws Exception{
+		final WorkerPathVal workerPathVal=
+				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
+						,WorkerPathVal.class);
+//		long sequence=workerPathVal.getSequence();
+		long sequence=1000;
+		this.communication = FlowUtils.getExcep(executor,sequence);
+		communication.setWorkerId(workerId);
+		communication.setSequence(workerPathVal.getSequence());
+		prepare();
+		new IPropertyConfigStoreImpl().initialize(conf);
+		triggered = true;
+	}
+
+	private void prepare(){
+		String topicPartition=communication.getTopicPartition();
+		InnerConsumer innerConsumer=new InnerConsumer(conf)
+				.manualPartitionAssign(topicPartition.split(","))
+				.group("data-comsumer");
+		consumer=BaseConsumer.boundConsumer(innerConsumer);
+		for(String string:consumer.getTopicPartition()){
+			consumer.seek(string, 0);
+		}
+	}
+	
+	private void release(){
+		try {
+			nodeWorker.release();
+			System.out.println(nodeWorker.getId()+ " release lock");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void error(Exception e){
+		ErrorMsg errorMsg=new ErrorMsg();
+		errorMsg.setMsg(e.getMessage());
+		errorMsg.setWorkerId(workerId);
+		errorMsg.setSequence(sequence);
+		FlowUtils.setError(executor, errorMsg);
+	}
+	
+	private void await(){
+		System.out.println(nodeWorker.getId()+" go to acquire lock...");
+		cleanup();
+		while(true){
+			try{
+				nodeWorker.acquire();
+				wakeup();
+				System.out.println(nodeWorker.getId()+ " get lock , executing spout...");
+				break;
+			}catch (Exception e) {
+				e.printStackTrace();
+				error(e);
+				try {
+					nodeWorker.release();
+					System.out.println(nodeWorker.getId()+ " release lock");
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+			}
+		}
+	}
+	
 	@Override
 	public void emitBatch(TransactionAttempt tx, BatchMeta nullMeta, TridentCollector collector) {
 
+		if(!triggered) {
+			await();
+		}
+		
+		if(reachEnd){
+			release();
+			await();
+			return ;
+		}
+		
 		long batchId=(long) tx.getTransactionId();
 		BatchMeta currMetadata=null;
 		if(store.containsKey(batchId)){
@@ -91,6 +210,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 						if(fetchObj instanceof Beginning) continue;
 						if(fetchObj instanceof Null) continue;
 						if(fetchObj instanceof Ending){
+							reachEnd=true;
 							breakOut=true;
 							break;
 						}

@@ -13,7 +13,6 @@ import org.apache.storm.tuple.Fields;
 
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
-import DataAn.storm.SpecialKafakaSpout;
 import DataAn.storm.denoise.IDenoiseFilterNodeProcessor;
 import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
 import DataAn.storm.interfece.InterfaceGetter;
@@ -53,7 +52,7 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 				}
 				DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
 				System.out.println("aggregate thread["+Thread.currentThread().getName() + "] tuple ["+defaultDeviceRecord.getTime()+","+defaultDeviceRecord.getSequence()+"] _ >  batch ["+defaultDeviceRecord.getBatchContext().getBatchId()+"]");
-				//val.process(defaultDeviceRecord);
+//				val.process(defaultDeviceRecord);
 			}
 
 			@Override
