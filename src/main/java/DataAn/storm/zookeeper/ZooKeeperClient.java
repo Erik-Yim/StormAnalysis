@@ -146,6 +146,9 @@ public class ZooKeeperClient implements Serializable {
 		
 		public void setPath(String path,String data){
 			try{
+				if(!exists(path)){
+					createPath(path);
+				}
 				curatorFramework.setData()
 				.forPath(path,data.getBytes("utf-8"));
 			}catch (Exception e) {
