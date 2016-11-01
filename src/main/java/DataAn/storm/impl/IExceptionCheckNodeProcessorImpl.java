@@ -6,21 +6,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.bson.Document;
-
 import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
 import DataAn.dto.ParamExceptionDto;
-import DataAn.mongo.client.MongodbUtil;
-import DataAn.mongo.init.InitMongo;
 import DataAn.storm.BatchContext;
+import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
 import DataAn.storm.exceptioncheck.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.impl.IPropertyConfigStoreImpl;
 import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
-import DataAn.storm.kafka.BoundProducer;
 import DataAn.storm.kafka.InnerProducer;
 //import DataAn.storm.kafka.KafkaNameKeys;
 import DataAn.storm.kafka.KafkaNameKeys;
@@ -46,8 +42,11 @@ public class IExceptionCheckNodeProcessorImpl implements
 	
 	Map<String,List<CaseSpecialDto>> finalCaseDtoMap =new HashMap<>();
 	
-	Object[] joblistCatch = new Object[]{};
-	Object[] exelistCatch = new Object[]{};
+	
+	Map<String,List<CaseSpecialDto>> joblistCatch =new HashMap<>();
+	Map<String,List<ParamExceptionDto>> exelistCatch =new HashMap<>();
+	
+
 	
 	String series ="";
 	String star ="";
@@ -60,33 +59,40 @@ public class IExceptionCheckNodeProcessorImpl implements
 		 deviceName =deviceRecord.getName();	
 		String[] paramValues = deviceRecord.getPropertyVals();
 		String[] param = deviceRecord.getProperties();
-		if(joblistCatch.length==0 && exelistCatch.length==0){
+		if(joblistCatch.size()==0 && exelistCatch.size()==0){
 			for(int i=0;i<paramValues.length;i++){
 				List<CaseSpecialDto>  csDtoCatch = new ArrayList<CaseSpecialDto>();
-				joblistCatch[i] = csDtoCatch;
+				joblistCatch.put(param[i], csDtoCatch);
 				List<ParamExceptionDto> paramEs =  new ArrayList<ParamExceptionDto>();
-				exelistCatch[i] = paramEs;
+				exelistCatch.put(param[i], paramEs);
 			}
 		}		
 		for(int i=0;i<paramValues.length;i++){
 			ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
 			long sequence =new AtomicLong(0).incrementAndGet();
 			if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
-				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch[i];
+//			if(5<Double.parseDouble(paramValues[i])){
+
+				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
 				CaseSpecialDto cDto = new CaseSpecialDto();
 				cDto.setDateTime(deviceRecord.getTime());
 				cDto.setSeries(deviceRecord.getSeries());
 				cDto.setStar(deviceRecord.getStar());
 				cDto.setParamName(param[i]);
 				cDto.setFrequency(ecpc.getCount());
+//				cDto.setFrequency(2);
 				cDto.setLimitValue(ecpc.getJobMax());
-				cDto.setLimitTime(ecpc.getDelayTime());
+//				cDto.setLimitValue(5);
+			cDto.setLimitTime(ecpc.getDelayTime());
+//				cDto.setLimitTime(3);
 				cDto.setSequence(sequence);
 				csDtoCatch.add(cDto);
 				casDtoMap.put(param[i], csDtoCatch);
 			}
 			if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
-				List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch[i];
+//			if(3<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<8 ){
+		
+				List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
 				ParamExceptionDto peDto =  new ParamExceptionDto();
 				peDto.setParamName(deviceRecord.getProperties()[i]);
 				peDto.setSeries(deviceRecord.getSeries());
@@ -221,6 +227,29 @@ public class IExceptionCheckNodeProcessorImpl implements
 		return batchContext;
 	}
 
+	
+	
+//	public static void main(String args[]){
+//		
+//		DefaultDeviceRecord ird = new DefaultDeviceRecord();
+//		ird.set_time(10);
+//		ird.setId("112345");
+//		ird.setName("flywheel");
+//		ird.setSeries("j9");
+//		ird.setStar("02");
+//		ird.setTime("2016-11-01 13:47:24");
+//		String[] param = new String[10];
+//		String[] values = new String[10];
+//		for(int i=0;i<param.length;i++){
+//			param[i]= "sequence"+i;
+//			values[i]=i+"";
+//		}
+//		ird.setProperties(param);
+//		ird.setPropertyVals(values);
+//		IExceptionCheckNodeProcessorImpl iim =  new IExceptionCheckNodeProcessorImpl();
+//		iim.process(ird);
+//	}
+//	
 }
 
 
