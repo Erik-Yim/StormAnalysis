@@ -11,6 +11,7 @@ import org.apache.storm.shade.org.apache.http.util.EntityUtils;
 import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
 
 import DataAn.common.utils.HttpUtil;
+import DataAn.common.utils.JJSON;
 import DataAn.common.utils.JsonStringToObj;
 import DataAn.dto.ConfigPropertyDto;
 import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
@@ -26,19 +27,25 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
 		// TODO Auto-generated method stub
-		
-		 HttpEntity entity = HttpUtil.get("");
-		 String charset = EntityUtils.getContentCharSet(entity);		        
-         List<ConfigPropertyDto> cDtos =JsonStringToObj.jsonArrayToListObject(charset,ConfigPropertyDto.class,null);
+		String series =  (String) context.get("series");
+		String star =  (String) context.get("star");
+		String parameterType =  (String) context.get("parameterType");
+
+		 String entity = HttpUtil.get("http://192.168.0.78:8080/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		 
+//		 Map<String, Class<ExceptionCasePointConfig>> classMap = new HashMap<String, Class<ExceptionCasePointConfig>>();
+//		 classMap.put("parameterInfos", ExceptionCasePointConfig.class);
+         ConfigPropertyDto cdto =JsonStringToObj.jsonToObject(entity,ConfigPropertyDto.class,null);
+       //  List<ConfigPropertyDto> cDtos =JJSON(entity,ConfigPropertyDto.class,classMap);
          ExceptionConfigModel ecm =  new ExceptionConfigModel();
          
          Map<String,List<ExceptionCasePointConfig>> deviceParams = new HashMap<>();
-         for(ConfigPropertyDto cdto:cDtos){
-        	 deviceParams.put(cdto.getDevice(), cdto.getEcpcs());        	 
-         }
+//         for(ConfigPropertyDto cdto:cDtos){
+        	 deviceParams.put(cdto.getDevice(), cdto.getParameterInfos());        	 
+//         }
          
          ecm.setExceptionCasePointConfigs(deviceParams);
-         series_start_map.put("", ecm);                
+         series_start_map.put(context.get("series")+"_"+context.get("star"), ecm);                
          return series_start_map;
 	}
 
@@ -63,5 +70,6 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		}
 		return ecpcf;
 	}
+	
 
 }

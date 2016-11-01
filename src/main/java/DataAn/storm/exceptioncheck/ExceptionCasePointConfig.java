@@ -23,6 +23,8 @@ public class ExceptionCasePointConfig implements Serializable{
 	
 	private double jobMax;
 	
+	private double jobMin;
+	
 	private int count;
 	
 	private double exceptionMax;
@@ -115,6 +117,14 @@ public class ExceptionCasePointConfig implements Serializable{
 
 	public void setExceptionMin(double exceptionMin) {
 		this.exceptionMin = exceptionMin;
+	}
+
+	public double getJobMin() {
+		return jobMin;
+	}
+
+	public void setJobMin(double jobMin) {
+		this.jobMin = jobMin;
 	}
 
 	

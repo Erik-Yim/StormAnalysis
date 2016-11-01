@@ -1,7 +1,5 @@
 package DataAn.dto;
 
-
-
 import java.util.List;
 
 import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
@@ -10,11 +8,11 @@ public class ConfigPropertyDto {
 	
 	private String series;
 	
-	private String  start;
+	private String  star;
 	
 	private String  device;
 	
-	private List<ExceptionCasePointConfig> ecpcs;
+	private List<ExceptionCasePointConfig> parameterInfos;
 
 	public String getSeries() {
 		return series;
@@ -23,13 +21,23 @@ public class ConfigPropertyDto {
 	public void setSeries(String series) {
 		this.series = series;
 	}
+	
 
-	public String getStart() {
-		return start;
+
+	public String getStar() {
+		return star;
 	}
 
-	public void setStart(String start) {
-		this.start = start;
+	public void setStar(String star) {
+		this.star = star;
+	}
+
+	public List<ExceptionCasePointConfig> getParameterInfos() {
+		return parameterInfos;
+	}
+
+	public void setParameterInfos(List<ExceptionCasePointConfig> parameterInfos) {
+		this.parameterInfos = parameterInfos;
 	}
 
 	public String getDevice() {
@@ -40,13 +48,7 @@ public class ConfigPropertyDto {
 		this.device = device;
 	}
 
-	public List<ExceptionCasePointConfig> getEcpcs() {
-		return ecpcs;
-	}
 
-	public void setEcpcs(List<ExceptionCasePointConfig> ecpcs) {
-		this.ecpcs = ecpcs;
-	}
 	
 	
 
