@@ -29,7 +29,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		// TODO Auto-generated method stub
 		String series =  (String) context.get("series");
 		String star =  (String) context.get("star");
-		String parameterType =  (String) context.get("parameterType");
+		String parameterType =  (String) context.get("device");
 
 		 String entity = HttpUtil.get("http://192.168.0.78:8080/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		 
@@ -55,14 +55,12 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		// TODO Auto-generated method stub
 		
 	}
-
-	@Override
 	public ExceptionCasePointConfig getPropertyConfigbyParam(String... args) {
 		// TODO Auto-generated method stub
 		ExceptionCasePointConfig ecpcf = null;
 		if(args.length>0){
-		ExceptionConfigModel ecfm =	series_start_map.get("series_start");
-		List<ExceptionCasePointConfig> ecfgs=ecfm.getExceptionCasePointConfigs().get("device");
+		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
+		List<ExceptionCasePointConfig> ecfgs=ecfm.getExceptionCasePointConfigs().get(args[2]);
 		for(ExceptionCasePointConfig ecfg:ecfgs){
 			if(ecfg.getParamName()=="paramName");
 			ecpcf =ecfg;
