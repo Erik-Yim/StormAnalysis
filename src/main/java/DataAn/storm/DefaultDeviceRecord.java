@@ -1,5 +1,6 @@
 package DataAn.storm;
 
+import DataAn.storm.kafka.MsgDefs;
 import DataAn.storm.kafka.Notify;
 
 public class DefaultDeviceRecord implements IDeviceRecord {
@@ -10,6 +11,9 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 	
 	private String id;
 	
+	/**
+	 * 设备
+	 */
 	private String name;
 	
 	private String series;
@@ -27,6 +31,9 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 	private BatchContext batchContext;
 
 	private boolean isPersist;
+	
+	private String status;
+	
 	
 	public long get_time() {
 		return _time;
@@ -126,8 +133,17 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 
 	@Override
 	public String getCollection() {
-		// TODO Auto-generated method stub
-		return null;
+		return getName();
+	}
+
+	@Override
+	public String status() {
+		return status;
+	}
+
+	@Override
+	public boolean isContent() {
+		return MsgDefs._TYPE_CONTENT.equals(status());
 	}
 	
 }

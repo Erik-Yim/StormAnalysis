@@ -12,31 +12,25 @@ public class BoundProducer implements Serializable {
 
 	private ProducerExecutor<String, String> executor;
 	
-	private String topic ;
-	
-	private Integer partition ;
-	
-	public BoundProducer(InnerProducer innerProducer,String topic,Integer partition) {
+	public BoundProducer(InnerProducer innerProducer) {
 		this.executor = innerProducer.build();
-		this.topic=topic;
-		this.partition=partition;
 	}
 	
-	public static final String _TYPE="type";
-	public static final String _TYPE_MIDDLE="middle";
-	public static final String _TYPE_BEGINNING="beginning";
-	public static final String _TYPE_ENDING="ending";
+	public static final String _TYPE=MsgDefs._TYPE;
+	public static final String _TYPE_CONTENT=MsgDefs._TYPE_CONTENT;
+	public static final String _TYPE_BEGINNING=MsgDefs._TYPE_BEGINNING;
+	public static final String _TYPE_ENDING=MsgDefs._TYPE_ENDING;
 	
-	public static final String _VAL="val";
+	public static final String _VAL=MsgDefs._VAL;
 	
-	public void send(FetchObj fetchObj){
+	public void send(FetchObj fetchObj,String topic,Integer partition){
 		Map<String, String> map=new HashMap<>();
 		if(fetchObj instanceof Beginning){
 			map.put(_TYPE, _TYPE_BEGINNING);
 		}else if(fetchObj instanceof Ending){
 			map.put(_TYPE, _TYPE_ENDING);
 		}else if(fetchObj instanceof DefaultFetchObj){
-			map.put(_TYPE, _TYPE_MIDDLE);
+			map.put(_TYPE, _TYPE_CONTENT);
 		}
 		map.put(_VAL, JJSON.get().formatObject(fetchObj));
 		String val=JJSON.get().formatObject(map);
@@ -46,6 +40,9 @@ public class BoundProducer implements Serializable {
 		else{
 			executor.send(topic, partition, null, val);
 		}
-		
+	}
+	
+	public void send(FetchObj fetchObj,String topic){
+		send(fetchObj, topic, null);
 	}
 }

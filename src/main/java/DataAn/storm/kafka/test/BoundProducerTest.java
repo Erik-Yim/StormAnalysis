@@ -24,7 +24,7 @@ public class BoundProducerTest {
 
 	
 	@SuppressWarnings("rawtypes")
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		List<DefaultDeviceRecord> defaultDeviceRecords=new ArrayList<>(10000);
 		
 		Random random=ThreadLocalRandom.current();
@@ -39,7 +39,7 @@ public class BoundProducerTest {
 				calendar=Calendar.getInstance();
 			}
 			ddr.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime()));
-			ddr.set_time(calendar.getTime().getTime());
+			ddr.set_time(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(ddr.getTime()).getTime());
 			List<String> paramKeys =  new ArrayList<String>();
 			for(int j=0;j<10;j++){
 				paramKeys.add("param"+j);
@@ -59,10 +59,10 @@ public class BoundProducerTest {
 		Map conf=new HashMap<>();
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		InnerProducer innerProducer=new InnerProducer(conf);
-		BoundProducer boundProducer=new BoundProducer(innerProducer, 
-				"bound-replicated-13", 0);
+		BoundProducer boundProducer=new BoundProducer(innerProducer);
 
-		boundProducer.send(new Beginning());
+		String topic="test-data-2";
+		boundProducer.send(new Beginning(),topic);
 		for(int i =0 ;i<defaultDeviceRecords.size();i++){
 			DefaultDeviceRecord defaultDeviceRecord=defaultDeviceRecords.get(i);
 			DefaultFetchObj defaultFetchObj=new DefaultFetchObj();
@@ -74,9 +74,9 @@ public class BoundProducerTest {
 			defaultFetchObj.setStar(defaultDeviceRecord.getStar());
 			defaultFetchObj.setTime(defaultDeviceRecord.getTime());
 			defaultFetchObj.set_time(defaultDeviceRecord.get_time());
-			boundProducer.send(defaultFetchObj);
+			boundProducer.send(defaultFetchObj,topic);
 		}
-		boundProducer.send(new Ending());
+		boundProducer.send(new Ending(),topic);
 		System.out.println("end...");
 		Utils.sleep(10000000);
 	}

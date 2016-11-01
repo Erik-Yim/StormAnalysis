@@ -22,21 +22,15 @@ public class KafkaDeviceRecordPersitImpl implements IDeviceRecordPersit{
 	@Override
 	public void persist(Map context,BatchContext batchContext,IDeviceRecord... deviceRecords) throws Exception {
 		
-//		InnerConsumer innerConsumer=new InnerConsumer(context)
-//				.manualPartitionAssign("bound-replicated-cleandata:0")
-//				.group("denoise-gen-group");
-//		BoundConsumer boundConsumer= BaseConsumer.boundConsumer(innerConsumer);
-		
 		InnerProducer innerProducer=new InnerProducer(context);
-		BoundProducer boundProducer=new BoundProducer(innerProducer, 
-				"after-denoise-cleandata", 0);
+		BoundProducer boundProducer=new BoundProducer(innerProducer);
 		for(IDeviceRecord deviceRecord:deviceRecords){
 			FetchObj fetchObj=parse((DefaultDeviceRecord) deviceRecord);
-			boundProducer.send(fetchObj);
+			boundProducer.send(fetchObj,batchContext.getDenoiseTopic());
 		}
 		
 		SimpleProducer simpleProducer=new SimpleProducer(innerProducer,
-				"persist-data", 0);
+				"data-persist", 0);
 		for(IDeviceRecord deviceRecord:deviceRecords){
 			MongoPeristModel mongoPeristModel=new MongoPeristModel();
 			mongoPeristModel.setCollection(deviceRecord.getCollection());

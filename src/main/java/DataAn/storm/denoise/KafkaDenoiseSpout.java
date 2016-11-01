@@ -17,6 +17,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 import DataAn.common.utils.JJSON;
+import DataAn.storm.BatchContext;
 import DataAn.storm.Communication;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.ErrorMsg;
@@ -28,12 +29,13 @@ import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
 import DataAn.storm.kafka.InnerConsumer;
+import DataAn.storm.zookeeper.DisAtomicLong;
+import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.NodeWorker;
 import DataAn.storm.zookeeper.NodeWorkers;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
-import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 
 @SuppressWarnings({ "rawtypes", "serial" })
 public class KafkaDenoiseSpout extends BaseRichSpout {
@@ -64,6 +66,8 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	private Communication communication;
 	
+	private DisAtomicLong disAtomicLong;
+	
 	private int failCount=0;
 	
 	private boolean reachEnd;
@@ -73,6 +77,8 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	private int workerId;
 	
 	private long sequence;
+	
+	private String topic;
 	
 	private void prepare(){
 		String topicPartition=communication.getTopicPartition();
@@ -96,6 +102,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		NodeWorkers.startup(executor,conf);
 		this.workerId=Integer.parseInt(String.valueOf(conf.get("storm.flow.worker.id")));
 		nodeWorker=NodeWorkers.get(workerId);
+		disAtomicLong=new DisAtomicLong(executor);
 	}
 	
 	
@@ -112,17 +119,20 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		communication=null;
 		triggered=false;
 		sequence=-1;
+		topic=null;
 	}
 	
 	protected void wakeup() {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-		this.communication = FlowUtils.getDenoise(executor,workerPathVal.getSequence());
+		long sequence=1000;  // workerPathVal.getSequence()
+		this.communication = FlowUtils.getDenoise(executor,sequence);
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
 		triggered = true;
+		topic="data-denoise-"+disAtomicLong.getSequence();
 	}
 	
 	private void release(){
@@ -182,8 +192,12 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 				iter=errorTuples.entrySet().iterator();
 				failCount++;
 			}
-			Entry<Long, List<DefaultDeviceRecord>> entry=iter.next();
-			collector.emit(new Values(entry.getValue(),null),entry.getKey());
+			if(iter.hasNext()){
+				Entry<Long, List<DefaultDeviceRecord>> entry=iter.next();
+				BatchContext batchContext=new BatchContext();
+				batchContext.setDenoiseTopic(topic);
+				collector.emit(new Values(entry.getValue(),batchContext),entry.getKey());
+			}
 			return ;
 		}
 		
@@ -204,7 +218,9 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 				reachEnd=true;
 				if(records!=null&&!records.isEmpty()){
 					tuples.put(time, records);
-					collector.emit(new Values(records,null),time);
+					BatchContext batchContext=new BatchContext();
+					batchContext.setDenoiseTopic(topic);
+					collector.emit(new Values(records,batchContext),time);
 					return;
 				}
 			}
@@ -227,7 +243,9 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			}
 		}
 		tuples.put(time, records);
-		collector.emit(new Values(records,null),time);
+		BatchContext batchContext=new BatchContext();
+		batchContext.setDenoiseTopic(topic);
+		collector.emit(new Values(records,batchContext),time);
 	}
 	
 	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){

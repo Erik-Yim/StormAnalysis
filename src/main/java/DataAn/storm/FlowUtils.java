@@ -35,6 +35,21 @@ public abstract class FlowUtils {
 		executor.setPath(path, JJSON.get().formatObject(communication));
 	}
 	
+	public static Communication getHierarchy(ZookeeperExecutor executor,long sequence){
+		String path="/flow/"+sequence+"/communication/hierarchy";
+		if(executor.exists(path)){
+			byte[] bytes=executor.getPath(path);
+			return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), Communication.class);
+		}
+		return null;
+	}
+	
+	public static void setHierarchy(ZookeeperExecutor executor,Communication communication){
+		String path="/flow/"+communication.getSequence()+"/communication/hierarchy";
+		executor.setPath(path, JJSON.get().formatObject(communication));
+	}
+	
+	
 	public static ErrorMsg getError(ZookeeperExecutor executor,long sequence){
 		String path="/flow/"+sequence+"/error";
 		byte[] bytes=executor.getPath(path);

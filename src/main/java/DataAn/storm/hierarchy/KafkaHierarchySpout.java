@@ -102,7 +102,8 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-		this.communication = FlowUtils.getDenoise(executor,workerPathVal.getSequence());
+		long sequence=1000;//workerPathVal.getSequence()
+		this.communication = FlowUtils.getDenoise(executor,sequence);
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();

@@ -19,12 +19,12 @@ public class BoundFetchObjIterator extends BaseFetchObjIterator<String, String> 
 		super(consumerRecords,parser);
 	}
 
-	public static final String _TYPE="type";
-	public static final String _TYPE_MIDDLE="middle";
-	public static final String _TYPE_BEGINNING="beginning";
-	public static final String _TYPE_ENDING="ending";
+	public static final String _TYPE=MsgDefs._TYPE;
+	public static final String _TYPE_CONTENT=MsgDefs._TYPE_CONTENT;
+	public static final String _TYPE_BEGINNING=MsgDefs._TYPE_BEGINNING;
+	public static final String _TYPE_ENDING=MsgDefs._TYPE_ENDING;
 	
-	public static final String _VAL="val";
+	public static final String _VAL=MsgDefs._VAL;
 	
 	
 	@Override
@@ -43,7 +43,7 @@ public class BoundFetchObjIterator extends BaseFetchObjIterator<String, String> 
 			Ending ending=  JJSON.get().parse(val, Ending.class);
 			ending.setOffset(consumerRecord.offset());
 			return ending;
-		}else if(_TYPE_MIDDLE.equals(map.get(_TYPE))){
+		}else if(_TYPE_CONTENT.equals(map.get(_TYPE))){
 			String val=map.get(_VAL);
 			DefaultFetchObj defaultFetchObj=  JJSON.get().parse(val, DefaultFetchObj.class);
 			defaultFetchObj.setOffset(consumerRecord.offset());

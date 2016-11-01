@@ -11,6 +11,9 @@ public class SimpleHierarchyDeviceRecordPersist implements IHierarchyDeviceRecor
 				+" persist thread["+Thread.currentThread().getName() 
 				+ "] tuple ["+deviceRecord.getTime()+","
 				+deviceRecord.getSequence()+"]  interval ["+deviceRecord.getInterval()+"] _ >");
+		
+		
+	
 	}
 
 }
