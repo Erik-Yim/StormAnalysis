@@ -8,6 +8,8 @@ import org.apache.storm.utils.Utils;
 import com.google.common.collect.Maps;
 
 import DataAn.common.utils.JJSON;
+import DataAn.storm.Communication;
+import DataAn.storm.FlowUtils;
 import DataAn.storm.zookeeper.DefaultNodeDataGenerator;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
@@ -19,11 +21,22 @@ public class TaskStartTrigger {
 		
 		Map conf=new HashMap<>();
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
-		ZooKeeperNameKeys.setNamespace(conf, "test-b");
+		ZooKeeperNameKeys.setNamespace(conf, "data-processing");
 		ZookeeperExecutor executor=new ZooKeeperClient()
 		.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 		.namespace(ZooKeeperNameKeys.getNamespace(conf))
 		.build();
+		Communication communication=new Communication();
+		communication.setFileName("2016-10-31-flow.csv");
+		communication.setOffset(0);
+		communication.setTopicPartition("data-denoise-37:0");
+		communication.setSequence(1000);
+		
+		FlowUtils.setDenoise(executor, communication);
+		
+//		FlowUtils.setExcep(executor, communication);
+		
+		FlowUtils.setHierarchy(executor, communication);
 		
 		executor.setPath("/locks/worker-schedule/workflow-trigger/default",
 				JJSON.get().formatObject(DefaultNodeDataGenerator.INSTANCE.generate("", Maps.newConcurrentMap())));

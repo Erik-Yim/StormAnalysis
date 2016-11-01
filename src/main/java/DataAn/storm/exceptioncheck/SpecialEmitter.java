@@ -1,22 +1,28 @@
-package DataAn.storm.hierarchy;
+package DataAn.storm.exceptioncheck;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichSpout;
-import org.apache.storm.tuple.Fields;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.spout.ITridentSpout.Emitter;
+import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.tuple.Values;
 
 import DataAn.common.utils.JJSON;
+import DataAn.storm.BatchContext;
+import DataAn.storm.BatchMeta;
+import DataAn.storm.BatchMeta.Scope;
 import DataAn.storm.Communication;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.ErrorMsg;
 import DataAn.storm.FlowUtils;
+import DataAn.storm.exceptioncheck.impl.IPropertyConfigStoreImpl;
 import DataAn.storm.kafka.BaseConsumer;
 import DataAn.storm.kafka.BaseConsumer.BoundConsumer;
 import DataAn.storm.kafka.BaseConsumer.FetchObjs;
@@ -33,20 +39,17 @@ import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
-@SuppressWarnings({ "rawtypes", "serial" })
-public class KafkaHierarchySpout extends BaseRichSpout {
+public class SpecialEmitter implements Emitter<BatchMeta> {
 	
-	protected Map conf;
+	private Map conf;
 	
 	private AtomicLong atomicLong=new AtomicLong(0);
-	
-	private SpoutOutputCollector collector;
 	
 	private BoundConsumer consumer;
 	
 	private int timeout=30000;
 	
-	private Fields fields;
+	private Map<Long, BatchMeta> store=new ConcurrentHashMap<>();
 	
 	protected ZookeeperExecutor executor;
 	
@@ -61,14 +64,8 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 	private int workerId;
 	
 	private long sequence;
-
-	public KafkaHierarchySpout(Fields fields) {
-		this.fields = fields;
-	}
 	
-	@Override
-	public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-		this.collector=collector;
+	public SpecialEmitter(Map conf) {
 		this.conf=conf;
 		executor=new ZooKeeperClient()
 				.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
@@ -78,16 +75,13 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		this.workerId=Integer.parseInt(String.valueOf(conf.get("storm.flow.worker.id")));
 		nodeWorker=NodeWorkers.get(workerId);
 	}
-	
-	private void prepare(){
-		String topicPartition=communication.getTopicPartition();
-		InnerConsumer innerConsumer=new InnerConsumer(conf)
-				.manualPartitionAssign(topicPartition.split(","))
-				.group("data-comsumer");
-		consumer=BaseConsumer.boundConsumer(innerConsumer);
-		for(String string:consumer.getTopicPartition()){
-			consumer.seek(string, 0);
+
+	private BatchMeta getLatest(long batchId){
+		BatchMeta latest=null;
+		while((latest=store.get(--batchId))!=null&&batchId>0){
+			return latest;
 		}
+		return null;
 	}
 	
 	protected void cleanup(){
@@ -98,16 +92,29 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		sequence=-1;
 	}
 	
-	protected void wakeup() {
+	protected void wakeup() throws Exception{
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-		long sequence=1000;//workerPathVal.getSequence()
-		this.communication = FlowUtils.getDenoise(executor,sequence);
+//		long sequence=workerPathVal.getSequence();
+		long sequence=1000;
+		this.communication = FlowUtils.getExcep(executor,sequence);
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
+		new IPropertyConfigStoreImpl().initialize(conf);
 		triggered = true;
+	}
+
+	private void prepare(){
+		String topicPartition=communication.getTopicPartition();
+		InnerConsumer innerConsumer=new InnerConsumer(conf)
+				.manualPartitionAssign(topicPartition.split(","))
+				.group("data-comsumer");
+		consumer=BaseConsumer.boundConsumer(innerConsumer);
+		for(String string:consumer.getTopicPartition()){
+			consumer.seek(string, 0);
+		}
 	}
 	
 	private void release(){
@@ -150,8 +157,8 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 	}
 	
 	@Override
-	public void nextTuple() {
-		
+	public void emitBatch(TransactionAttempt tx, BatchMeta nullMeta, TridentCollector collector) {
+
 		if(!triggered) {
 			await();
 		}
@@ -162,11 +169,41 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 			return ;
 		}
 		
+		long batchId=(long) tx.getTransactionId();
+		BatchMeta currMetadata=null;
+		if(store.containsKey(batchId)){
+			currMetadata=store.get(batchId);
+		}
+		else{
+			currMetadata=new BatchMeta();
+			currMetadata.setBatchId(batchId);
+			BatchMeta prevMetadata=getLatest(batchId);
+			long offset=-1;
+			if(prevMetadata!=null){
+				if(prevMetadata!=null){
+					offset=prevMetadata.getOffsetStartEnd(consumer.getTopicPartition()[0]);
+				}
+			}
+			long offsetAdd=offset+1;
+			currMetadata.setTopicPartitionOffsetStart(consumer.getTopicPartition()[0],
+					offsetAdd);
+			currMetadata.setTopicPartitionOffsetEnd(consumer.getTopicPartition()[0],
+					offsetAdd);
+			store.put(batchId, currMetadata);
+		}
+		BatchContext batchContext=new BatchContext();
+		batchContext.setBatchId(batchId);
+		batchContext.setConf(conf);
+		
+		List<DefaultFetchObj> fetchObjs=new ArrayList<>();
+		for(Entry<String, Scope> entry:currMetadata.getTopicPartitionOffset().entrySet()){
+			consumer.seek(entry.getKey(), entry.getValue().start);
+		}
 		FetchObj fetchObj=null;
 		while(true){
-			FetchObjs fetchObjs=consumer.next(timeout);
-			if(!fetchObjs.isEmpty()){
-				Iterator<FetchObj> fetchObjIterator= fetchObjs.iterator();
+			FetchObjs fetchObjs2=consumer.next(timeout);
+			if(!fetchObjs2.isEmpty()){
+				Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
 				while(fetchObjIterator.hasNext()){
 					fetchObj=fetchObjIterator.next();
 					if(fetchObj instanceof Beginning) continue;
@@ -175,18 +212,23 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 						reachEnd=true;
 						break;
 					}
-					DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
-					defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
-					collector.emit(new Values(defaultDeviceRecord));
+					fetchObjs.add((DefaultFetchObj) fetchObj);
+					currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
 				}
 				break;
 			}
 		}
+		
+		for(int i=0;i<fetchObjs.size();i++){
+			DefaultDeviceRecord defaultDeviceRecord=parse(fetchObjs.get(i));
+			defaultDeviceRecord.setBatchContext(batchContext);
+			defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
+			collector.emit(new Values(defaultDeviceRecord,batchContext));
+		}		
 	}
 	
-	private HierarchyDeviceRecord parse(DefaultFetchObj defaultFetchObj){
-		HierarchyDeviceRecord defaultDeviceRecord=new HierarchyDeviceRecord();
-		
+	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){
+		DefaultDeviceRecord defaultDeviceRecord=new DefaultDeviceRecord();		
 		defaultDeviceRecord.setId(defaultFetchObj.getId());
 		defaultDeviceRecord.setName(defaultFetchObj.getName());
 		defaultDeviceRecord.setProperties(defaultFetchObj.getProperties());
@@ -194,28 +236,22 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		defaultDeviceRecord.setSeries(defaultFetchObj.getSeries());
 		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
 		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
-		defaultDeviceRecord.set_time(defaultFetchObj.get_time());
-		
+		defaultDeviceRecord.set_time(defaultFetchObj.get_time());	
 		return defaultDeviceRecord;
 	}
 
 	@Override
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(fields);
+	public void success(TransactionAttempt tx) {
+		BatchMeta batchMeta= store.get(tx.getTransactionId());
+		for(Entry<String, Scope> entry:batchMeta.getTopicPartitionOffset().entrySet()){
+			consumer.commitSync(entry.getKey(), entry.getValue().end);
+		}
+		System.out.println("-------SpecialEmitter  success ---------");
 	}
 
 	@Override
-	public void ack(Object msgId) {
-		super.ack(msgId);
+	public void close() {
+		System.out.println("------SpecialEmitter  close ----------");
 	}
-	
-	@Override
-	public void fail(Object msgId) {
-		super.fail(msgId);
-	}
-	
-	
-	
-	
-	
+
 }

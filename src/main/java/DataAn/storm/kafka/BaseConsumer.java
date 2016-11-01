@@ -15,6 +15,8 @@ import DataAn.storm.kafka.InnerConsumer.ConsumerExecutor;
 @SuppressWarnings("serial")
 public abstract class BaseConsumer implements Serializable{
 
+	private InnerConsumer innerConsumer;
+	
 	private ConsumerExecutor<String, String> executor;
 	
 	protected FetchObjParser parser=new FetchObjParser() {
@@ -120,5 +122,8 @@ public abstract class BaseConsumer implements Serializable{
 		return simpleConsumer;
 	}
 	
+	public InnerConsumer getInnerConsumer() {
+		return innerConsumer;
+	}
 	
 }

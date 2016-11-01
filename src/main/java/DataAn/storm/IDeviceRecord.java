@@ -56,4 +56,16 @@ public interface IDeviceRecord extends Serializable{
 	
 	String getCollection();
 	
+	/**
+	 * beginning , content , ending...
+	 * @return
+	 */
+	String status();
+	
+	/**
+	 * content {@link #status()} == true
+	 * @return
+	 */
+	boolean isContent();
+	
 }

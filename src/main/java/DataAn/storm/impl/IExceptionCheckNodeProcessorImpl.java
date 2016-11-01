@@ -42,11 +42,9 @@ public class IExceptionCheckNodeProcessorImpl implements
 	
 	Map<String,List<CaseSpecialDto>> finalCaseDtoMap =new HashMap<>();
 	
-	
 	Map<String,List<CaseSpecialDto>> joblistCatch =new HashMap<>();
 	Map<String,List<ParamExceptionDto>> exelistCatch =new HashMap<>();
 	
-
 	
 	String series ="";
 	String star ="";

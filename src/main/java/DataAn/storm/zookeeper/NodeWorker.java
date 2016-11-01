@@ -88,7 +88,7 @@ public class NodeWorker implements Serializable {
 		startWorker();
 	}
 
-	private String path(){
+	public String path(){
 		return nodeSelecter.pluginWorkersPath()+"/"+prefix+String.valueOf(id);
 	}
 	

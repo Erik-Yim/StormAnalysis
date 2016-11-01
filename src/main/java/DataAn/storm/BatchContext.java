@@ -27,7 +27,16 @@ public class BatchContext extends HashMap<String,Object>{
 	
 	private Object syncDevicePersit=new Object();
 	
+	private String denoiseTopic;
 	
+	public String getDenoiseTopic() {
+		return denoiseTopic;
+	}
+
+	public void setDenoiseTopic(String denoiseTopic) {
+		this.denoiseTopic = denoiseTopic;
+	}
+
 	public IDeviceRecordPersit getDeviceRecordPersit() {
 		if(deviceRecordPersit==null){
 			synchronized (syncDevicePersit) {
