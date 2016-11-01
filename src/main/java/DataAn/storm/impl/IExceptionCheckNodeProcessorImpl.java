@@ -112,7 +112,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		InnerProducer innerProducer=new InnerProducer(conf);
 		SimpleProducer simpleProducer =new SimpleProducer(innerProducer, 
-				"bound-JobException-3", 0);	
+				"data-persist", 0);	
 		for(String param_Name:casDtoMap.keySet()){			
 			List<CaseSpecialDto> cDtos = casDtoMap.get(param_Name);
 		//	List<Document> documentList = new ArrayList<Document>();

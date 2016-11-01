@@ -145,5 +145,15 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 	public boolean isContent() {
 		return MsgDefs._TYPE_CONTENT.equals(status());
 	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+	
+	
 	
 }

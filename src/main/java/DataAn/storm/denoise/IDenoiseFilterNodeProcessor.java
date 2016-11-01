@@ -31,6 +31,7 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 					String [] param = null;
 					Set<String> invalid = new HashSet<>();
 					for(IDeviceRecord idr:deviceRecords){
+						if(!idr.isContent()) continue;
 						vals = idr.getPropertyVals();
 						param = idr.getProperties();
 						for(int i=0;i<vals.length;i++){							
@@ -40,6 +41,7 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 						}
 					}					
 					for(IDeviceRecord idr:deviceRecords){
+						if(!idr.isContent()) continue;
 						param = idr.getProperties();
 						vals = idr.getPropertyVals();
 						String [] newparam= new String[param.length-invalid.size()];
