@@ -21,22 +21,26 @@ public class TaskStartTrigger {
 		
 		Map conf=new HashMap<>();
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
-		ZooKeeperNameKeys.setNamespace(conf, "data-processing");
 		ZookeeperExecutor executor=new ZooKeeperClient()
 		.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 		.namespace(ZooKeeperNameKeys.getNamespace(conf))
 		.build();
 		Communication communication=new Communication();
-		communication.setFileName("2016-10-31-flow.csv");
+		communication.setFileName("j9-02--2016-02-01.csv");
 		communication.setOffset(0);
-		communication.setTopicPartition("data-denoise-37:0");
 		communication.setSequence(1000);
+		communication.setFilePath("c:\\j9-02--2016-02-01.csv");
+		communication.setVersions("aaaa-bbbb");
+		
+		FlowUtils.setBegin(executor, communication);
 		
 		FlowUtils.setDenoise(executor, communication);
 		
 //		FlowUtils.setExcep(executor, communication);
 		
 		FlowUtils.setHierarchy(executor, communication);
+		
+		System.out.println("-----------");
 		
 		executor.setPath("/locks/worker-schedule/workflow-trigger/default",
 				JJSON.get().formatObject(DefaultNodeDataGenerator.INSTANCE.generate("", Maps.newConcurrentMap())));

@@ -9,10 +9,13 @@ import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.denoise.MongoDeviceRecordConvert.MongoDeviceRecordConvertGetter;
 import DataAn.storm.interfece.IDeviceRecordPersit;
+import DataAn.storm.kafka.Beginning;
 import DataAn.storm.kafka.BoundProducer;
 import DataAn.storm.kafka.DefaultFetchObj;
+import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
 import DataAn.storm.kafka.InnerProducer;
+import DataAn.storm.kafka.MsgDefs;
 import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.persist.MongoPeristModel;
 
@@ -32,6 +35,7 @@ public class KafkaDeviceRecordPersitImpl implements IDeviceRecordPersit{
 		SimpleProducer simpleProducer=new SimpleProducer(innerProducer,
 				"data-persist", 0);
 		for(IDeviceRecord deviceRecord:deviceRecords){
+			if(!deviceRecord.isContent()) continue;
 			MongoPeristModel mongoPeristModel=new MongoPeristModel();
 			mongoPeristModel.setCollection(deviceRecord.getCollection());
 			mongoPeristModel.setContent(JJSON.get().formatObject(
@@ -40,7 +44,13 @@ public class KafkaDeviceRecordPersitImpl implements IDeviceRecordPersit{
 		}
 	}
 	
-	private DefaultFetchObj parse(DefaultDeviceRecord defaultDeviceRecord){
+	private FetchObj parse(DefaultDeviceRecord defaultDeviceRecord){
+		if(MsgDefs._TYPE_BEGINNING.equals(defaultDeviceRecord.status())){
+			return new Beginning();
+		}
+		if(MsgDefs._TYPE_ENDING.equals(defaultDeviceRecord.status())){
+			return new Ending();
+		}
 		DefaultFetchObj defaultFetchObj=new DefaultFetchObj();
 		defaultFetchObj.setId(defaultDeviceRecord.getId());
 		defaultFetchObj.setName(defaultDeviceRecord.getName());

@@ -40,6 +40,7 @@ public class DistrLockTest {
 				public void run() {
 
 					while(true){
+						
 						NodeWorker nodeWorker=NodeWorkers.get(_i);
 						try{
 							nodeWorker.acquire();

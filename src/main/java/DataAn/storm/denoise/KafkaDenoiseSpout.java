@@ -29,6 +29,7 @@ import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
 import DataAn.storm.kafka.InnerConsumer;
+import DataAn.storm.kafka.MsgDefs;
 import DataAn.storm.zookeeper.DisAtomicLong;
 import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.NodeWorker;
@@ -213,14 +214,34 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		List<DefaultDeviceRecord> records=null;
 		while(true){
 			FetchObj fetchObj=next();
-			if(Beginning.class.isInstance(fetchObj)) continue;
+			if(Beginning.class.isInstance(fetchObj)) {
+				BatchContext batchContext=new BatchContext();
+				batchContext.setDenoiseTopic(topic);
+				if(records==null){
+					records=new ArrayList<>();
+				}
+				DefaultDeviceRecord beginning=new DefaultDeviceRecord();
+				beginning.setStatus(MsgDefs._TYPE_BEGINNING);
+				records.add(beginning);
+				collector.emit(new Values(records,batchContext),time);
+				break;
+			}
 			if(Ending.class.isInstance(fetchObj)) {
 				reachEnd=true;
+				DefaultDeviceRecord end=new DefaultDeviceRecord();
+				end.setStatus(MsgDefs._TYPE_ENDING);
+				BatchContext batchContext=new BatchContext();
+				batchContext.setDenoiseTopic(topic);
 				if(records!=null&&!records.isEmpty()){
+					records.add(end);
 					tuples.put(time, records);
-					BatchContext batchContext=new BatchContext();
-					batchContext.setDenoiseTopic(topic);
 					collector.emit(new Values(records,batchContext),time);
+					return;
+				}
+				else{
+					records=new ArrayList<>();
+					records.add(end);
+					collector.emit(new Values(records,batchContext),-1);
 					return;
 				}
 			}

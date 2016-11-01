@@ -4,7 +4,17 @@ import java.io.Serializable;
 
 public class Communication implements Serializable {
 
+	private String versions;
+	
+	private String filePath;
+	
 	private String fileName;
+	
+	private String series;
+	
+	private String star;
+	
+	private String name;
 	
 	private long sequence;
 	
@@ -53,6 +63,48 @@ public class Communication implements Serializable {
 	public void setOffset(long offset) {
 		this.offset = offset;
 	}
+
+	public String getVersions() {
+		return versions;
+	}
+
+	public void setVersions(String versions) {
+		this.versions = versions;
+	}
+
+	public String getFilePath() {
+		return filePath;
+	}
+
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
+
+	public String getSeries() {
+		return series;
+	}
+
+	public void setSeries(String series) {
+		this.series = series;
+	}
+
+	public String getStar() {
+		return star;
+	}
+
+	public void setStar(String star) {
+		this.star = star;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	
 	
 	
 }
