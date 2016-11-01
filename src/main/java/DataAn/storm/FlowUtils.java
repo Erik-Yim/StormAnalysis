@@ -7,6 +7,22 @@ import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
 public abstract class FlowUtils {
 
+	
+	public static Communication getBegin(ZookeeperExecutor executor,long sequence){
+		String path="/flow/"+sequence+"/communication/begin";
+		if(executor.exists(path)){
+			byte[] bytes=executor.getPath(path);
+			return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), Communication.class);
+		}
+		return null;
+	}
+	
+	public static void setBegin(ZookeeperExecutor executor,Communication communication){
+		String path="/flow/"+communication.getSequence()+"/communication/begin";
+		executor.setPath(path, JJSON.get().formatObject(communication));
+	}
+	
+	
 	public static Communication getDenoise(ZookeeperExecutor executor,long sequence){
 		String path="/flow/"+sequence+"/communication/denoise";
 		if(executor.exists(path)){
