@@ -22,9 +22,12 @@ public interface IMongoPersistService {
 			return new IMongoPersistService() {                
 				@Override
 				public void persist(MongoPeristModel mongoPeristModel, Map context) {
+					String series =  (String) context.get("series");
+					String star =  (String) context.get("star");
+					
 					Map<String, Object> content= JJSON.get().parse(mongoPeristModel.getContent());
 					MongodbUtil mg = MongodbUtil.getInstance();
-					MongoCollection<Document> collection = mg.getCollection("series_start", mongoPeristModel.getCollection());
+					MongoCollection<Document> collection = mg.getCollection(series+"_"+star, mongoPeristModel.getCollection());
 //					//List<Document> documentList = new ArrayList<Document>();
 //					Document doc = new Document();
 //					for(Map.Entry<String, Object> entry : content.entrySet()){
