@@ -6,6 +6,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.storm.shade.com.google.common.collect.Maps;
@@ -35,6 +38,8 @@ import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.NodeWorker;
 import DataAn.storm.zookeeper.NodeWorkers;
 import DataAn.storm.zookeeper.ZooKeeperClient;
+import DataAn.storm.zookeeper.ZooKeeperClient.Node;
+import DataAn.storm.zookeeper.ZooKeeperClient.NodeCallback;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
@@ -81,6 +86,8 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	private String topic;
 	
+	private boolean hasError;
+	
 	private void prepare(){
 		String topicPartition=communication.getTopicPartition();
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
@@ -121,6 +128,11 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		triggered=false;
 		sequence=-1;
 		topic=null;
+		hasError=false;
+	}
+	
+	public void setHasError(boolean hasError) {
+		this.hasError = hasError;
 	}
 	
 	protected void wakeup() {
@@ -134,6 +146,23 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		prepare();
 		triggered = true;
 		topic="data-denoise-"+disAtomicLong.getSequence();
+		final String path="/flow/"+communication.getSequence()+"/error";
+		if(!executor.exists(path)){
+			executor.createPath(path);
+		}
+		executor.watchPath(path, new NodeCallback() {
+			
+			@Override
+			public void call(Node node) {
+				setHasError(true);
+			}
+		} , Executors.newFixedThreadPool(1, new ThreadFactory() {
+			
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, path);
+			}
+		}));
 	}
 	
 	private void release(){
@@ -184,7 +213,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		
 		if(!errorTuples.isEmpty()){
 			if(failCount>3){
-				error(new RuntimeException("ss"));
+				error(new RuntimeException("some error..."));
 				release();
 				await();
 				return;

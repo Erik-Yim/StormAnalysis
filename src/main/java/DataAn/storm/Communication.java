@@ -23,6 +23,11 @@ public class Communication implements Serializable {
 	private int workerId;
 	
 	private long offset;
+	
+	private String zkPath;
+	
+	private String status;
+	
 
 	public String getFileName() {
 		return fileName;
@@ -103,8 +108,22 @@ public class Communication implements Serializable {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
-	
+
+	public String getZkPath() {
+		return zkPath;
+	}
+
+	public void setZkPath(String zkPath) {
+		this.zkPath = zkPath;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
 	
 	
 }

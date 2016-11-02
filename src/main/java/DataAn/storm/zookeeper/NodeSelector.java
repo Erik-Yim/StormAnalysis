@@ -21,6 +21,9 @@ import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.storm.shade.com.google.common.collect.Maps;
 
 import DataAn.common.utils.JJSON;
+import DataAn.storm.Communication;
+import DataAn.storm.ErrorMsg;
+import DataAn.storm.FlowUtils;
 import DataAn.storm.kafka.InnerProducer;
 import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
@@ -50,6 +53,8 @@ public class NodeSelector implements Serializable{
 	private SimpleProducer simpleProducer;
 	
 	private ExecutorService executorService=Executors.newFixedThreadPool(3);
+	
+	private CommunicationUtils communicationUtils;
 	
 	public static abstract class CacheType{
 		private static final String CHILD="patch_child";
@@ -91,7 +96,7 @@ public class NodeSelector implements Serializable{
 		this.executor = executor;
 		this.atomicLong=new DisAtomicLong(executor);
 		this.workflow=createWorkflow();
-		
+		communicationUtils=new CommunicationUtils(executor);
 		leaderLatch=new LeaderLatch(executor.backend(),
 				leaderPath());
 		leaderLatch.addListener(new LeaderLatchListener() {
@@ -342,6 +347,8 @@ public class NodeSelector implements Serializable{
 		
 		private long sequence;
 		
+		private Communication communication;
+		
 		private String rootPath;
 		
 		private Workflow workflow;
@@ -423,6 +430,9 @@ public class NodeSelector implements Serializable{
 			
 			if(c.hasChildren()){
 				instance.childPathWatcherPaths.add(instancePath);
+				if(instance.rootPath==null||"".equals(instance.rootPath)){
+					instance.rootPath=instancePath;
+				}
 				for(NodeData data:c.nodes){
 					createInstancePath(data, instance);
 				}
@@ -483,16 +493,35 @@ public class NodeSelector implements Serializable{
 	}
 	
 	private void start(Instance instance){
+		communicationUtils.start(instance.communication);
 		propagateWorkerPath(null, null, workflow.nodeData, instance);
 	}
 	
-	private void attachInstanceChildPathWatcher(Instance instance){
+	private void breakFlow(final Instance instance){
+		try {
+			for(InstanceNode instanceNode :instance.instanceNodes.values()){
+				instanceNode.pathChildrenCache.close();
+			}
+			communicationUtils.remove(instance.communication);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void attachInstanceChildPathWatcher(final Instance instance){
 		for(String path:instance.childPathWatcherPaths){
 			final String _path=path;
 			InstanceNode instanceNode=instance.instanceNodes.get(_path);
 			final PathChildrenCache cache= executor.watchChildrenPath(_path, new ZooKeeperClient.NodeChildrenCallback() {
 				@Override
 				public void call(List<Node> nodes) {
+					
+					ErrorMsg errorMsg= FlowUtils.getError(executor, instance.sequence);
+					if(errorMsg!=null){
+						breakFlow(instance);
+						return ;
+					}
+					
 					boolean done=true;
 					for(Node node:nodes){
 						byte[] bytes=node.getData();
@@ -506,11 +535,14 @@ public class NodeSelector implements Serializable{
 						}
 					}
 					
-					long instanceId=instanceSequence(_path);
+					long instanceId=instance.sequence;
 					
 					if(done){
 						complete(_path);
 						close(instanceId, _path, CacheType.CHILD);
+						if(_path.equals(instance.rootPath)){
+							communicationUtils.remove(instance.communication);
+						}
 					}
 					
 					Collections.sort(nodes, new Comparator<Node>() {
@@ -602,7 +634,7 @@ public class NodeSelector implements Serializable{
 		attachWorfkowTriggerWatcher();
 	}
 	
-	private Instance createInstance(){
+	private Instance createInstance(Communication communication){
 		Long sequence=getSequence();
 		Instance instance=new Instance();
 		instance.workflow=this.workflow;
@@ -626,7 +658,8 @@ public class NodeSelector implements Serializable{
 			
 			@Override
 			public void call(Node node) {
-				Instance instance=createInstance();
+				Communication communication=JJSON.get().parse(node.getStringData(), Communication.class);
+				Instance instance=createInstance(communication);
 				start(instance);
 			}
 		}, Executors.newFixedThreadPool(1, new ThreadFactory() {
