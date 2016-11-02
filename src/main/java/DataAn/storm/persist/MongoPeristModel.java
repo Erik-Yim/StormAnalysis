@@ -6,11 +6,32 @@ public class MongoPeristModel extends BaseFetchObj {
 
 	private Long  sequence;
 	
+	private String series;
+	
+	private String star;
+	
 	private String collection;
 	
 	private String content;
 	
 	private String key;
+	
+	
+	public String getSeries() {
+		return series;
+	}
+
+	public void setSeries(String series) {
+		this.series = series;
+	}
+
+	public String getStar() {
+		return star;
+	}
+
+	public void setStar(String star) {
+		this.star = star;
+	}
 
 	public String getCollection() {
 		return collection;

@@ -203,7 +203,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			}
 		}
 	}
-	
+			
 	@Override
 	public void nextTuple() {
 		
