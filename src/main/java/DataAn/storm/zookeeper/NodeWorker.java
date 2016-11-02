@@ -43,7 +43,7 @@ public class NodeWorker implements Serializable {
 
 	private LeaderLatch processorLeaderLatch;
 	
-	private String tempPath;
+	private WorkerTemporary workerTemporary;
 	
 	private Master master;
 	
@@ -98,6 +98,31 @@ public class NodeWorker implements Serializable {
 		
 	}
 	
+	public class WorkerTemporary implements Serializable {
+
+		private WorkerPathVal workerPathVal;
+		
+		private String tempPath;
+
+		public WorkerPathVal getWorkerPathVal() {
+			return workerPathVal;
+		}
+
+		public void setWorkerPathVal(WorkerPathVal workerPathVal) {
+			this.workerPathVal = workerPathVal;
+		}
+
+		public String getTempPath() {
+			return tempPath;
+		}
+
+		public void setTempPath(String tempPath) {
+			this.tempPath = tempPath;
+		}
+	}
+	
+	
+	
 	private void startWorker(){
 		final String path=path();
 		SingleMonitor singleMonitor=SingleMonitor.get(nodeSelecter.basePath()+"/worker-register-sync-lock"); 
@@ -116,7 +141,10 @@ public class NodeWorker implements Serializable {
 						final WorkerPathVal workerPathVal=
 								JJSON.get().parse(node.getStringData(),WorkerPathVal.class);
 						final String tempPath=executor.createEphSequencePath(path+"/temp-");
-						setTempPath(tempPath);
+						WorkerTemporary workerTemporary=new WorkerTemporary();
+						workerTemporary.setTempPath(tempPath);
+						workerTemporary.setWorkerPathVal(workerPathVal);
+						setWorkerTemporary(workerTemporary);
 						executorService.execute(new Runnable() {
 							@Override
 							public void run() {
@@ -263,13 +291,12 @@ public class NodeWorker implements Serializable {
 		throw new TimeoutException(" worker cannot be scheduled.");
 	}
 	
-	public void setTempPath(String tempPath) {
-		this.tempPath = tempPath;
+	public void setWorkerTemporary(WorkerTemporary workerTemporary) {
+		this.workerTemporary = workerTemporary;
 	}
 	
-	
 	public void release() throws Exception{
-		executor.deletePath(tempPath);
+		executor.deletePath(workerTemporary.getTempPath());
 	}
 	
 	private void wakeup(){
