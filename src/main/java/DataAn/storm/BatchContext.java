@@ -29,6 +29,8 @@ public class BatchContext extends HashMap<String,Object>{
 	
 	private String denoiseTopic;
 	
+	private Communication communication;
+	
 	public String getDenoiseTopic() {
 		return denoiseTopic;
 	}
@@ -109,4 +111,14 @@ public class BatchContext extends HashMap<String,Object>{
 	public void setConf(Map conf) {
 		this.conf = conf;
 	}
+
+	public Communication getCommunication() {
+		return communication;
+	}
+
+	public void setCommunication(Communication communication) {
+		this.communication = communication;
+	}
+	
+	
 }

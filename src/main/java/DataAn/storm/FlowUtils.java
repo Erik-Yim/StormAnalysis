@@ -2,6 +2,9 @@ package DataAn.storm;
 
 import java.nio.charset.Charset;
 
+import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.Tuple;
+
 import DataAn.common.utils.JJSON;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
@@ -69,7 +72,7 @@ public abstract class FlowUtils {
 	public static ErrorMsg getError(ZookeeperExecutor executor,long sequence){
 		String path="/flow/"+sequence+"/error";
 		byte[] bytes=executor.getPath(path);
-		if(bytes==null) return null;
+		if(bytes==null||bytes.length==0) return null;
 		return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), ErrorMsg.class);
 	}
 	
@@ -79,6 +82,22 @@ public abstract class FlowUtils {
 				JJSON.get().formatObject(errorMsg));
 	}
 	
+	public static void setError(ZookeeperExecutor executor,Tuple tuple, String message){
+		Communication communication=(Communication) tuple.getValueByField("communication");
+		setError(executor, communication, message);
+	}
 	
+	public static void setError(ZookeeperExecutor executor,TridentTuple tuple, String message){
+		Communication communication=(Communication) tuple.getValueByField("communication");
+		setError(executor, communication, message);
+	}
+	
+	public static void setError(ZookeeperExecutor executor,Communication communication, String message){
+		ErrorMsg errorMsg=new ErrorMsg();
+		errorMsg.setMsg(message);
+		errorMsg.setSequence(communication.getSequence());
+		errorMsg.setWorkerId(communication.getWorkerId());
+		setError(executor, errorMsg);
+	}
 	
 }

@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.storm.trident.operation.TridentCollector;
@@ -36,6 +38,8 @@ import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.NodeWorker;
 import DataAn.storm.zookeeper.NodeWorkers;
 import DataAn.storm.zookeeper.ZooKeeperClient;
+import DataAn.storm.zookeeper.ZooKeeperClient.Node;
+import DataAn.storm.zookeeper.ZooKeeperClient.NodeCallback;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
@@ -65,6 +69,8 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private long sequence;
 	
+	private boolean hasError;
+	
 	public SpecialEmitter(Map conf) {
 		this.conf=conf;
 		executor=new ZooKeeperClient()
@@ -90,6 +96,11 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		communication=null;
 		triggered=false;
 		sequence=-1;
+		hasError=false;
+	}
+	
+	public void setHasError(boolean hasError) {
+		this.hasError = hasError;
 	}
 	
 	protected void wakeup() throws Exception{
@@ -104,6 +115,23 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		prepare();
 		new IPropertyConfigStoreImpl().initialize(conf);
 		triggered = true;
+		final String path="/flow/"+communication.getSequence()+"/error";
+		if(!executor.exists(path)){
+			executor.createPath(path);
+		}
+		executor.watchPath(path, new NodeCallback() {
+			
+			@Override
+			public void call(Node node) {
+				setHasError(true);
+			}
+		} , Executors.newFixedThreadPool(1, new ThreadFactory() {
+			
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, path);
+			}
+		}));
 	}
 
 	private void prepare(){
@@ -158,73 +186,84 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	@Override
 	public void emitBatch(TransactionAttempt tx, BatchMeta nullMeta, TridentCollector collector) {
-
-		if(!triggered) {
-			await();
-		}
-		
-		if(reachEnd){
-			release();
-			await();
-			return ;
-		}
-		
-		long batchId=(long) tx.getTransactionId();
-		BatchMeta currMetadata=null;
-		if(store.containsKey(batchId)){
-			currMetadata=store.get(batchId);
-		}
-		else{
-			currMetadata=new BatchMeta();
-			currMetadata.setBatchId(batchId);
-			BatchMeta prevMetadata=getLatest(batchId);
-			long offset=-1;
-			if(prevMetadata!=null){
+		try{
+			if(!triggered) {
+				await();
+			}
+			
+			if(reachEnd){
+				release();
+				await();
+				return ;
+			}
+			
+			if(hasError){
+				release();
+				await();
+				return;
+			}
+			
+			long batchId=(long) tx.getTransactionId();
+			BatchMeta currMetadata=null;
+			if(store.containsKey(batchId)){
+				currMetadata=store.get(batchId);
+			}
+			else{
+				currMetadata=new BatchMeta();
+				currMetadata.setBatchId(batchId);
+				BatchMeta prevMetadata=getLatest(batchId);
+				long offset=-1;
 				if(prevMetadata!=null){
-					offset=prevMetadata.getOffsetStartEnd(consumer.getTopicPartition()[0]);
-				}
-			}
-			long offsetAdd=offset+1;
-			currMetadata.setTopicPartitionOffsetStart(consumer.getTopicPartition()[0],
-					offsetAdd);
-			currMetadata.setTopicPartitionOffsetEnd(consumer.getTopicPartition()[0],
-					offsetAdd);
-			store.put(batchId, currMetadata);
-		}
-		BatchContext batchContext=new BatchContext();
-		batchContext.setBatchId(batchId);
-		batchContext.setConf(conf);
-		
-		List<DefaultFetchObj> fetchObjs=new ArrayList<>();
-		for(Entry<String, Scope> entry:currMetadata.getTopicPartitionOffset().entrySet()){
-			consumer.seek(entry.getKey(), entry.getValue().start);
-		}
-		FetchObj fetchObj=null;
-		while(true){
-			FetchObjs fetchObjs2=consumer.next(timeout);
-			if(!fetchObjs2.isEmpty()){
-				Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
-				while(fetchObjIterator.hasNext()){
-					fetchObj=fetchObjIterator.next();
-					if(fetchObj instanceof Beginning) continue;
-					if(fetchObj instanceof Null) continue;
-					if(fetchObj instanceof Ending){
-						reachEnd=true;
-						break;
+					if(prevMetadata!=null){
+						offset=prevMetadata.getOffsetStartEnd(consumer.getTopicPartition()[0]);
 					}
-					fetchObjs.add((DefaultFetchObj) fetchObj);
-					currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
 				}
-				break;
+				long offsetAdd=offset+1;
+				currMetadata.setTopicPartitionOffsetStart(consumer.getTopicPartition()[0],
+						offsetAdd);
+				currMetadata.setTopicPartitionOffsetEnd(consumer.getTopicPartition()[0],
+						offsetAdd);
+				store.put(batchId, currMetadata);
 			}
+			BatchContext batchContext=new BatchContext();
+			batchContext.setBatchId(batchId);
+			batchContext.setConf(conf);
+			
+			List<DefaultFetchObj> fetchObjs=new ArrayList<>();
+			for(Entry<String, Scope> entry:currMetadata.getTopicPartitionOffset().entrySet()){
+				consumer.seek(entry.getKey(), entry.getValue().start);
+			}
+			FetchObj fetchObj=null;
+			while(true){
+				FetchObjs fetchObjs2=consumer.next(timeout);
+				if(!fetchObjs2.isEmpty()){
+					Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
+					while(fetchObjIterator.hasNext()){
+						fetchObj=fetchObjIterator.next();
+						if(fetchObj instanceof Beginning) continue;
+						if(fetchObj instanceof Null) continue;
+						if(fetchObj instanceof Ending){
+							reachEnd=true;
+							break;
+						}
+						fetchObjs.add((DefaultFetchObj) fetchObj);
+						currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
+					}
+					break;
+				}
+			}
+			
+			for(int i=0;i<fetchObjs.size();i++){
+				DefaultDeviceRecord defaultDeviceRecord=parse(fetchObjs.get(i));
+				defaultDeviceRecord.setBatchContext(batchContext);
+				defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
+				collector.emit(new Values(defaultDeviceRecord,batchContext));
+			}		
+		}catch (Exception e) {
+			setHasError(true);
+			error(e);
 		}
 		
-		for(int i=0;i<fetchObjs.size();i++){
-			DefaultDeviceRecord defaultDeviceRecord=parse(fetchObjs.get(i));
-			defaultDeviceRecord.setBatchContext(batchContext);
-			defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
-			collector.emit(new Values(defaultDeviceRecord,batchContext));
-		}		
 	}
 	
 	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){

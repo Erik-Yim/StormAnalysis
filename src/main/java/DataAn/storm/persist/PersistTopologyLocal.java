@@ -14,7 +14,7 @@ public class PersistTopologyLocal {
 		
 		StormTopology stormTopology=new PersistTopologyBuilder().build(persistConfig);
 		Config conf=new Config();
-		KafkaNameKeys.setKafkaTopicPartition(conf, "persist-replicated-1:0");
+		KafkaNameKeys.setKafkaTopicPartition(conf, "data-persist:0");
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		conf.setMessageTimeoutSecs(10000);
 		int runtimeInSeconds=100000;

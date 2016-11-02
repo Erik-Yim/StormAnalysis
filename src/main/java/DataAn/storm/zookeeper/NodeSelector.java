@@ -81,7 +81,7 @@ public class NodeSelector implements Serializable{
 			nodeSelector.conf=conf;
 			InnerProducer innerProducer=new InnerProducer(conf);
 			SimpleProducer simpleProducer =new SimpleProducer(innerProducer, 
-					"wokflow-instance", 0);
+					"workflow-instance-track", 0);
 			nodeSelector.simpleProducer=simpleProducer;
 			map.put(name, nodeSelector);
 		}
@@ -96,7 +96,7 @@ public class NodeSelector implements Serializable{
 		this.executor = executor;
 		this.atomicLong=new DisAtomicLong(executor);
 		this.workflow=createWorkflow();
-		communicationUtils=new CommunicationUtils(executor);
+		communicationUtils=new CommunicationUtils(executor,false);
 		leaderLatch=new LeaderLatch(executor.backend(),
 				leaderPath());
 		leaderLatch.addListener(new LeaderLatchListener() {
@@ -500,6 +500,7 @@ public class NodeSelector implements Serializable{
 	private void breakFlow(final Instance instance){
 		try {
 			for(InstanceNode instanceNode :instance.instanceNodes.values()){
+				if(instanceNode.pathChildrenCache!=null)
 				instanceNode.pathChildrenCache.close();
 			}
 			communicationUtils.remove(instance.communication);
@@ -516,75 +517,81 @@ public class NodeSelector implements Serializable{
 				@Override
 				public void call(List<Node> nodes) {
 					
-					ErrorMsg errorMsg= FlowUtils.getError(executor, instance.sequence);
-					if(errorMsg!=null){
-						breakFlow(instance);
-						return ;
-					}
-					
-					boolean done=true;
-					for(Node node:nodes){
-						byte[] bytes=node.getData();
-						if(bytes==null){
-							bytes=executor.getPath(node.getPath());
+					try{
+						ErrorMsg errorMsg= FlowUtils.getError(executor, instance.sequence);
+						if(errorMsg!=null){
+							breakFlow(instance);
+							return ;
 						}
-						InstanceNodeVal instanceNodeVal=JJSON.get().parse(new String(bytes, Charset.forName("utf-8")),
-								InstanceNodeVal.class);
-						if(!NodeStatus.COMPLETE.equals(instanceNodeVal.status)){
-							done=false;
-						}
-					}
-					
-					long instanceId=instance.sequence;
-					
-					if(done){
-						complete(_path);
-						close(instanceId, _path, CacheType.CHILD);
-						if(_path.equals(instance.rootPath)){
-							communicationUtils.remove(instance.communication);
-						}
-					}
-					
-					Collections.sort(nodes, new Comparator<Node>() {
-						@Override
-						public int compare(Node o1, Node o2) {
-							return pathSequence(o1.getPath())-pathSequence(o2.getPath());
-						}
-					});
-					
-					
-					Instance instance=master.instances.get(instanceId);
-					InstanceNode instanceNode=instance.instanceNodes.get(_path);
-					if("0".equals(instanceNode.nodeData.parallel)){
-						InstanceNodeVal latestNode=null;
-						for(int i=nodes.size()-1;i>-1;i--){
-							Node tempNode=nodes.get(i);
-							byte[] bytes=tempNode.getData();
+						
+						boolean done=true;
+						for(Node node:nodes){
+							byte[] bytes=node.getData();
 							if(bytes==null){
-								bytes=executor.getPath(tempNode.getPath());
+								bytes=executor.getPath(node.getPath());
 							}
-							InstanceNodeVal instanceNodeVal=JJSON.get().parse(
-									new String(bytes, Charset.forName("utf-8")),
+							InstanceNodeVal instanceNodeVal=JJSON.get().parse(new String(bytes, Charset.forName("utf-8")),
 									InstanceNodeVal.class);
 							if(!NodeStatus.COMPLETE.equals(instanceNodeVal.status)){
-								latestNode=instanceNodeVal;
-							}
-							else{
-								break;
+								done=false;
 							}
 						}
-						if(latestNode!=null){
-							NodeData nodeData=instanceNode.nodeData;
-							NodeData find=null;
-							for(NodeData temp:nodeData.nodes){
-								if(temp.id==latestNode.id){
-									find=temp;
+						
+						long instanceId=instance.sequence;
+						
+						if(done){
+							complete(_path);
+							close(instanceId, _path, CacheType.CHILD);
+							if(_path.equals(instance.rootPath)){
+								communicationUtils.remove(instance.communication);
+							}
+						}
+						
+						Collections.sort(nodes, new Comparator<Node>() {
+							@Override
+							public int compare(Node o1, Node o2) {
+								return pathSequence(o1.getPath())-pathSequence(o2.getPath());
+							}
+						});
+						
+						
+						Instance instance=master.instances.get(instanceId);
+						InstanceNode instanceNode=instance.instanceNodes.get(_path);
+						if("0".equals(instanceNode.nodeData.parallel)){
+							InstanceNodeVal latestNode=null;
+							for(int i=nodes.size()-1;i>-1;i--){
+								Node tempNode=nodes.get(i);
+								byte[] bytes=tempNode.getData();
+								if(bytes==null){
+									bytes=executor.getPath(tempNode.getPath());
+								}
+								InstanceNodeVal instanceNodeVal=JJSON.get().parse(
+										new String(bytes, Charset.forName("utf-8")),
+										InstanceNodeVal.class);
+								if(!NodeStatus.COMPLETE.equals(instanceNodeVal.status)){
+									latestNode=instanceNodeVal;
+								}
+								else{
 									break;
 								}
 							}
-							propagateWorkerPath(latestNode, instanceNode, find,
-									instance);
+							if(latestNode!=null){
+								NodeData nodeData=instanceNode.nodeData;
+								NodeData find=null;
+								for(NodeData temp:nodeData.nodes){
+									if(temp.id==latestNode.id){
+										find=temp;
+										break;
+									}
+								}
+								propagateWorkerPath(latestNode, instanceNode, find,
+										instance);
+							}
 						}
+					}catch (Exception e) {
+						e.printStackTrace();
+						FlowUtils.setError(executor, instance.communication, e.getMessage());
+						breakFlow(instance);
 					}
 				}
 				
@@ -639,13 +646,11 @@ public class NodeSelector implements Serializable{
 		Instance instance=new Instance();
 		instance.workflow=this.workflow;
 		instance.sequence=sequence;
-		
-		master.instances.put(sequence, instance);
-		
+		instance.communication=communication;
+		communication.setSequence(sequence);
 		createInstancePath(instance.workflow.nodeData,instance);
-		
 		attachInstanceChildPathWatcher(instance);
-		
+		master.instances.put(sequence, instance);
 		return instance;
 	}
 	
@@ -660,7 +665,12 @@ public class NodeSelector implements Serializable{
 			public void call(Node node) {
 				Communication communication=JJSON.get().parse(node.getStringData(), Communication.class);
 				Instance instance=createInstance(communication);
-				start(instance);
+				try{
+					start(instance);
+				}catch (Exception e) {
+					breakFlow(instance);
+				}
+				
 			}
 		}, Executors.newFixedThreadPool(1, new ThreadFactory() {
 			@Override

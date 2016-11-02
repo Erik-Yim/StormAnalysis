@@ -20,32 +20,42 @@ public class CommunicationUtils implements Serializable{
 	private ZookeeperExecutor executor;
 	
 	public CommunicationUtils(final ZookeeperExecutor executor) {
+		this(executor,true);
+	}
+	public CommunicationUtils(final ZookeeperExecutor executor,boolean start) {
 		this.executor = executor;
-		executor.watchChildrenPath("/flow-tasks/", new ZooKeeperClient.NodeChildrenCallback() {
-			@Override
-			public void call(List<Node> nodes) {
-				Collections.sort(nodes, new Comparator<Node>() {
-					@Override
-					public int compare(Node o1, Node o2) {
-						return pathSequence(o1.getPath())-pathSequence(o2.getPath());
-					}
-				});
-				
-				if(nodes.size()>0){
-					Node node=nodes.get(0);
-					Communication communication= JJSON.get().parse(node.getStringData(), Communication.class);
-					if(NodeStatus.READY.equals(communication.getStatus())){
-						executor.setPath("/locks/worker-schedule/workflow-trigger/default",
-								JJSON.get().formatObject(communication));
+		if(start){
+			executor.watchChildrenPath("/flow-tasks", new ZooKeeperClient.NodeChildrenCallback() {
+				@Override
+				public void call(List<Node> nodes) {
+					Collections.sort(nodes, new Comparator<Node>() {
+						@Override
+						public int compare(Node o1, Node o2) {
+							return pathSequence(o1.getPath())-pathSequence(o2.getPath());
+						}
+					});
+					
+					if(nodes.size()>0){
+						Node node=nodes.get(0);
+						byte[] bytes=node.getData();
+						if(bytes==null){
+							bytes=executor.getPath(node.getPath());
+						}
+						Communication communication= JJSON.get().parse(
+								new String(bytes,Charset.forName("utf-8")), Communication.class);
+						communication.setZkPath(node.getPath());
+						if(NodeStatus.READY.equals(communication.getStatus())){
+							executor.setPath("/locks/worker-schedule/workflow-trigger/default",
+									JJSON.get().formatObject(communication));
+						}
 					}
 				}
-			}
-			private int pathSequence(String path){
-				String lastStr=path.substring(path.lastIndexOf("/"));
-				return Integer.parseInt(lastStr.substring(lastStr.lastIndexOf("-")+1));
-			}
-		});
-		
+				private int pathSequence(String path){
+					String lastStr=path.substring(path.lastIndexOf("/"));
+					return Integer.parseInt(lastStr.substring(lastStr.lastIndexOf("-")+1));
+				}
+			});
+		}
 	}
 
 	public void add(Communication communication){

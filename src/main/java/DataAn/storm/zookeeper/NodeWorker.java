@@ -132,7 +132,8 @@ public class NodeWorker implements Serializable {
 				WorkerPathVal workerPathVal=new WorkerPathVal();
 				workerPathVal.setId(id);
 				workerPathVal.setTime(new Date().getTime());
-				executor.createPath(path,JJSON.get().formatObject(workerPathVal).getBytes(Charset.forName("utf-8")),CreateMode.PERSISTENT);
+				executor.createPath(path,JJSON.get().formatObject(workerPathVal).getBytes(Charset.forName("utf-8")),
+						CreateMode.PERSISTENT);
 			}
 			executor.watchPath(path, new ZooKeeperClient.NodeCallback () {
 				@Override

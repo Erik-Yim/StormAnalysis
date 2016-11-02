@@ -16,7 +16,11 @@ import org.apache.storm.tuple.Values;
 
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
+import DataAn.storm.FlowUtils;
 import DataAn.storm.denoise.IDenoiseFilterNodeProcessor.IDenoiseFilterNodeProcessorGetter;
+import DataAn.storm.zookeeper.ZooKeeperClient;
+import DataAn.storm.zookeeper.ZooKeeperNameKeys;
+import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
 
 @SuppressWarnings({"serial","unchecked","rawtypes"})
@@ -29,7 +33,17 @@ public class DenoiseTopologyBuilder implements Serializable {
 		tridentTopology.newStream("denoise-task-stream", new KafkaDenoiseSpout())
 		.shuffle()
 		.each(new Fields("record","batchContext"), new BaseFunction() {
-//			int i=0;
+
+			protected ZookeeperExecutor executor;
+			
+			@Override
+			public void prepare(Map conf, TridentOperationContext context) {
+				executor=new ZooKeeperClient()
+						.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
+						.namespace(ZooKeeperNameKeys.getNamespace(conf))
+						.build();
+			}
+			
 			@Override
 			public void execute(TridentTuple tuple, TridentCollector collector) {
 				try{
@@ -42,6 +56,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 //						throw new RuntimeException("dd");
 //					}
 				}catch (Exception e) {
+					FlowUtils.setError(executor, tuple, e.getMessage());
 					throw new FailedException(e);
 				}
 			}
@@ -50,9 +65,15 @@ public class DenoiseTopologyBuilder implements Serializable {
 			
 			private Map conf;
 			
+			protected ZookeeperExecutor executor;
+			
 			@Override
 			public void prepare(Map conf, TridentOperationContext context) {
 				this.conf=conf;
+				executor=new ZooKeeperClient()
+						.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
+						.namespace(ZooKeeperNameKeys.getNamespace(conf))
+						.build();
 			}
 			
 			@Override
@@ -63,6 +84,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 					BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
 					batchContext.getDeviceRecordPersit().persist(conf, batchContext, defaultDeviceRecords.toArray(new DefaultDeviceRecord[]{}));
 				}catch (Exception e) {
+					FlowUtils.setError(executor, tuple, e.getMessage());
 					throw new FailedException(e);
 				}
 			}

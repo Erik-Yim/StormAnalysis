@@ -1,21 +1,25 @@
 package DataAn.storm.exceptioncheck;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.BaseAggregator;
-import org.apache.storm.trident.operation.BaseFilter;
 import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
-import DataAn.storm.denoise.IDenoiseFilterNodeProcessor;
+import DataAn.storm.FlowUtils;
 import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
 import DataAn.storm.interfece.InterfaceGetter;
+import DataAn.storm.zookeeper.ZooKeeperClient;
+import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
+import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
 
 @SuppressWarnings("serial")
@@ -37,6 +41,16 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 //		})
 		.aggregate(new Fields("record","batchContext") , new BaseAggregator<IExceptionCheckNodeProcessor>() {
 
+			protected ZookeeperExecutor executor;
+			
+			@Override
+			public void prepare(Map conf, TridentOperationContext context) {
+				executor=new ZooKeeperClient()
+						.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
+						.namespace(ZooKeeperNameKeys.getNamespace(conf))
+						.build();
+			}
+			
 			@Override
 			public IExceptionCheckNodeProcessor init(Object batchId,
 					TridentCollector collector) {
@@ -47,12 +61,18 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 			@Override
 			public void aggregate(IExceptionCheckNodeProcessor val, TridentTuple tuple,
 					TridentCollector collector) {
-				if(val.getBatchContext()==null){
-					val.setBatchContext((BatchContext) tuple.getValueByField("batchContext"));
+				try{
+					if(val.getBatchContext()==null){
+						val.setBatchContext((BatchContext) tuple.getValueByField("batchContext"));
+					}
+					DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
+					System.out.println("aggregate thread["+Thread.currentThread().getName() + "] tuple ["+defaultDeviceRecord.getTime()+","+defaultDeviceRecord.getSequence()+"] _ >  batch ["+defaultDeviceRecord.getBatchContext().getBatchId()+"]");
+//					val.process(defaultDeviceRecord);
+				}catch (Exception e) {
+					FlowUtils.setError(executor, tuple, e.getMessage());
+					throw new FailedException(e);
 				}
-				DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
-				System.out.println("aggregate thread["+Thread.currentThread().getName() + "] tuple ["+defaultDeviceRecord.getTime()+","+defaultDeviceRecord.getSequence()+"] _ >  batch ["+defaultDeviceRecord.getBatchContext().getBatchId()+"]");
-//				val.process(defaultDeviceRecord);
+				
 			}
 
 			@Override
@@ -60,6 +80,7 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 				try {
 					val.persist();
 				} catch (Exception e) {
+					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), e.getMessage());
 					throw new FailedException(e);
 				}
 			}

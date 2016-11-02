@@ -139,7 +139,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-		long sequence=1000;  // workerPathVal.getSequence()
+		long sequence=workerPathVal.getSequence();
 		this.communication = FlowUtils.getDenoise(executor,sequence);
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
@@ -207,95 +207,106 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	@Override
 	public void nextTuple() {
 		
-		if(!triggered) {
-			await();
-		}
-		
-		if(!errorTuples.isEmpty()){
-			if(failCount>3){
-				error(new RuntimeException("some error..."));
+		try{
+			if(!triggered) {
+				await();
+			}
+			
+			if(hasError){
 				release();
 				await();
 				return;
 			}
-			if(iter==null){
-				iter=errorTuples.entrySet().iterator();
-				failCount++;
-			}
-			if(iter.hasNext()){
-				Entry<Long, List<DefaultDeviceRecord>> entry=iter.next();
-				BatchContext batchContext=new BatchContext();
-				batchContext.setDenoiseTopic(topic);
-				collector.emit(new Values(entry.getValue(),batchContext),entry.getKey());
-			}
-			return ;
-		}
-		
-		if(reachEnd){
-			release();
-			await();
-			return ;
-		}
-		
-		
-		failCount=0;
-		long time=0;
-		List<DefaultDeviceRecord> records=null;
-		while(true){
-			FetchObj fetchObj=next();
-			if(Beginning.class.isInstance(fetchObj)) {
-				BatchContext batchContext=new BatchContext();
-				batchContext.setDenoiseTopic(topic);
-				if(records==null){
-					records=new ArrayList<>();
-				}
-				DefaultDeviceRecord beginning=new DefaultDeviceRecord();
-				beginning.setStatus(MsgDefs._TYPE_BEGINNING);
-				records.add(beginning);
-				collector.emit(new Values(records,batchContext),time);
-				break;
-			}
-			if(Ending.class.isInstance(fetchObj)) {
-				reachEnd=true;
-				DefaultDeviceRecord end=new DefaultDeviceRecord();
-				end.setStatus(MsgDefs._TYPE_ENDING);
-				BatchContext batchContext=new BatchContext();
-				batchContext.setDenoiseTopic(topic);
-				if(records!=null&&!records.isEmpty()){
-					records.add(end);
-					tuples.put(time, records);
-					collector.emit(new Values(records,batchContext),time);
+			
+			if(!errorTuples.isEmpty()){
+				if(failCount>3){
+					error(new RuntimeException("some error..."));
+					release();
+					await();
 					return;
 				}
-				else{
-					records=new ArrayList<>();
-					records.add(end);
-					collector.emit(new Values(records,batchContext),-1);
-					return;
+				if(iter==null){
+					iter=errorTuples.entrySet().iterator();
+					failCount++;
 				}
+				if(iter.hasNext()){
+					Entry<Long, List<DefaultDeviceRecord>> entry=iter.next();
+					BatchContext batchContext=new BatchContext();
+					batchContext.setDenoiseTopic(topic);
+					collector.emit(new Values(entry.getValue(),batchContext),entry.getKey());
+				}
+				return ;
 			}
 			
-			DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
-			if(time==0){
-				time=defaultDeviceRecord.get_time();
-				records=new ArrayList<>();
-				defaultDeviceRecord.setSequence(atomicLong.get());
-				records.add(defaultDeviceRecord);
+			if(reachEnd){
+				release();
+				await();
+				return ;
 			}
-			else{
-				if(time!=defaultDeviceRecord.get_time()){
+			
+			
+			failCount=0;
+			long time=0;
+			List<DefaultDeviceRecord> records=null;
+			while(true){
+				FetchObj fetchObj=next();
+				if(Beginning.class.isInstance(fetchObj)) {
+					BatchContext batchContext=new BatchContext();
+					batchContext.setDenoiseTopic(topic);
+					if(records==null){
+						records=new ArrayList<>();
+					}
+					DefaultDeviceRecord beginning=new DefaultDeviceRecord();
+					beginning.setStatus(MsgDefs._TYPE_BEGINNING);
+					records.add(beginning);
+					collector.emit(new Values(records,batchContext),time);
 					break;
 				}
-				else{
+				if(Ending.class.isInstance(fetchObj)) {
+					reachEnd=true;
+					DefaultDeviceRecord end=new DefaultDeviceRecord();
+					end.setStatus(MsgDefs._TYPE_ENDING);
+					BatchContext batchContext=new BatchContext();
+					batchContext.setDenoiseTopic(topic);
+					if(records!=null&&!records.isEmpty()){
+						records.add(end);
+						tuples.put(time, records);
+						collector.emit(new Values(records,batchContext),time);
+						return;
+					}
+					else{
+						records=new ArrayList<>();
+						records.add(end);
+						collector.emit(new Values(records,batchContext),-1);
+						return;
+					}
+				}
+				
+				DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
+				if(time==0){
+					time=defaultDeviceRecord.get_time();
+					records=new ArrayList<>();
 					defaultDeviceRecord.setSequence(atomicLong.get());
 					records.add(defaultDeviceRecord);
 				}
+				else{
+					if(time!=defaultDeviceRecord.get_time()){
+						break;
+					}
+					else{
+						defaultDeviceRecord.setSequence(atomicLong.get());
+						records.add(defaultDeviceRecord);
+					}
+				}
 			}
+			tuples.put(time, records);
+			BatchContext batchContext=new BatchContext();
+			batchContext.setDenoiseTopic(topic);
+			collector.emit(new Values(records,batchContext),time);
+		}catch (Exception e) {
+			setHasError(true);
+			error(e);
 		}
-		tuples.put(time, records);
-		BatchContext batchContext=new BatchContext();
-		batchContext.setDenoiseTopic(topic);
-		collector.emit(new Values(records,batchContext),time);
 	}
 	
 	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){

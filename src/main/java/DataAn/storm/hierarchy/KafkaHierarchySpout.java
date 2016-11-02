@@ -3,6 +3,9 @@ package DataAn.storm.hierarchy;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -30,6 +33,8 @@ import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.NodeWorker;
 import DataAn.storm.zookeeper.NodeWorkers;
 import DataAn.storm.zookeeper.ZooKeeperClient;
+import DataAn.storm.zookeeper.ZooKeeperClient.Node;
+import DataAn.storm.zookeeper.ZooKeeperClient.NodeCallback;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
@@ -46,8 +51,6 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 	
 	private int timeout=30000;
 	
-	private Fields fields;
-	
 	protected ZookeeperExecutor executor;
 	
 	protected NodeWorker nodeWorker;
@@ -61,9 +64,10 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 	private int workerId;
 	
 	private long sequence;
+	
+	private boolean hasError;
 
-	public KafkaHierarchySpout(Fields fields) {
-		this.fields = fields;
+	public KafkaHierarchySpout() {
 	}
 	
 	@Override
@@ -96,6 +100,7 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		communication=null;
 		triggered=false;
 		sequence=-1;
+		hasError=false;
 	}
 	
 	protected void wakeup() {
@@ -108,6 +113,22 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
 		triggered = true;
+		final String path="/flow/"+communication.getSequence()+"/error";
+		if(!executor.exists(path)){
+			executor.createPath(path);
+		}
+		executor.watchPath(path, new NodeCallback() {
+			@Override
+			public void call(Node node) {
+				setHasError(true);
+			}
+		} , Executors.newFixedThreadPool(1, new ThreadFactory() {
+			
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, path);
+			}
+		}));
 	}
 	
 	private void release(){
@@ -152,36 +173,55 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 	@Override
 	public void nextTuple() {
 		
-		if(!triggered) {
-			await();
-		}
-		
-		if(reachEnd){
-			release();
-			await();
-			return ;
-		}
-		
-		FetchObj fetchObj=null;
-		while(true){
-			FetchObjs fetchObjs=consumer.next(timeout);
-			if(!fetchObjs.isEmpty()){
-				Iterator<FetchObj> fetchObjIterator= fetchObjs.iterator();
-				while(fetchObjIterator.hasNext()){
-					fetchObj=fetchObjIterator.next();
-					if(fetchObj instanceof Beginning) continue;
-					if(fetchObj instanceof Null) continue;
-					if(fetchObj instanceof Ending){
-						reachEnd=true;
-						break;
-					}
-					DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
-					defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
-					collector.emit(new Values(defaultDeviceRecord));
-				}
-				break;
+		try{
+			
+			if(!triggered) {
+				await();
 			}
+			
+			if(hasError){
+				release();
+				await();
+				return;
+			}
+			
+			
+			if(reachEnd){
+				release();
+				await();
+				return ;
+			}
+			
+			FetchObj fetchObj=null;
+			while(true){
+				FetchObjs fetchObjs=consumer.next(timeout);
+				if(!fetchObjs.isEmpty()){
+					Iterator<FetchObj> fetchObjIterator= fetchObjs.iterator();
+					while(fetchObjIterator.hasNext()){
+						fetchObj=fetchObjIterator.next();
+						if(fetchObj instanceof Beginning) continue;
+						if(fetchObj instanceof Null) continue;
+						if(fetchObj instanceof Ending){
+							reachEnd=true;
+							break;
+						}
+						DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
+						defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
+						collector.emit(new Values(defaultDeviceRecord,communication));
+					}
+					break;
+				}
+			}
+		}catch (Exception e) {
+			setHasError(true);
+			error(e);
 		}
+		
+		
+	}
+	
+	public void setHasError(boolean hasError) {
+		this.hasError = hasError;
 	}
 	
 	private HierarchyDeviceRecord parse(DefaultFetchObj defaultFetchObj){
@@ -201,7 +241,7 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(fields);
+		declarer.declare(new Fields("record","communication"));
 	}
 
 	@Override
@@ -213,9 +253,5 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 	public void fail(Object msgId) {
 		super.fail(msgId);
 	}
-	
-	
-	
-	
 	
 }

@@ -12,12 +12,10 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 import DataAn.common.utils.JJSON;
-import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.kafka.BaseConsumer;
 import DataAn.storm.kafka.BaseConsumer.FetchObjs;
 import DataAn.storm.kafka.BaseConsumer.SimpleConsumer;
 import DataAn.storm.kafka.BaseFetchObj;
-import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.FetchObj;
 import DataAn.storm.kafka.FetchObjParser;
 import DataAn.storm.kafka.InnerConsumer;
@@ -61,37 +59,18 @@ public class PersistKafkaSpout extends BaseRichSpout {
 		
 	}
 	
-	
-	
 	@Override
 	public void nextTuple() {
 		MongoPeristModel mongoPeristModel=null;
-		while(true){
-			FetchObjs fetchObjs2=consumer.next(timeout);
-			if(!fetchObjs2.isEmpty()){
-				Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
-				while(fetchObjIterator.hasNext()){
-					mongoPeristModel=(MongoPeristModel) fetchObjIterator.next();
-					mongoPeristModel.setSequence(atomicLong.incrementAndGet());
-					collector.emit(new Values(mongoPeristModel));
-				}
+		FetchObjs fetchObjs2=consumer.next(timeout);
+		if(!fetchObjs2.isEmpty()){
+			Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
+			while(fetchObjIterator.hasNext()){
+				mongoPeristModel=(MongoPeristModel) fetchObjIterator.next();
+				mongoPeristModel.setSequence(atomicLong.incrementAndGet());
+				collector.emit(new Values(mongoPeristModel));
 			}
 		}
-	}
-	
-	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){
-		DefaultDeviceRecord defaultDeviceRecord=new DefaultDeviceRecord();
-		
-		defaultDeviceRecord.setId(defaultFetchObj.getId());
-		defaultDeviceRecord.setName(defaultFetchObj.getName());
-		defaultDeviceRecord.setProperties(defaultFetchObj.getProperties());
-		defaultDeviceRecord.setPropertyVals(defaultFetchObj.getPropertyVals());
-		defaultDeviceRecord.setSeries(defaultFetchObj.getSeries());
-		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
-		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
-		defaultDeviceRecord.set_time(defaultFetchObj.get_time());
-		
-		return defaultDeviceRecord;
 	}
 
 	@Override

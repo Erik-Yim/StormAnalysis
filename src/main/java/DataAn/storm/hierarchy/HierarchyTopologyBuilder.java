@@ -12,7 +12,7 @@ public class HierarchyTopologyBuilder implements Serializable {
 
 	public StormTopology build(HierarchyConfig exceptionCheckConfig) throws Exception {
 		TopologyBuilder topologyBuilder=new TopologyBuilder();
-		topologyBuilder.setSpout("hierarchy-task-spout", new KafkaHierarchySpout(new Fields("record")));
+		topologyBuilder.setSpout("hierarchy-task-spout", new KafkaHierarchySpout());
 		topologyBuilder.setBolt("hierarchy-task-cal-bolt", new HierarchyCalBolt(),2)
 		.shuffleGrouping("hierarchy-task-spout");
 		topologyBuilder.setBolt("hierarchy-task-persist-bolt", new HierarchyPersistBolt(),3)

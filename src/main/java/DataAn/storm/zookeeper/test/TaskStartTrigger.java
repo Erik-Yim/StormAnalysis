@@ -2,15 +2,12 @@ package DataAn.storm.zookeeper.test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.storm.utils.Utils;
 
-import com.google.common.collect.Maps;
-
-import DataAn.common.utils.JJSON;
 import DataAn.storm.Communication;
-import DataAn.storm.FlowUtils;
-import DataAn.storm.zookeeper.DefaultNodeDataGenerator;
+import DataAn.storm.zookeeper.CommunicationUtils;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
@@ -28,24 +25,18 @@ public class TaskStartTrigger {
 		Communication communication=new Communication();
 		communication.setFileName("j9-02--2016-02-01.csv");
 		communication.setOffset(0);
-		communication.setSequence(1000);
 		communication.setFilePath("c:\\j9-02--2016-02-01.csv");
-		communication.setVersions("aaaa-bbbb");
+		communication.setVersions(UUID.randomUUID().toString());
+		communication.setTopicPartition("test-data-2:0");
+		communication.setSeries("series1");
+		communication.setStar("star1");
+		communication.setName("device1");
 		
-		FlowUtils.setBegin(executor, communication);
+		CommunicationUtils communicationUtils=new CommunicationUtils(executor,true);
+		Utils.sleep(3000);
+		communicationUtils.add(communication);
 		
-		FlowUtils.setDenoise(executor, communication);
-		
-//		FlowUtils.setExcep(executor, communication);
-		
-		FlowUtils.setHierarchy(executor, communication);
-		
-		System.out.println("-----------");
-		
-		executor.setPath("/locks/worker-schedule/workflow-trigger/default",
-				JJSON.get().formatObject(DefaultNodeDataGenerator.INSTANCE.generate("", Maps.newConcurrentMap())));
-		
-		Utils.sleep(1000);
+		Utils.sleep(1000000);
 	}
 	
 }

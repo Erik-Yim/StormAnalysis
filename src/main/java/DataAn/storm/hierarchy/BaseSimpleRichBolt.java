@@ -10,6 +10,13 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
+import DataAn.storm.Communication;
+import DataAn.storm.ErrorMsg;
+import DataAn.storm.FlowUtils;
+import DataAn.storm.zookeeper.ZooKeeperClient;
+import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
+import DataAn.storm.zookeeper.ZooKeeperNameKeys;
+
 @SuppressWarnings({"serial","rawtypes"})
 public abstract class BaseSimpleRichBolt extends org.apache.storm.topology.base.BaseRichBolt {
 
@@ -21,6 +28,9 @@ public abstract class BaseSimpleRichBolt extends org.apache.storm.topology.base.
 	
 	private Fields fields; 
 	
+	protected ZookeeperExecutor executor;
+	
+	
 	public BaseSimpleRichBolt(Fields fields) {
 		this.fields = fields;
 	}
@@ -30,6 +40,10 @@ public abstract class BaseSimpleRichBolt extends org.apache.storm.topology.base.
 		this.collector=collector;
 		this.stormConf=stormConf;
 		this.context=context;
+		executor=new ZooKeeperClient()
+				.connectString(ZooKeeperNameKeys.getZooKeeperServer(stormConf))
+				.namespace(ZooKeeperNameKeys.getNamespace(stormConf))
+				.build();
 	}
 	
 	protected final Map getStormConf() {
@@ -41,6 +55,7 @@ public abstract class BaseSimpleRichBolt extends org.apache.storm.topology.base.
 		try{
 			doExecute(tuple);
 		}catch (Exception e) {
+			FlowUtils.setError(executor, tuple, e.getMessage());
 			throw new FailedException(e);
 		}
 	}
