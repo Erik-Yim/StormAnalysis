@@ -35,8 +35,8 @@ public class TestClass {
 		keyVal.put("fileName", "011");
 		keyVal.put("statusType", "1");
 		keyVal.put("userType", "flywheel");
-		String sys = ig.get().sendStatus(keyVal);
-		System.out.println(sys);
+		//String sys = ig.get().sendStatus(keyVal);
+		//System.out.println(sys);
 		
 }
 
