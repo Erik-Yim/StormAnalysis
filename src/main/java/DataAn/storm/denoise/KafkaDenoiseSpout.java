@@ -2,11 +2,11 @@ package DataAn.storm.denoise;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
@@ -145,7 +145,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
 		triggered = true;
-		topic="data-denoise-"+disAtomicLong.getSequence();
+		topic="data-denoise-"+disAtomicLong.getSequence()+"-"+new Date().getTime();
 		final String path="/flow/"+communication.getSequence()+"/error";
 		if(!executor.exists(path)){
 			executor.createPath(path);
@@ -231,8 +231,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 				}
 				if(iter.hasNext()){
 					Entry<Long, List<DefaultDeviceRecord>> entry=iter.next();
-					BatchContext batchContext=new BatchContext();
-					batchContext.setDenoiseTopic(topic);
+					BatchContext batchContext = getBatchContext();
 					collector.emit(new Values(entry.getValue(),batchContext),entry.getKey());
 				}
 				return ;
@@ -251,8 +250,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			while(true){
 				FetchObj fetchObj=next();
 				if(Beginning.class.isInstance(fetchObj)) {
-					BatchContext batchContext=new BatchContext();
-					batchContext.setDenoiseTopic(topic);
+					BatchContext batchContext = getBatchContext();
 					if(records==null){
 						records=new ArrayList<>();
 					}
@@ -266,8 +264,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 					reachEnd=true;
 					DefaultDeviceRecord end=new DefaultDeviceRecord();
 					end.setStatus(MsgDefs._TYPE_ENDING);
-					BatchContext batchContext=new BatchContext();
-					batchContext.setDenoiseTopic(topic);
+					BatchContext batchContext = getBatchContext();
 					if(records!=null&&!records.isEmpty()){
 						records.add(end);
 						tuples.put(time, records);
@@ -300,18 +297,24 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 				}
 			}
 			tuples.put(time, records);
-			BatchContext batchContext=new BatchContext();
-			batchContext.setDenoiseTopic(topic);
+			BatchContext batchContext = getBatchContext();
 			collector.emit(new Values(records,batchContext),time);
 		}catch (Exception e) {
 			setHasError(true);
 			error(e);
 		}
 	}
+
+	private BatchContext getBatchContext() {
+		BatchContext batchContext=new BatchContext();
+		batchContext.setDenoiseTopic(topic);
+		batchContext.setCommunication(communication);
+		return batchContext;
+	}
 	
 	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){
 		DefaultDeviceRecord defaultDeviceRecord=new DefaultDeviceRecord();
-		
+		defaultDeviceRecord.setStatus(MsgDefs._TYPE_CONTENT);
 		defaultDeviceRecord.setId(defaultFetchObj.getId());
 		defaultDeviceRecord.setName(defaultFetchObj.getName());
 		defaultDeviceRecord.setProperties(defaultFetchObj.getProperties());
@@ -320,7 +323,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
 		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
 		defaultDeviceRecord.set_time(defaultFetchObj.get_time());
-		
+		defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
 		return defaultDeviceRecord;
 	}
 

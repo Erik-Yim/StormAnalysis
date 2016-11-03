@@ -46,17 +46,19 @@ public class DenoiseTopologyBuilder implements Serializable {
 			
 			@Override
 			public void execute(TridentTuple tuple, TridentCollector collector) {
+				BatchContext batchContext=null;
 				try{
+					batchContext=(BatchContext) tuple.getValueByField("batchContext");
 					List<DefaultDeviceRecord> defaultDeviceRecords= (List<DefaultDeviceRecord>) tuple.getValueByField("record");
 					IDenoiseFilterNodeProcessor denoiseFilterNodeProcessor= IDenoiseFilterNodeProcessorGetter.get();
-					//denoiseFilterNodeProcessor.cleanup(defaultDeviceRecords);
-					BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
+					denoiseFilterNodeProcessor.cleanup(defaultDeviceRecords);
 					collector.emit(new Values(defaultDeviceRecords,batchContext));
 //					if(i++%3==0){
 //						throw new RuntimeException("dd");
 //					}
 				}catch (Exception e) {
-					FlowUtils.setError(executor, tuple, e.getMessage());
+					e.printStackTrace();
+					FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
 					throw new FailedException(e);
 				}
 			}

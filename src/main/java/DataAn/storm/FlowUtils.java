@@ -71,9 +71,12 @@ public abstract class FlowUtils {
 	
 	public static ErrorMsg getError(ZookeeperExecutor executor,long sequence){
 		String path="/flow/"+sequence+"/error";
-		byte[] bytes=executor.getPath(path);
-		if(bytes==null||bytes.length==0) return null;
-		return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), ErrorMsg.class);
+		if(executor.exists(path)){
+			byte[] bytes=executor.getPath(path);
+			if(bytes==null||bytes.length==0) return null;
+			return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), ErrorMsg.class);
+		}
+		return null;
 	}
 	
 	public static void setError(ZookeeperExecutor executor,ErrorMsg errorMsg){

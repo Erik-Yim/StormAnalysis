@@ -235,7 +235,7 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
 		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
 		defaultDeviceRecord.set_time(defaultFetchObj.get_time());
-		
+		defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
 		return defaultDeviceRecord;
 	}
 

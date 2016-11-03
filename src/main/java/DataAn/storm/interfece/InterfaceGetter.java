@@ -46,14 +46,12 @@ public class InterfaceGetter {
 
 			@Override
 			public void setBatchContext(BatchContext batchContext) {
-				// TODO Auto-generated method stub
-				
+				ICNP.setBatchContext(batchContext);				
 			}
 
 			@Override
 			public BatchContext getBatchContext() {
-				// TODO Auto-generated method stub
-				return null;
+				return ICNP.getBatchContext();
 			}
 		};
 	}

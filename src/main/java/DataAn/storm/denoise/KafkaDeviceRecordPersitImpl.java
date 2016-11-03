@@ -38,6 +38,8 @@ public class KafkaDeviceRecordPersitImpl implements IDeviceRecordPersit{
 			if(!deviceRecord.isContent()) continue;
 			MongoPeristModel mongoPeristModel=new MongoPeristModel();
 			mongoPeristModel.setCollection(deviceRecord.getCollection());
+			mongoPeristModel.setSeries(deviceRecord.getSeries());
+			mongoPeristModel.setStar(deviceRecord.getStar());
 			mongoPeristModel.setContent(JJSON.get().formatObject(
 					MongoDeviceRecordConvertGetter.get(context).convert(context, (DefaultDeviceRecord) deviceRecord)));
 			simpleProducer.send(mongoPeristModel);

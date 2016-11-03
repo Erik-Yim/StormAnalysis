@@ -28,37 +28,42 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 
 				@Override
 				public void cleanup(List<? extends IDeviceRecord> deviceRecords) {
-					String [] vals = null;
-					String [] param = null;
-					Set<String> invalid = new HashSet<>();
-					for(IDeviceRecord idr:deviceRecords){
-						if(!idr.isContent()) continue;
-						vals = idr.getPropertyVals();
-						param = idr.getProperties();
-						for(int i=0;i<vals.length;i++){							
-							if(vals[i].contains("#")){
-								invalid.add(param[i]);
+					try{
+						String [] vals = null;
+						String [] param = null;
+						Set<String> invalid = new HashSet<>();
+						for(IDeviceRecord idr:deviceRecords){
+							if(!idr.isContent()) continue;
+							vals = idr.getPropertyVals();
+							param = idr.getProperties();
+							for(int i=0;i<vals.length;i++){							
+								if(vals[i].contains("#")){
+									invalid.add(param[i]);
+								}
 							}
-						}
-					}					
-					for(IDeviceRecord idr:deviceRecords){
-						if(!idr.isContent()) continue;
-						param = idr.getProperties();
-						vals = idr.getPropertyVals();
-						String [] newparam= new String[param.length-invalid.size()];
-						String [] newvals= new String[param.length-invalid.size()];
-						int j = 0;						
-						for(int i=0;i<param.length;i++){							
-							if(!(invalid.contains(param[i]))){
-								newparam[j] = param[i];
-								newvals[j] = vals[i];
+						}					
+						for(IDeviceRecord idr:deviceRecords){
+							if(!idr.isContent()) continue;
+							param = idr.getProperties();
+							vals = idr.getPropertyVals();
+							String [] newparam= new String[param.length-invalid.size()];
+							String [] newvals= new String[param.length-invalid.size()];
+							int j = 0;						
+							for(int i=0;i<param.length;i++){							
+								if(!(invalid.contains(param[i]))){
+									newparam[j] = param[i];
+									newvals[j] = vals[i];
+									j++;
+								}
 							}
-							j++;
+							((DefaultDeviceRecord)idr).setProperties(newparam);
+							((DefaultDeviceRecord)idr).setPropertyVals(newvals);
 						}
-						((DefaultDeviceRecord)idr).setProperties(newparam);
-						((DefaultDeviceRecord)idr).setPropertyVals(newvals);
+						System.out.println("------------");
+					}catch (Exception e) {
+						throw new RuntimeException(e);
 					}
-					System.out.println("------------");
+					
 				}
 				
 			};

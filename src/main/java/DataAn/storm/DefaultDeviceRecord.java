@@ -5,6 +5,8 @@ import DataAn.storm.kafka.Notify;
 
 public class DefaultDeviceRecord implements IDeviceRecord {
 
+	private String versions;
+	
 	private Notify notify;
 	
 	private Long  sequence;
@@ -153,7 +155,13 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 	public void setStatus(String status) {
 		this.status = status;
 	}
-	
-	
+
+	public String getVersions() {
+		return versions;
+	}
+
+	public void setVersions(String versions) {
+		this.versions = versions;
+	}
 	
 }

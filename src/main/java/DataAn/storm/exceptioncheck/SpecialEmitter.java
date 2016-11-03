@@ -2,6 +2,7 @@ package DataAn.storm.exceptioncheck;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -107,13 +108,17 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-//		long sequence=workerPathVal.getSequence();
-		long sequence=1000;
+		long sequence=workerPathVal.getSequence();
+//		long sequence=1000;
 		this.communication = FlowUtils.getExcep(executor,sequence);
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
-		new IPropertyConfigStoreImpl().initialize(conf);
+		Map context=new HashMap<>();
+		context.put("series", communication.getSeries());
+		context.put("star", communication.getStar());
+		context.put("device", communication.getName());
+		new IPropertyConfigStoreImpl().initialize(context);
 		triggered = true;
 		final String path="/flow/"+communication.getSequence()+"/error";
 		if(!executor.exists(path)){
@@ -228,6 +233,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 			BatchContext batchContext=new BatchContext();
 			batchContext.setBatchId(batchId);
 			batchContext.setConf(conf);
+			batchContext.setCommunication(communication);
 			
 			List<DefaultFetchObj> fetchObjs=new ArrayList<>();
 			for(Entry<String, Scope> entry:currMetadata.getTopicPartitionOffset().entrySet()){
