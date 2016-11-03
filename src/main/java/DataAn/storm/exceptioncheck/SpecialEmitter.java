@@ -282,6 +282,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		defaultDeviceRecord.setStar(defaultFetchObj.getStar());
 		defaultDeviceRecord.setTime(defaultFetchObj.getTime());
 		defaultDeviceRecord.set_time(defaultFetchObj.get_time());	
+		defaultDeviceRecord.setVersions(defaultFetchObj.versions());
 		return defaultDeviceRecord;
 	}
 
