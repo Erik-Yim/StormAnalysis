@@ -52,6 +52,11 @@ public class CommunicationUtils implements Serializable{
 				public void run() {
 					
 					try {
+						
+						if(!executor.exists("/flow-tasks")){
+							executor.createPath("/flow-tasks");
+						}
+						
 						List<String> paths= executor.backend().getChildren().forPath("/flow-tasks");
 						Collections.sort(paths, new Comparator<String>() {
 							@Override
@@ -61,7 +66,7 @@ public class CommunicationUtils implements Serializable{
 						});
 						
 						if(paths.size()>0){
-							String path=paths.get(0);
+							String path="/flow-tasks/"+paths.get(0);
 							byte[] bytes=executor.getPath(path);
 							Communication communication= JJSON.get().parse(
 									new String(bytes,Charset.forName("utf-8")), Communication.class);
@@ -78,7 +83,7 @@ public class CommunicationUtils implements Serializable{
 				}
 				
 				private int pathSequence(String path){
-					String lastStr=path.substring(path.lastIndexOf("/"));
+					String lastStr=path;
 					return Integer.parseInt(lastStr.substring(lastStr.lastIndexOf("-")+1));
 				}
 				
