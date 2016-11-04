@@ -69,7 +69,6 @@ public class IExceptionCheckNodeProcessorImpl implements
 			ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
 			long sequence =new AtomicLong(0).incrementAndGet();
 			if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
-//			if(5<Double.parseDouble(paramValues[i])){
 
 				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
 				CaseSpecialDto cDto = new CaseSpecialDto();
@@ -78,18 +77,17 @@ public class IExceptionCheckNodeProcessorImpl implements
 				cDto.setStar(deviceRecord.getStar());
 				cDto.setParamName(param[i]);
 				cDto.setFrequency(ecpc.getCount());
-//				cDto.setFrequency(2);
+
 				cDto.setLimitValue(ecpc.getJobMax());
-//				cDto.setLimitValue(5);
-			cDto.setLimitTime(ecpc.getDelayTime());
-//				cDto.setLimitTime(3);
+
+				cDto.setLimitTime(ecpc.getDelayTime());
 				cDto.setSequence(sequence);
+				//cDto.setVerison(deviceRecord.g);
 				csDtoCatch.add(cDto);
 				casDtoMap.put(param[i], csDtoCatch);
 			}
 			if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
-//			if(3<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<8 ){
-		
+	
 				List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
 				ParamExceptionDto peDto =  new ParamExceptionDto();
 				peDto.setParamName(deviceRecord.getProperties()[i]);
@@ -138,12 +136,13 @@ public class IExceptionCheckNodeProcessorImpl implements
 					jobMap.put("star", cDtos.get(i).getStar());
 					jobMap.put("deviceName", cDtos.get(i).getDeviceName());
 					jobMap.put("paramName", cDtos.get(i).getParamName());	
-					jobMap.put("value", cDtos.get(i).getValue());	
+					jobMap.put("value", cDtos.get(i).getValue());					
 					jobMap.put("hadRead", "0");	
 					String context = JJSON.get().formatObject(jobMap);
 					
 					MongoPeristModel mpModel=new MongoPeristModel();
 					mpModel.setCollection(deviceName+"_ExceptionJob");
+					//mpModel.setVersions(versions);;
 					mpModel.setContent(context);
 					simpleProducer.send(mpModel);
 					

@@ -15,6 +15,14 @@ public class CaseSpecialDto {
 	//特殊工况所针对的参数
 	private  String paramName;
 	
+	public String getVerison() {
+		return verison;
+	}
+
+	public void setVerison(String verison) {
+		this.verison = verison;
+	}
+
 	//特殊工况所针对的参数
 	private  String value;
 	
@@ -26,6 +34,8 @@ public class CaseSpecialDto {
 	private String star;
 	
 	private String deviceName;
+	
+	private String verison;
 		
 	private long sequence;
 
