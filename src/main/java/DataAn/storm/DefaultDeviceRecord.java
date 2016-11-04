@@ -164,4 +164,9 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 		this.versions = versions;
 	}
 	
+	@Override
+	public String versions() {
+		return this.versions;
+	}
+	
 }

@@ -68,4 +68,6 @@ public interface IDeviceRecord extends Serializable{
 	 */
 	boolean isContent();
 	
+	public String versions();
+	
 }
