@@ -4,7 +4,7 @@ import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.denoise.IDenoiseFilterNodeProcessor;
 import DataAn.storm.denoise.KafkaDeviceRecordPersitImpl;
-import DataAn.storm.impl.IExceptionCheckNodeProcessorImpl;
+import DataAn.storm.exceptioncheck.impl.IExceptionCheckNodeProcessorImpl;
 
 public class InterfaceGetter {
 

@@ -36,6 +36,8 @@ public interface IDeviceRecord extends Serializable{
 	 */
 	String getTime();
 	
+	public long get_time();
+	
 	/**
 	 * 参数
 	 * @return

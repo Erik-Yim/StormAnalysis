@@ -1,6 +1,7 @@
-package DataAn.storm.impl;
+package DataAn.storm.exceptioncheck.impl;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,11 +12,9 @@ import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
 import DataAn.dto.ParamExceptionDto;
 import DataAn.storm.BatchContext;
-import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
 import DataAn.storm.exceptioncheck.ExceptionConfigModel;
-import DataAn.storm.exceptioncheck.impl.IPropertyConfigStoreImpl;
 import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
 import DataAn.storm.kafka.InnerProducer;
 //import DataAn.storm.kafka.KafkaNameKeys;
@@ -129,7 +128,8 @@ public class IExceptionCheckNodeProcessorImpl implements
 					}
 					Map<String ,Object> jobMap =  new HashMap<>();
 								
-					jobMap.put("datestime", DateUtil.format(cDtos.get(i).getDateTime()));
+					jobMap.put("datestime", cDtos.get(i).getDateTime());
+					jobMap.put("versions", cDtos.get(i).getVerisons());
 					jobMap.put("year", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy"));
 					jobMap.put("year_month", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy-MM"));
 					jobMap.put("year_month_day", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy-MM-dd"));
@@ -178,7 +178,8 @@ public class IExceptionCheckNodeProcessorImpl implements
 							
 							Map<String ,Object> ExceptionMap =  new HashMap<>();
 							
-							ExceptionMap.put("datetime", DateUtil.format(ped.getTime()));
+							ExceptionMap.put("datetime", ped.getTime());
+							ExceptionMap.put("versions", ped.getVersions());
 							ExceptionMap.put("year", DateUtil.format(ped.getTime(), "yyyy"));
 							ExceptionMap.put("year_month", DateUtil.format(ped.getTime(), "yyyy-MM"));
 							ExceptionMap.put("year_month_day", DateUtil.format(ped.getTime(), "yyyy-MM-dd"));
