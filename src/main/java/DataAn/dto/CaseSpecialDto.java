@@ -18,8 +18,18 @@ public class CaseSpecialDto {
 	//特殊工况所针对的参数
 	private  String value;
 	
+	public long get_time() {
+		return _time;
+	}
+
+	public void set_time(long _time) {
+		this._time = _time;
+	}
+
 	//特殊工况所针对的时间
 	private  String  dateTime;
+	
+	private  long  _time;
 	
 	private String series;
 	

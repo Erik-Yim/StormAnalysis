@@ -130,9 +130,6 @@ public class IExceptionCheckNodeProcessorImpl implements
 								
 					jobMap.put("datestime", cDtos.get(i).getDateTime());
 					jobMap.put("versions", cDtos.get(i).getVerisons());
-					jobMap.put("year", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy"));
-					jobMap.put("year_month", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy-MM"));
-					jobMap.put("year_month_day", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy-MM-dd"));
 					jobMap.put("series", cDtos.get(i).getSeries());
 					jobMap.put("star", cDtos.get(i).getStar());
 					jobMap.put("deviceName", cDtos.get(i).getDeviceName());
@@ -180,9 +177,6 @@ public class IExceptionCheckNodeProcessorImpl implements
 							
 							ExceptionMap.put("datetime", ped.getTime());
 							ExceptionMap.put("versions", ped.getVersions());
-							ExceptionMap.put("year", DateUtil.format(ped.getTime(), "yyyy"));
-							ExceptionMap.put("year_month", DateUtil.format(ped.getTime(), "yyyy-MM"));
-							ExceptionMap.put("year_month_day", DateUtil.format(ped.getTime(), "yyyy-MM-dd"));
 							ExceptionMap.put("series", ped.getSeries());
 							ExceptionMap.put("star", ped.getStar());
 							ExceptionMap.put("deviceName", ped.getDeviceName());	

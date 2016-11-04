@@ -31,7 +31,16 @@ public class ParamExceptionDto {
 	
 	private long sequence;
 	
+	private  long  _time;
 	
+	public long get_time() {
+		return _time;
+	}
+
+	public void set_time(long _time) {
+		this._time = _time;
+	}
+
 	public long getSequence() {
 		return sequence;
 	}
