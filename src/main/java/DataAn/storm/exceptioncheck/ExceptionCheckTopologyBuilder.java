@@ -15,8 +15,7 @@ import org.apache.storm.tuple.Fields;
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.FlowUtils;
-import DataAn.storm.interfece.IExceptionCheckNodeProcessor;
-import DataAn.storm.interfece.InterfaceGetter;
+import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor.IExceptionCheckNodeProcessorGetter;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
@@ -54,7 +53,7 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 			@Override
 			public IExceptionCheckNodeProcessor init(Object batchId,
 					TridentCollector collector) {
-				IExceptionCheckNodeProcessor processor=InterfaceGetter.getExceptionCheckNodeProcessor();
+				IExceptionCheckNodeProcessor processor=IExceptionCheckNodeProcessorGetter.getNew();
 				return processor;
 			}
 

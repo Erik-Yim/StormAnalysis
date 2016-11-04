@@ -18,6 +18,7 @@ public class TaskStartTrigger {
 		
 		Map conf=new HashMap<>();
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
+		ZooKeeperNameKeys.setNamespace(conf, "test-zhongjin");
 		ZookeeperExecutor executor=new ZooKeeperClient()
 		.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 		.namespace(ZooKeeperNameKeys.getNamespace(conf))
@@ -27,8 +28,8 @@ public class TaskStartTrigger {
 		communication.setOffset(0);
 		communication.setFilePath("c:\\j9-02--2016-02-01.csv");
 		communication.setVersions(UUID.randomUUID().toString());
-//		communication.setTopicPartition("data-prototype-7:0");
-		communication.setTopicPartition("data-denoise-19-1478155064089:0");
+		communication.setTopicPartition("data-prototype-30-1478227734563:0");
+//		communication.setTopicPartition("data-denoise-19-1478155064089:0");
 		communication.setSeries("j9");
 		communication.setStar("02");
 		communication.setName("flywheel");

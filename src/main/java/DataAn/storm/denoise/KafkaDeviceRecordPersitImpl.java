@@ -8,13 +8,11 @@ import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.denoise.MongoDeviceRecordConvert.MongoDeviceRecordConvertGetter;
-import DataAn.storm.interfece.IDeviceRecordPersit;
 import DataAn.storm.kafka.Beginning;
 import DataAn.storm.kafka.BoundProducer;
 import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
-import DataAn.storm.kafka.InnerProducer;
 import DataAn.storm.kafka.MsgDefs;
 import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.persist.MongoPeristModel;
@@ -23,17 +21,13 @@ import DataAn.storm.persist.MongoPeristModel;
 public class KafkaDeviceRecordPersitImpl implements IDeviceRecordPersit{
 
 	@Override
-	public void persist(Map context,BatchContext batchContext,IDeviceRecord... deviceRecords) throws Exception {
+	public void persist(BoundProducer boundProducer, SimpleProducer simpleProducer, Map context,BatchContext batchContext,IDeviceRecord... deviceRecords) throws Exception {
 		
-		InnerProducer innerProducer=new InnerProducer(context);
-		BoundProducer boundProducer=new BoundProducer(innerProducer);
 		for(IDeviceRecord deviceRecord:deviceRecords){
 			FetchObj fetchObj=parse((DefaultDeviceRecord) deviceRecord);
 			boundProducer.send(fetchObj,batchContext.getDenoiseTopic());
 		}
 		
-		SimpleProducer simpleProducer=new SimpleProducer(innerProducer,
-				"data-persist", 0);
 		for(IDeviceRecord deviceRecord:deviceRecords){
 			if(!deviceRecord.isContent()) continue;
 			MongoPeristModel mongoPeristModel=new MongoPeristModel();

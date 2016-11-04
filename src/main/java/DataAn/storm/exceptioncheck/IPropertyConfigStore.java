@@ -1,9 +1,6 @@
 package DataAn.storm.exceptioncheck;
 
-import java.io.IOException;
 import java.util.Map;
-
-import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
 
 public interface IPropertyConfigStore {
 

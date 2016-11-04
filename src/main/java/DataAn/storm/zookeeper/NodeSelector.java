@@ -236,6 +236,20 @@ public class NodeSelector implements Serializable{
 			parent.nodes.add(this);
 		}
 		
+		private boolean containsWorker(int worker){
+			boolean contains=id==worker;
+			if(contains){
+				return true;
+			}
+			for(NodeData nodeData:nodes){
+				contains=nodeData.containsWorker(worker);
+				if(contains){
+					return true;
+				}
+			}
+			return false;
+		}
+		
 	}
 	
 	public static class InstanceNodeVal{
@@ -386,6 +400,10 @@ public class NodeSelector implements Serializable{
 		
 		private NodeData nodeData;
 		
+		private boolean containsWorker(int workerId){
+			return nodeData.containsWorker(workerId);
+		}
+		
 	}
 	
 	private Workflow createWorkflow(){
@@ -471,6 +489,15 @@ public class NodeSelector implements Serializable{
 	}
 	
 	private void start(final int worker,final String instancePath,final Instance instance){
+		
+		if(!instance.workflow.containsWorker(worker)){
+			throw new RuntimeException("the worker["+worker+"] does not exist.");
+		}
+		
+		if(!instance.workflow.workerPaths.containsKey(worker)){
+			throw new RuntimeException("the worker["+worker+"] does not exist.");
+		}
+		
 		final WorkerPathVal workerPathVal=new WorkerPathVal();
 		workerPathVal.id=worker;
 		workerPathVal.time=new Date().getTime();
@@ -668,6 +695,7 @@ public class NodeSelector implements Serializable{
 				try{
 					start(instance);
 				}catch (Exception e) {
+					e.printStackTrace();
 					breakFlow(instance);
 				}
 				

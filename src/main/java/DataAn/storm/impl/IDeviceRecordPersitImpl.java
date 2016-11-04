@@ -11,7 +11,7 @@ import DataAn.mongo.client.MongodbUtil;
 import DataAn.mongo.init.InitMongo;
 import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
-import DataAn.storm.interfece.IDeviceRecordPersit;
+import DataAn.storm.denoise.IDeviceRecordPersit;
 
 //public class IDeviceRecordPersitImpl implements IDeviceRecordPersit {
 //

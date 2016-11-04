@@ -1,9 +1,10 @@
-package DataAn.storm.interfece;
+package DataAn.storm.exceptioncheck;
 
 import java.io.Serializable;
 
 import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
+import DataAn.storm.exceptioncheck.impl.IExceptionCheckNodeProcessorImpl;
 
 /**
  * 异常警告节点
@@ -24,4 +25,12 @@ public interface IExceptionCheckNodeProcessor extends Serializable {
 	void setBatchContext(BatchContext batchContext);
 	
 	BatchContext getBatchContext();
+	
+	class IExceptionCheckNodeProcessorGetter{
+		public static IExceptionCheckNodeProcessor getNew(){
+			return new IExceptionCheckNodeProcessorImpl();
+		}
+	}
+	
+	
 }

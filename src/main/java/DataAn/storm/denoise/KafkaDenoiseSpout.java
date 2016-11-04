@@ -261,6 +261,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 					break;
 				}
 				if(Ending.class.isInstance(fetchObj)) {
+					System.out.println("reach------------------ the end "+consumer.getTopicPartition()[0]);
 					reachEnd=true;
 					DefaultDeviceRecord end=new DefaultDeviceRecord();
 					end.setStatus(MsgDefs._TYPE_ENDING);

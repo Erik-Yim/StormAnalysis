@@ -18,9 +18,13 @@ import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.FlowUtils;
 import DataAn.storm.denoise.IDenoiseFilterNodeProcessor.IDenoiseFilterNodeProcessorGetter;
+import DataAn.storm.denoise.IDeviceRecordPersit.IDeviceRecordPersitGetter;
+import DataAn.storm.kafka.BoundProducer;
+import DataAn.storm.kafka.InnerProducer;
+import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.zookeeper.ZooKeeperClient;
-import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
+import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 
 
 @SuppressWarnings({"serial","unchecked","rawtypes"})
@@ -53,9 +57,6 @@ public class DenoiseTopologyBuilder implements Serializable {
 					IDenoiseFilterNodeProcessor denoiseFilterNodeProcessor= IDenoiseFilterNodeProcessorGetter.get();
 					denoiseFilterNodeProcessor.cleanup(defaultDeviceRecords);
 					collector.emit(new Values(defaultDeviceRecords,batchContext));
-//					if(i++%3==0){
-//						throw new RuntimeException("dd");
-//					}
 				}catch (Exception e) {
 					e.printStackTrace();
 					FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
@@ -69,6 +70,10 @@ public class DenoiseTopologyBuilder implements Serializable {
 			
 			protected ZookeeperExecutor executor;
 			
+			private BoundProducer boundProducer;
+			
+			private SimpleProducer simpleProducer;
+			
 			@Override
 			public void prepare(Map conf, TridentOperationContext context) {
 				this.conf=conf;
@@ -76,6 +81,10 @@ public class DenoiseTopologyBuilder implements Serializable {
 						.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 						.namespace(ZooKeeperNameKeys.getNamespace(conf))
 						.build();
+				InnerProducer innerProducer=new InnerProducer(conf);
+				boundProducer=new BoundProducer(innerProducer);
+				simpleProducer=new SimpleProducer(innerProducer,
+						"data-persist", 0);
 			}
 			
 			@Override
@@ -84,7 +93,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 				try{
 					List<DefaultDeviceRecord> defaultDeviceRecords= (List<DefaultDeviceRecord>) tuple.getValueByField("record");
 					BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
-					batchContext.getDeviceRecordPersit().persist(conf, batchContext, defaultDeviceRecords.toArray(new DefaultDeviceRecord[]{}));
+					IDeviceRecordPersitGetter.get().persist(boundProducer, simpleProducer,conf, batchContext, defaultDeviceRecords.toArray(new DefaultDeviceRecord[]{}));
 				}catch (Exception e) {
 					FlowUtils.setError(executor, tuple, e.getMessage());
 					throw new FailedException(e);

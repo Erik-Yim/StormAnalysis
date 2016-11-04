@@ -18,6 +18,7 @@ public class DenoiseTopologyLocal {
 		Config conf=new Config();
 		conf.put("storm.flow.worker.id", 1);
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
+		ZooKeeperNameKeys.setNamespace(conf, "test-zhongjin");
 		KafkaNameKeys.setKafkaServer(conf, "nim2.storm.com:9092");
 		conf.put(RichSpoutBatchExecutor.MAX_BATCH_SIZE_CONF, 3);
 		conf.setMessageTimeoutSecs(10000);
