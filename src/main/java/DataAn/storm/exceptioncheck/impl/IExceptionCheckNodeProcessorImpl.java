@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.util.concurrent.AtomicDouble;
+
 import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
@@ -65,147 +67,127 @@ public class IExceptionCheckNodeProcessorImpl implements
 		}		
 		for(int i=0;i<paramValues.length;i++){
 			ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
+			
 			long sequence =new AtomicLong(0).incrementAndGet();
-			if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
+			if(ecpc!=null){
+				if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
+					List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
+					CaseSpecialDto cDto = new CaseSpecialDto();
+					cDto.setDateTime(deviceRecord.getTime());
+					cDto.setSeries(deviceRecord.getSeries());
+					cDto.setStar(deviceRecord.getStar());
+					cDto.setParamName(param[i]);
+					cDto.setFrequency(ecpc.getCount());
 
-				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
-				CaseSpecialDto cDto = new CaseSpecialDto();
-				cDto.setDateTime(deviceRecord.getTime());
-				cDto.setSeries(deviceRecord.getSeries());
-				cDto.setStar(deviceRecord.getStar());
-				cDto.setParamName(param[i]);
-				cDto.setFrequency(ecpc.getCount());
+					cDto.setLimitValue(ecpc.getJobMax());
 
-				cDto.setLimitValue(ecpc.getJobMax());
-
-				cDto.setLimitTime(ecpc.getDelayTime());
-				cDto.setSequence(sequence);
-				cDto.setVerisons(deviceRecord.versions());
-				csDtoCatch.add(cDto);
-				casDtoMap.put(param[i], csDtoCatch);
+					cDto.setLimitTime(ecpc.getDelayTime());
+					cDto.setSequence(sequence);
+					cDto.setVerisons(deviceRecord.versions());
+					csDtoCatch.add(cDto);
+					casDtoMap.put(param[i], csDtoCatch);
+				}
+				if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
+		
+					List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
+					ParamExceptionDto peDto =  new ParamExceptionDto();
+					peDto.setParamName(deviceRecord.getProperties()[i]);
+					peDto.setSeries(deviceRecord.getSeries());
+					peDto.setStar(deviceRecord.getStar());
+					peDto.setValue(paramValues[i]);
+					peDto.setTime(deviceRecord.getTime());	
+					peDto.setSequence(sequence);
+					peDto.setVersions(deviceRecord.versions());
+					paramEs.add(peDto);	
+					exceptionDtoMap.put(param[i], paramEs);
+				}
+															
 			}
-			if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
 	
-				List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
-				ParamExceptionDto peDto =  new ParamExceptionDto();
-				peDto.setParamName(deviceRecord.getProperties()[i]);
-				peDto.setSeries(deviceRecord.getSeries());
-				peDto.setStar(deviceRecord.getStar());
-				peDto.setValue(paramValues[i]);
-				peDto.setTime(deviceRecord.getTime());	
-				peDto.setSequence(sequence);
-				peDto.setVersions(deviceRecord.versions());
-				paramEs.add(peDto);	
-				exceptionDtoMap.put(param[i], paramEs);
-			}
 		}		
 		return exceptionDtoMap;	
 	}
 
 	@Override
-	public void persist() throws Exception {	
-		
+	public void persist() throws Exception {			
 		Map<String ,Object> conf=new HashMap<>();
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		InnerProducer innerProducer=new InnerProducer(conf);
 		SimpleProducer simpleProducer =new SimpleProducer(innerProducer, 
 				"data-persist", 0);	
-		for(String param_Name:casDtoMap.keySet()){			
-			List<CaseSpecialDto> cDtos = casDtoMap.get(param_Name);
-		//	List<Document> documentList = new ArrayList<Document>();
-			List<CaseSpecialDto> finalCaseDtos =  new ArrayList<>();
-			List<Long> finalCaseDtosequence =  new ArrayList<>();
-			for(int i=0;i<cDtos.size();){				
-				int count = cDtos.get(i).getFrequency();
-				int limitTime = (int) cDtos.get(i).getLimitTime();
-				int endTime = (int)((DateUtil.fromDateStringToLong(cDtos.get(i+count-1).getDateTime()))/60000);
-				int startTime =(int)((DateUtil.fromDateStringToLong(cDtos.get(i).getDateTime()))/60000);
-				if((endTime-startTime)>=limitTime){
-					for(int j =i;j<i+count;j++){
-						finalCaseDtos.add(cDtos.get(j));
-						finalCaseDtosequence.add(cDtos.get(j).getSequence());
-					}
-					Map<String ,Object> jobMap =  new HashMap<>();
-								
-					jobMap.put("datestime", cDtos.get(i).getDateTime());
-					jobMap.put("versions", cDtos.get(i).getVerisons());
-					jobMap.put("series", cDtos.get(i).getSeries());
-					jobMap.put("star", cDtos.get(i).getStar());
-					jobMap.put("deviceName", cDtos.get(i).getDeviceName());
-					jobMap.put("paramName", cDtos.get(i).getParamName());	
-					jobMap.put("value", cDtos.get(i).getValue());					
-					jobMap.put("hadRead", "0");	
-					String context = JJSON.get().formatObject(jobMap);
-					
-					MongoPeristModel mpModel=new MongoPeristModel();
-					mpModel.setCollection(deviceName+"_ExceptionJob");
-					mpModel.setVersions(cDtos.get(i).getVerisons());
-					mpModel.setContent(context);
-					simpleProducer.send(mpModel);
-					
-					
-//					Document doc = new Document();
-//					doc.append("datestime", DateUtil.format(cDtos.get(i).getDateTime()));
-//					doc.append("year", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy"));
-//					doc.append("year_month", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy-MM"));
-//					doc.append("year_month_day", DateUtil.format(cDtos.get(i).getDateTime(), "yyyy-MM-dd"));
-//					doc.append("series", cDtos.get(i).getSeries());
-//					doc.append("star", cDtos.get(i).getStar());
-//					doc.append("deviceName", cDtos.get(i).getDeviceName());
-//					doc.append("paramName", cDtos.get(i).getParamName());	
-//					doc.append("value", cDtos.get(i).getValue());	
-//					doc.append("hadRead", "0");	
-//					documentList.add(doc);
-					i=i+limitTime;	
-				}else{i++;}				
+		if(casDtoMap!=null && casDtoMap.size()>0 ){
+			for(String param_Name:casDtoMap.keySet()){			
+				List<CaseSpecialDto> cDtos = casDtoMap.get(param_Name);
+			//	List<Document> documentList = new ArrayList<Document>();
+				List<CaseSpecialDto> finalCaseDtos =  new ArrayList<>();
+				List<Long> finalCaseDtosequence =  new ArrayList<>();
+				for(int i=0;i<cDtos.size();){				
+					int count = cDtos.get(i).getFrequency();
+					int limitTime = (int) cDtos.get(i).getLimitTime();
+					int endTime = (int)((DateUtil.fromDateStringToLong(cDtos.get(i+count-1).getDateTime()))/60000);
+					int startTime =(int)((DateUtil.fromDateStringToLong(cDtos.get(i).getDateTime()))/60000);
+					if((endTime-startTime)>=limitTime){
+						for(int j =i;j<i+count;j++){
+							finalCaseDtos.add(cDtos.get(j));
+							finalCaseDtosequence.add(cDtos.get(j).getSequence());
+						}
+						Map<String ,Object> jobMap =  new HashMap<>();
+									
+						jobMap.put("datestime", cDtos.get(i).getDateTime());
+						jobMap.put("versions", cDtos.get(i).getVerisons());
+						jobMap.put("series", cDtos.get(i).getSeries());
+						jobMap.put("star", cDtos.get(i).getStar());
+						jobMap.put("deviceName", cDtos.get(i).getDeviceName());
+						jobMap.put("paramName", cDtos.get(i).getParamName());	
+						jobMap.put("value", cDtos.get(i).getValue());					
+						jobMap.put("hadRead", "0");	
+						String context = JJSON.get().formatObject(jobMap);
+						
+						MongoPeristModel mpModel=new MongoPeristModel();
+						mpModel.setCollection(deviceName+"_ExceptionJob");
+						mpModel.setVersions(cDtos.get(i).getVerisons());
+						mpModel.setContent(context);
+						simpleProducer.send(mpModel);									
+						i=i+limitTime;	
+					}else{i++;}				
+				}
+			//	MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_SpecialCase", documentList);
+				finalCaseDtoMap.put(param_Name, finalCaseDtos);
+				paramSequence.put(param_Name, finalCaseDtosequence);
 			}
-		//	MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_SpecialCase", documentList);
-			finalCaseDtoMap.put(param_Name, finalCaseDtos);
-			paramSequence.put(param_Name, finalCaseDtosequence);
-		}		
-		for(String paramExce:exceptionDtoMap.keySet()){
-			List<ParamExceptionDto> paramEs = exceptionDtoMap.get(paramExce);
-		//	List<Document> documentList = new ArrayList<Document>();
-			if(finalCaseDtoMap.keySet().contains(paramExce)){
-				List<Long> paramSe = paramSequence.get(paramExce);			
-				if(paramSe!=null && paramSe.size()>0){
-					for(ParamExceptionDto ped:paramEs){
-						if(!(paramSe.contains(ped.getSequence()))){
-							
-							Map<String ,Object> ExceptionMap =  new HashMap<>();
-							
-							ExceptionMap.put("datetime", ped.getTime());
-							ExceptionMap.put("versions", ped.getVersions());
-							ExceptionMap.put("series", ped.getSeries());
-							ExceptionMap.put("star", ped.getStar());
-							ExceptionMap.put("deviceName", ped.getDeviceName());	
-							ExceptionMap.put("paramName", ped.getParamName());	
-							ExceptionMap.put("value", ped.getValue());
-							ExceptionMap.put("hadRead", "0");	
-							String exceptinContext = JJSON.get().formatObject(ExceptionMap);							
-							MongoPeristModel mpModel=new MongoPeristModel();
-							mpModel.setCollection(deviceName+"_Exception");
-							mpModel.setContent(exceptinContext);
-							mpModel.setVersions(ped.getVersions());
-							simpleProducer.send(mpModel);
-													
-//							Document doc = new Document();	
-//							doc.append("datetime", DateUtil.format(ped.getTime()));
-//							doc.append("year", DateUtil.format(ped.getTime(), "yyyy"));
-//							doc.append("year_month", DateUtil.format(ped.getTime(), "yyyy-MM"));
-//							doc.append("year_month_day", DateUtil.format(ped.getTime(), "yyyy-MM-dd"));
-//							doc.append("series", ped.getSeries());
-//							doc.append("star", ped.getStar());
-//							doc.append("deviceName", ped.getDeviceName());	
-//							doc.append("paramName", ped.getParamName());	
-//							doc.append("value", ped.getValue());
-//							doc.append("hadRead", "0");	
-//							documentList.add(doc);
+		}
+
+		if(exceptionDtoMap!=null && exceptionDtoMap.size()>0){
+			for(String paramExce:exceptionDtoMap.keySet()){
+				List<ParamExceptionDto> paramEs = exceptionDtoMap.get(paramExce);
+			//	List<Document> documentList = new ArrayList<Document>();
+				if(finalCaseDtoMap.keySet().contains(paramExce)){
+					List<Long> paramSe = paramSequence.get(paramExce);			
+					if(paramSe!=null && paramSe.size()>0){
+						for(ParamExceptionDto ped:paramEs){
+							if(!(paramSe.contains(ped.getSequence()))){
+								
+								Map<String ,Object> ExceptionMap =  new HashMap<>();
+								
+								ExceptionMap.put("datetime", ped.getTime());
+								ExceptionMap.put("versions", ped.getVersions());
+								ExceptionMap.put("series", ped.getSeries());
+								ExceptionMap.put("star", ped.getStar());
+								ExceptionMap.put("deviceName", ped.getDeviceName());	
+								ExceptionMap.put("paramName", ped.getParamName());	
+								ExceptionMap.put("value", ped.getValue());
+								ExceptionMap.put("hadRead", "0");	
+								String exceptinContext = JJSON.get().formatObject(ExceptionMap);							
+								MongoPeristModel mpModel=new MongoPeristModel();
+								mpModel.setCollection(deviceName+"_Exception");
+								mpModel.setContent(exceptinContext);
+								mpModel.setVersions(ped.getVersions());
+								simpleProducer.send(mpModel);
+							}
 						}
 					}
-				}
+				}			
 			}
-			//MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_Exception", documentList);
 		}
 					
 	}

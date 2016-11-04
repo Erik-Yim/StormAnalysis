@@ -54,10 +54,12 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		if(args.length>0){
 		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
 		List<ExceptionCasePointConfig> ecfgs=ecfm.getExceptionCasePointConfigs().get(args[2]);
-		for(ExceptionCasePointConfig ecfg:ecfgs){
-			if(ecfg.getParamName()==args[3]);
-			ecpcf =ecfg;
-		}			
+		if(ecfgs!=null&& ecfgs.size()>0){
+			for(ExceptionCasePointConfig ecfg:ecfgs){
+				if(ecfg.getParamName()==args[3]);
+				ecpcf =ecfg;
+				}	
+			}				
 		}
 		return ecpcf;
 	}

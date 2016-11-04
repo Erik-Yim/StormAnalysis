@@ -21,7 +21,7 @@ public class ExceptionCasePointConfig implements Serializable{
 
 	private long delayTime;
 	
-	private double jobMax;
+	private double jobMax = Double.MAX_VALUE/2;
 	
 	private double jobMin;
 	
