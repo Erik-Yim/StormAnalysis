@@ -52,13 +52,13 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 							if(!(invalid.contains(param[i]))){
 								newparam[j] = param[i];
 								newvals[j] = vals[i];
+								j++;
 							}
-							j++;
+							
 						}
 						((DefaultDeviceRecord)idr).setProperties(newparam);
 						((DefaultDeviceRecord)idr).setPropertyVals(newvals);
-					}
-					System.out.println("------------");
+					}				
 				}
 				
 			};
