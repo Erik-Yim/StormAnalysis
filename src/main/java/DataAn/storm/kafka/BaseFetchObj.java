@@ -10,6 +10,8 @@ public  class BaseFetchObj implements FetchObj {
 	
 	private Notify notify;
 	
+	private String versions;
+	
 	@Override
 	public long offset() {
 		return offset;
@@ -54,6 +56,19 @@ public  class BaseFetchObj implements FetchObj {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public String getVersions() {
+		return versions;
+	}
+
+	public void setVersions(String versions) {
+		this.versions = versions;
+	}
+	
+	@Override
+	public String versions() {
+		return versions;
 	}
 	
 }

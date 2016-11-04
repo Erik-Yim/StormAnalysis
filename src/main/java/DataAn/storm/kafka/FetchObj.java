@@ -10,4 +10,5 @@ public interface FetchObj extends Serializable {
 	
 	public String id();
 	
+	public String versions();
 }
