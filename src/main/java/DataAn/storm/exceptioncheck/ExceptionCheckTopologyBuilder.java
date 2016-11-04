@@ -1,16 +1,19 @@
 package DataAn.storm.exceptioncheck;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.BaseAggregator;
+import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
@@ -29,16 +32,37 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 		TridentTopology tridentTopology=new TridentTopology();
 		
 		tridentTopology.newStream("exception-check-task-stream", new SpecialKafakaSpout(new Fields("record","batchContext")))
-//		.each(new Fields("record","batchContext"), new BaseFilter() {
-//			@Override
-//			public boolean isKeep(TridentTuple tuple) {
-//				DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
-//				BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
-//				IDenoiseFilterNodeProcessor denoiseFilterNodeProcessor=batchContext.getDenoiseFilterNodeProcessor();
-//				return denoiseFilterNodeProcessor.isKeep(defaultDeviceRecord);
-//			}
-//		})
-		.aggregate(new Fields("record","batchContext") , new BaseAggregator<IExceptionCheckNodeProcessor>() {
+		.each(new Fields("record","batchContext"), new BaseFunction() {
+			
+			protected ZookeeperExecutor executor;
+			
+			@Override
+			public void prepare(Map conf, TridentOperationContext context) {
+				executor=new ZooKeeperClient()
+						.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
+						.namespace(ZooKeeperNameKeys.getNamespace(conf))
+						.build();
+			}
+			
+			@Override
+			public void execute(TridentTuple tuple, TridentCollector collector) {
+				BatchContext batchContext=null;
+				try{
+					batchContext=(BatchContext) tuple.getValueByField("batchContext");
+					IExceptionCheckNodeProcessor processor=IExceptionCheckNodeProcessorGetter.getNew();
+					List<DefaultDeviceRecord> defaultDeviceRecords=(List<DefaultDeviceRecord>) tuple.getValueByField("record");
+					for(DefaultDeviceRecord defaultDeviceRecord:defaultDeviceRecords){
+						processor.process(defaultDeviceRecord);
+					}
+					collector.emit(new Values(processor));
+				}catch (Exception e) {
+					e.printStackTrace();
+					FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
+					throw new FailedException(e);
+				}
+			}
+		},new Fields("processor"))
+		.aggregate(new Fields("batchContext","processor") , new BaseAggregator<ExcepOpe>() {
 
 			protected ZookeeperExecutor executor;
 			
@@ -51,35 +75,36 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 			}
 			
 			@Override
-			public IExceptionCheckNodeProcessor init(Object batchId,
-					TridentCollector collector) {
-				IExceptionCheckNodeProcessor processor=IExceptionCheckNodeProcessorGetter.getNew();
-				return processor;
+			public ExcepOpe init(Object batchId, TridentCollector collector) {
+				return new ExcepOpe();
 			}
+			
 
 			@Override
-			public void aggregate(IExceptionCheckNodeProcessor val, TridentTuple tuple,
+			public void aggregate(ExcepOpe val, TridentTuple tuple,
 					TridentCollector collector) {
 				try{
 					if(val.getBatchContext()==null){
 						val.setBatchContext((BatchContext) tuple.getValueByField("batchContext"));
 					}
-					DefaultDeviceRecord defaultDeviceRecord= (DefaultDeviceRecord) tuple.getValueByField("record");
-					System.out.println("aggregate thread["+Thread.currentThread().getName() + "] tuple ["+defaultDeviceRecord.getTime()+","+defaultDeviceRecord.getSequence()+"] _ >  batch ["+defaultDeviceRecord.getBatchContext().getBatchId()+"]");
-					val.process(defaultDeviceRecord);
+					if(val.getProcessor()==null){
+						IExceptionCheckNodeProcessor processor= (IExceptionCheckNodeProcessor) tuple.getValueByField("processor");
+						val.setProcessor(processor);
+					}
+					System.out.println("aggregate thread["+Thread.currentThread().getName() + "]");
 				}catch (Exception e) {
 					e.printStackTrace();
-					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), e.getMessage());
 					throw new FailedException(e);
 				}
 				
 			}
 
 			@Override
-			public void complete(IExceptionCheckNodeProcessor val, TridentCollector collector) {
+			public void complete(ExcepOpe val, TridentCollector collector) {
 				try {
-					val.persist();
+					val.getProcessor().persist();
 				} catch (Exception e) {
+					e.printStackTrace();
 					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), e.getMessage());
 					throw new FailedException(e);
 				}

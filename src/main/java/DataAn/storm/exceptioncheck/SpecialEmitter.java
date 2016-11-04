@@ -235,7 +235,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 			batchContext.setConf(conf);
 			batchContext.setCommunication(communication);
 			
-			List<DefaultFetchObj> fetchObjs=new ArrayList<>();
+			List<DefaultDeviceRecord> defaultDeviceRecords=new ArrayList<>();
 			for(Entry<String, Scope> entry:currMetadata.getTopicPartitionOffset().entrySet()){
 				consumer.seek(entry.getKey(), entry.getValue().start);
 			}
@@ -252,19 +252,16 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 							reachEnd=true;
 							break;
 						}
-						fetchObjs.add((DefaultFetchObj) fetchObj);
+						DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
+						defaultDeviceRecord.setBatchContext(batchContext);
+						defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
+						defaultDeviceRecords.add(defaultDeviceRecord);
 						currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
 					}
 					break;
 				}
 			}
-			
-			for(int i=0;i<fetchObjs.size();i++){
-				DefaultDeviceRecord defaultDeviceRecord=parse(fetchObjs.get(i));
-				defaultDeviceRecord.setBatchContext(batchContext);
-				defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
-				collector.emit(new Values(defaultDeviceRecord,batchContext));
-			}		
+			collector.emit(new Values(defaultDeviceRecords,batchContext));
 		}catch (Exception e) {
 			setHasError(true);
 			error(e);
