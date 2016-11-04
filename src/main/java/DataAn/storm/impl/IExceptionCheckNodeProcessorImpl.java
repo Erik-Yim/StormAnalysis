@@ -82,7 +82,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 
 				cDto.setLimitTime(ecpc.getDelayTime());
 				cDto.setSequence(sequence);
-				//cDto.setVerison(deviceRecord.g);
+				cDto.setVerisons(deviceRecord.versions());
 				csDtoCatch.add(cDto);
 				casDtoMap.put(param[i], csDtoCatch);
 			}
@@ -96,6 +96,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 				peDto.setValue(paramValues[i]);
 				peDto.setTime(deviceRecord.getTime());	
 				peDto.setSequence(sequence);
+				peDto.setVersions(deviceRecord.versions());
 				paramEs.add(peDto);	
 				exceptionDtoMap.put(param[i], paramEs);
 			}
@@ -142,7 +143,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 					
 					MongoPeristModel mpModel=new MongoPeristModel();
 					mpModel.setCollection(deviceName+"_ExceptionJob");
-					//mpModel.setVersions(versions);;
+					mpModel.setVersions(cDtos.get(i).getVerisons());
 					mpModel.setContent(context);
 					simpleProducer.send(mpModel);
 					
@@ -191,6 +192,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 							MongoPeristModel mpModel=new MongoPeristModel();
 							mpModel.setCollection(deviceName+"_Exception");
 							mpModel.setContent(exceptinContext);
+							mpModel.setVersions(ped.getVersions());
 							simpleProducer.send(mpModel);
 													
 //							Document doc = new Document();	

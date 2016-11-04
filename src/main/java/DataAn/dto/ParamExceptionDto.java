@@ -13,14 +13,14 @@ public class ParamExceptionDto {
 	//异常点时间
 	private  String time;
 	
-	private String version;
+	private String versions;
 	
-	public String getVersion() {
-		return version;
+	public String getVersions() {
+		return versions;
 	}
 
-	public void setVersion(String version) {
-		this.version = version;
+	public void setVersions(String versions) {
+		this.versions = versions;
 	}
 
 	private String series;
