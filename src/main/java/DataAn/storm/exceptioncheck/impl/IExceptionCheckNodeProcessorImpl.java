@@ -57,14 +57,21 @@ public class IExceptionCheckNodeProcessorImpl implements
 		 deviceName =deviceRecord.getName();	
 		String[] paramValues = deviceRecord.getPropertyVals();
 		String[] param = deviceRecord.getProperties();
-		if(joblistCatch.size()==0 && exelistCatch.size()==0){
+	
 			for(int i=0;i<paramValues.length;i++){
-				List<CaseSpecialDto>  csDtoCatch = new ArrayList<CaseSpecialDto>();
-				joblistCatch.put(param[i], csDtoCatch);
-				List<ParamExceptionDto> paramEs =  new ArrayList<ParamExceptionDto>();
-				exelistCatch.put(param[i], paramEs);
+				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
+				if(csDtoCatch==null){
+					csDtoCatch = new ArrayList<CaseSpecialDto>();
+					joblistCatch.put(param[i], csDtoCatch);
+				}
+				List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
+				if(paramEs==null){
+					paramEs =  new ArrayList<ParamExceptionDto>();
+					exelistCatch.put(param[i], paramEs);
+				}
+				
 			}
-		}		
+				
 		for(int i=0;i<paramValues.length;i++){
 			ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
 			
@@ -171,10 +178,8 @@ public class IExceptionCheckNodeProcessorImpl implements
 					List<Long> paramSe = paramSequence.get(paramExce);			
 					if(paramSe!=null && paramSe.size()>0){
 						for(ParamExceptionDto ped:paramEs){
-							if(!(paramSe.contains(ped.getSequence()))){
-								
-								Map<String ,Object> ExceptionMap =  new HashMap<>();
-								
+							if(!(paramSe.contains(ped.getSequence()))){							
+								Map<String ,Object> ExceptionMap =  new HashMap<>();								
 								ExceptionMap.put("datetime", ped.getTime());
 								ExceptionMap.put("versions", ped.getVersions());
 								ExceptionMap.put("series", ped.getSeries());
