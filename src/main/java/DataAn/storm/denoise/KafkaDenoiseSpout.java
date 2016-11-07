@@ -11,13 +11,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
+
+import com.google.common.collect.Maps;
 
 import DataAn.common.utils.JJSON;
 import DataAn.storm.BatchContext;
@@ -27,6 +28,7 @@ import DataAn.storm.ErrorMsg;
 import DataAn.storm.FlowUtils;
 import DataAn.storm.kafka.BaseConsumer;
 import DataAn.storm.kafka.BaseConsumer.BoundConsumer;
+import DataAn.storm.kafka.BaseConsumer.FetchObjs;
 import DataAn.storm.kafka.Beginning;
 import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.Ending;
@@ -60,15 +62,18 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	private AtomicLong atomicLong=new AtomicLong(0);
 	
+	private AtomicLong batchAtomicLong=new AtomicLong(0);
+	
+	
 	private SpoutOutputCollector collector;
 	
 	private BoundConsumer consumer;
 
-	private Map<Long, List<DefaultDeviceRecord>> tuples=Maps.newConcurrentMap();
+	private Map<Long, Map<Long, List<DefaultDeviceRecord>>> tuples=Maps.newConcurrentMap();
 	
-	private Map<Long, List<DefaultDeviceRecord>> errorTuples=Maps.newConcurrentMap();
+	private Map<Long, Map<Long, List<DefaultDeviceRecord>>> errorTuples=Maps.newConcurrentMap();
 	
-	private Iterator<Entry<Long, List<DefaultDeviceRecord>>> iter;
+	private Iterator<Entry<Long, Map<Long, List<DefaultDeviceRecord>>>> iter;
 	
 	private Communication communication;
 	
@@ -230,7 +235,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 					failCount++;
 				}
 				if(iter.hasNext()){
-					Entry<Long, List<DefaultDeviceRecord>> entry=iter.next();
+					Entry<Long, Map<Long, List<DefaultDeviceRecord>>> entry=iter.next();
 					BatchContext batchContext = getBatchContext();
 					collector.emit(new Values(entry.getValue(),batchContext),entry.getKey());
 				}
@@ -243,63 +248,55 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 				return ;
 			}
 			
-			
 			failCount=0;
 			long time=0;
-			List<DefaultDeviceRecord> records=null;
+			Map<Long, List<DefaultDeviceRecord>> maps=Maps.newHashMap();
+			List<DefaultDeviceRecord> records=new ArrayList<DefaultDeviceRecord>();
+			FetchObj fetchObj=null;
 			while(true){
-				FetchObj fetchObj=next();
-				if(Beginning.class.isInstance(fetchObj)) {
-					BatchContext batchContext = getBatchContext();
-					if(records==null){
-						records=new ArrayList<>();
-					}
-					DefaultDeviceRecord beginning=new DefaultDeviceRecord();
-					beginning.setStatus(MsgDefs._TYPE_BEGINNING);
-					records.add(beginning);
-					collector.emit(new Values(records,batchContext),time);
-					break;
-				}
-				if(Ending.class.isInstance(fetchObj)) {
-					System.out.println("reach------------------ the end "+consumer.getTopicPartition()[0]);
-					reachEnd=true;
-					DefaultDeviceRecord end=new DefaultDeviceRecord();
-					end.setStatus(MsgDefs._TYPE_ENDING);
-					BatchContext batchContext = getBatchContext();
-					if(records!=null&&!records.isEmpty()){
-						records.add(end);
-						tuples.put(time, records);
-						collector.emit(new Values(records,batchContext),time);
-						return;
-					}
-					else{
-						records=new ArrayList<>();
-						records.add(end);
-						collector.emit(new Values(records,batchContext),-1);
-						return;
-					}
-				}
-				
-				DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
-				if(time==0){
-					time=defaultDeviceRecord.get_time();
-					records=new ArrayList<>();
-					defaultDeviceRecord.setSequence(atomicLong.get());
-					records.add(defaultDeviceRecord);
-				}
-				else{
-					if(time!=defaultDeviceRecord.get_time()){
-						break;
-					}
-					else{
-						defaultDeviceRecord.setSequence(atomicLong.get());
-						records.add(defaultDeviceRecord);
+				FetchObjs fetchObjs=consumer.next(timeout);
+				if(!fetchObjs.isEmpty()){
+					Iterator<FetchObj> fetchObjIterator= fetchObjs.iterator();
+					while(fetchObjIterator.hasNext()){
+						fetchObj=fetchObjIterator.next();
+						if(Beginning.class.isInstance(fetchObj)) {
+							List<DefaultDeviceRecord>  beginRecords=new ArrayList<>();
+							DefaultDeviceRecord beginning=new DefaultDeviceRecord();
+							beginning.setStatus(MsgDefs._TYPE_BEGINNING);
+							beginRecords.add(beginning);
+							maps.put((long) -1, beginRecords);
+						}else if(Ending.class.isInstance(fetchObj)) {
+							System.out.println("reach------------------ the end "+consumer.getTopicPartition()[0]);
+							reachEnd=true;
+							DefaultDeviceRecord end=new DefaultDeviceRecord();
+							end.setStatus(MsgDefs._TYPE_ENDING);
+							List<DefaultDeviceRecord>  endRecords=new ArrayList<>();
+							endRecords.add(end);
+							maps.put((long) 1, endRecords);
+						}
+						else{
+							DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
+							if(time==defaultDeviceRecord.get_time()){
+								records.add(defaultDeviceRecord);
+							}
+							else{
+								if(time!=0){
+									maps.put(time, records);
+								}
+								records=new ArrayList<>();
+								time=defaultDeviceRecord.get_time();
+								records.add(defaultDeviceRecord);
+							}
+						}
 					}
 				}
+				break;
 			}
-			tuples.put(time, records);
+			Long batchId=batchAtomicLong.incrementAndGet();
+			tuples.put(batchId, maps);
 			BatchContext batchContext = getBatchContext();
-			collector.emit(new Values(records,batchContext),time);
+			batchContext.setBatchId(batchId);
+			collector.emit(new Values(maps,batchContext),batchId);
 		}catch (Exception e) {
 			setHasError(true);
 			error(e);
@@ -350,20 +347,6 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			errorTuples.put((Long) msgId, tuples.get(msgId));
 		}
 		iter=null;
-	}
-	
-	
-	protected FetchObj next(){
-		if(iterator==null){
-			iterator=consumer.next(timeout).iterator();
-		}
-		while(iterator.hasNext()){
-			FetchObj fetchObj= iterator.next();
-			offset.set(fetchObj.offset());
-			return fetchObj;
-		}
-		iterator=null;
-		return next();
 	}
 	
 	public static class Offset{

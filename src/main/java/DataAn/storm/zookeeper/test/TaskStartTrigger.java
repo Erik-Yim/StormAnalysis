@@ -29,8 +29,8 @@ public class TaskStartTrigger {
 		communication.setFilePath("c:\\j9-02--2016-02-01.csv");
 		communication.setVersions(UUID.randomUUID().toString());
 //		communication.setTopicPartition("data-prototype-30-1478227734563:0");
-//		communication.setTopicPartition("data-denoise-19-1478155064089:0");
-		communication.setTopicPartition("data-denoise-10-1478237312584:0");
+		communication.setTopicPartition("data-denoise-31-1478247139636:0");
+//		communication.setTopicPartition("data-denoise-10-1478237312584:0");
 		communication.setSeries("j9");
 		communication.setStar("02");
 		communication.setName("flywheel");
