@@ -124,32 +124,38 @@ public class IExceptionCheckNodeProcessorImpl implements
 				for(int i=0;i<cDtos.size();){				
 					int count = cDtos.get(i).getFrequency();
 					int limitTime = (int) cDtos.get(i).getLimitTime();
-					int endTime = (int)((DateUtil.fromDateStringToLong(cDtos.get(i+count-1).getDateTime()))/60000);
-					int startTime =(int)((DateUtil.fromDateStringToLong(cDtos.get(i).getDateTime()))/60000);
-					if((endTime-startTime)>=limitTime){
-						for(int j =i;j<i+count;j++){
-							finalCaseDtos.add(cDtos.get(j));
-							finalCaseDtosequence.add(cDtos.get(j).getSequence());
-						}
-						Map<String ,Object> jobMap =  new HashMap<>();
-									
-						jobMap.put("datestime", cDtos.get(i).getDateTime());
-						jobMap.put("versions", cDtos.get(i).getVerisons());
-						jobMap.put("series", cDtos.get(i).getSeries());
-						jobMap.put("star", cDtos.get(i).getStar());
-						jobMap.put("deviceName", cDtos.get(i).getDeviceName());
-						jobMap.put("paramName", cDtos.get(i).getParamName());	
-						jobMap.put("value", cDtos.get(i).getValue());					
-						jobMap.put("hadRead", "0");	
-						String context = JJSON.get().formatObject(jobMap);
+					if((i+count-1)<cDtos.size()){
+						//int endTime = (int)((DateUtil.fromDateStringToLong(cDtos.get(i+count-1).getDateTime()))/60000);
+						int endTime = (int)((cDtos.get(i+count-1).get_time())/60000);
+						//int startTime =(int)((DateUtil.fromDateStringToLong(cDtos.get(i).getDateTime()))/60000);
+						int startTime =(int)((cDtos.get(i+count-1).get_time())/60000);
+						if((endTime-startTime)>=limitTime){
+							for(int j =i;j<i+count;j++){
+								finalCaseDtos.add(cDtos.get(j));
+								finalCaseDtosequence.add(cDtos.get(j).getSequence());
+							}
+							Map<String ,Object> jobMap =  new HashMap<>();
+										
+							jobMap.put("datestime", cDtos.get(i).getDateTime());
+							jobMap.put("versions", cDtos.get(i).getVerisons());
+							jobMap.put("series", cDtos.get(i).getSeries());
+							jobMap.put("star", cDtos.get(i).getStar());
+							jobMap.put("deviceName", cDtos.get(i).getDeviceName());
+							jobMap.put("paramName", cDtos.get(i).getParamName());	
+							jobMap.put("value", cDtos.get(i).getValue());					
+							jobMap.put("hadRead", "0");	
+							String context = JJSON.get().formatObject(jobMap);
+							
+							MongoPeristModel mpModel=new MongoPeristModel();
+							mpModel.setCollection(deviceName+"_ExceptionJob");
+							mpModel.setVersions(cDtos.get(i).getVerisons());
+							mpModel.setContent(context);
+							simpleProducer.send(mpModel);									
+							i=i+limitTime;	
+						}else{i++;}										
 						
-						MongoPeristModel mpModel=new MongoPeristModel();
-						mpModel.setCollection(deviceName+"_ExceptionJob");
-						mpModel.setVersions(cDtos.get(i).getVerisons());
-						mpModel.setContent(context);
-						simpleProducer.send(mpModel);									
-						i=i+limitTime;	
-					}else{i++;}				
+					}
+					
 				}
 			//	MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_SpecialCase", documentList);
 				finalCaseDtoMap.put(param_Name, finalCaseDtos);
