@@ -11,6 +11,7 @@ import DataAn.dto.CaseSpecialDto;
 import DataAn.dto.ParamExceptionDto;
 import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
+import DataAn.storm.StormNames;
 import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
 import DataAn.storm.exceptioncheck.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor;
@@ -111,7 +112,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		InnerProducer innerProducer=new InnerProducer(conf);
 		SimpleProducer simpleProducer =new SimpleProducer(innerProducer, 
-				"data-persist", 0);	
+				StormNames.DATA_PERSIST_TOPIC, 0);	
 		if(casDtoMap!=null && casDtoMap.size()>0 ){
 			for(String param_Name:casDtoMap.keySet()){			
 				List<CaseSpecialDto> cDtos = casDtoMap.get(param_Name);

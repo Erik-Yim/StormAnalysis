@@ -7,6 +7,7 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
+import DataAn.storm.StormNames;
 import DataAn.storm.kafka.InnerProducer;
 import DataAn.storm.kafka.SimpleProducer;
 
@@ -24,7 +25,7 @@ public class HierarchyPersistBolt extends BaseSimpleRichBolt {
 		super.prepare(stormConf, context, collector);
 		InnerProducer innerProducer=new InnerProducer(stormConf);
 		producer =new SimpleProducer(innerProducer, 
-				"data-persist", 0);	
+				StormNames.DATA_PERSIST_TOPIC, 0);	
 	}
 	
 	@Override

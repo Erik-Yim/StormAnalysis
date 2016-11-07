@@ -19,6 +19,7 @@ import org.apache.storm.tuple.Values;
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.FlowUtils;
+import DataAn.storm.StormNames;
 import DataAn.storm.denoise.IDenoiseFilterNodeProcessor.IDenoiseFilterNodeProcessorGetter;
 import DataAn.storm.denoise.IDeviceRecordPersit.IDeviceRecordPersitGetter;
 import DataAn.storm.kafka.BoundProducer;
@@ -88,7 +89,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 				InnerProducer innerProducer=new InnerProducer(conf);
 				boundProducer=new BoundProducer(innerProducer);
 				simpleProducer=new SimpleProducer(innerProducer,
-						"data-persist", 0);
+						StormNames.DATA_PERSIST_TOPIC, 0);
 			}
 			
 			@Override
