@@ -57,6 +57,7 @@ public class KafkaDeviceRecordPersitImpl implements IDeviceRecordPersit{
 		defaultFetchObj.setTime(defaultDeviceRecord.getTime());
 		defaultFetchObj.set_time(defaultDeviceRecord.get_time());
 		defaultFetchObj.setRecordTime(new Date().getTime());
+		defaultFetchObj.setVersions(defaultDeviceRecord.getVersions()); 
 		return defaultFetchObj;
 	}
 

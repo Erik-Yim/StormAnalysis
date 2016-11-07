@@ -1,5 +1,7 @@
 package DataAn.storm.persist;
 
+import java.util.List;
+
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
@@ -15,12 +17,14 @@ public class SimplePersistBolt extends BaseSimpleRichBolt {
 
 	@Override
 	protected void doExecute(Tuple tuple) throws Exception {
-		MongoPeristModel mongoPeristModel= 
-				(MongoPeristModel) tuple.getValueByField("record");
+		List<MongoPeristModel> mongoPeristModels= 
+				(List<MongoPeristModel>) tuple.getValueByField("record");
 		IMongoPersistService mongoPersistService=  IMongoPersistService.MongoPersistServiceGetter.getMongoPersistService(getStormConf());
 		try{
-			mongoPersistService.persist(mongoPeristModel, getStormConf());
-			Notify notify=mongoPeristModel.getNotify();
+			for(MongoPeristModel mongoPeristModel:mongoPeristModels){
+				mongoPersistService.persist(mongoPeristModel, getStormConf());
+				Notify notify=mongoPeristModel.getNotify();
+			}
 			//TODO send notification
 		}catch (Exception e) {
 			// TODO: handle exception

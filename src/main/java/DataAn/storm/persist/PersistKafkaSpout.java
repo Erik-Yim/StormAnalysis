@@ -1,6 +1,8 @@
 package DataAn.storm.persist;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -51,7 +53,8 @@ public class PersistKafkaSpout extends BaseRichSpout {
 		this.collector=collector;
 		String topicPartition=KafkaNameKeys.getKafkaTopicPartition(conf);
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
-				.manualPartitionAssign(topicPartition.split(","));
+				.manualPartitionAssign(topicPartition.split(","))
+				.group("data-comsumer");
 		consumer=BaseConsumer.simpleConsumer(innerConsumer,parser);
 		for(String string:consumer.getTopicPartition()){
 			consumer.seek(string, 0);
@@ -61,15 +64,16 @@ public class PersistKafkaSpout extends BaseRichSpout {
 	
 	@Override
 	public void nextTuple() {
-		MongoPeristModel mongoPeristModel=null;
+		List<MongoPeristModel> models=new ArrayList<>();
 		FetchObjs fetchObjs2=consumer.next(timeout);
 		if(!fetchObjs2.isEmpty()){
 			Iterator<FetchObj> fetchObjIterator= fetchObjs2.iterator();
 			while(fetchObjIterator.hasNext()){
-				mongoPeristModel=(MongoPeristModel) fetchObjIterator.next();
+				MongoPeristModel mongoPeristModel=(MongoPeristModel) fetchObjIterator.next();
 				mongoPeristModel.setSequence(atomicLong.incrementAndGet());
-				collector.emit(new Values(mongoPeristModel));
+				models.add(mongoPeristModel);
 			}
+			collector.emit(new Values(models));
 		}
 	}
 

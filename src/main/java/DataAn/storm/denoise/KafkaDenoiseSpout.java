@@ -1,6 +1,7 @@
 package DataAn.storm.denoise;
 
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -150,7 +151,8 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
 		triggered = true;
-		topic="data-denoise-"+disAtomicLong.getSequence()+"-"+new Date().getTime();
+		topic="data-denoise-"+disAtomicLong.getSequence()+"-"+
+		new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 		final String path="/flow/"+communication.getSequence()+"/error";
 		if(!executor.exists(path)){
 			executor.createPath(path);
