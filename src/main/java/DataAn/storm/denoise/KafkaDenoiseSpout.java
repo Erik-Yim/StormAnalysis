@@ -256,7 +256,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			
 			failCount=0;
 			long time=0;
-			Map<Long, List<DefaultDeviceRecord>> maps=Maps.newHashMap();
+			Map<Long, List<DefaultDeviceRecord>> maps=Maps.newLinkedHashMap();
 			List<DefaultDeviceRecord> records=new ArrayList<DefaultDeviceRecord>();
 			FetchObj fetchObj=null;
 			while(true){

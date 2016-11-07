@@ -82,7 +82,12 @@ public class IExceptionCheckNodeProcessorImpl implements
 					cDto.setLimitTime(ecpc.getDelayTime());
 					cDto.setSequence(sequence);
 					cDto.setVerisons(deviceRecord.versions());
-					csDtoCatch.add(cDto);
+					try{
+						csDtoCatch.add(cDto);
+					}catch (Exception e) {
+						e.printStackTrace();
+					}
+					
 					casDtoMap.put(param[i], csDtoCatch);
 				}
 				if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
@@ -151,7 +156,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 							simpleProducer.send(mpModel);									
 							i=i+limitTime;	
 						}else{i++;}										
-					}
+					}else{i++;}
 					
 				}
 			//	MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_SpecialCase", documentList);
