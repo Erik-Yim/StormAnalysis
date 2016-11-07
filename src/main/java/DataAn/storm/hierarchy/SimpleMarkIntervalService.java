@@ -7,14 +7,14 @@ import java.util.List;
 public class SimpleMarkIntervalService implements IMarkIntervalService {
 
 	@Override
-	public Long[] markIntervals(HierarchyDeviceRecord deviceRecord,List<HierarchyModel> hierarchyModels) throws Exception {
-		List<Long> intervals=new ArrayList<>();
+	public HierarchyModel[] markIntervals(HierarchyDeviceRecord deviceRecord,List<HierarchyModel> hierarchyModels) throws Exception {
+		List<HierarchyModel> intervals=new ArrayList<>();
 		for(HierarchyModel hierarchyModel:hierarchyModels){
 			if(matches(deviceRecord, hierarchyModel)){
-				intervals.add(hierarchyModel.getInterval());
+				intervals.add(hierarchyModel);
 			}
 		}
-		return intervals.toArray(new Long[]{});
+		return intervals.toArray(new HierarchyModel[]{});
 	}
 
 	private boolean matches(HierarchyDeviceRecord deviceRecord,HierarchyModel hierarchyModel){

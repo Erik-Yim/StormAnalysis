@@ -6,6 +6,8 @@ import DataAn.storm.BatchContext;
 
 public class ExcepOpe implements Serializable {
 
+	private long batchId;
+	
 	private IExceptionCheckNodeProcessor processor;
 	
 	private BatchContext batchContext;
@@ -24,6 +26,14 @@ public class ExcepOpe implements Serializable {
 
 	public void setBatchContext(BatchContext batchContext) {
 		this.batchContext = batchContext;
+	}
+
+	public long getBatchId() {
+		return batchId;
+	}
+
+	public void setBatchId(long batchId) {
+		this.batchId = batchId;
 	}
 	
 }

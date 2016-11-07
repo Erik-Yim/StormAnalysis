@@ -9,10 +9,9 @@ import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.BaseAggregator;
 import org.apache.storm.trident.operation.BaseFunction;
-import org.apache.storm.trident.operation.ReducerAggregator;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
-import org.apache.storm.trident.testing.MemoryMapState;
+import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
@@ -34,7 +33,6 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 		TridentTopology tridentTopology=new TridentTopology();
 		
 		tridentTopology.newStream("exception-check-task-stream", new SpecialKafakaSpout(new Fields("record","batchContext")))
-		.parallelismHint(2)
 		.shuffle()
 		.each(new Fields("record","batchContext"), new BaseFunction() {
 			
@@ -66,8 +64,6 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 				}
 			}
 		},new Fields("processor"))
-		.parallelismHint(3)
-		.shuffle()
 		.aggregate(new Fields("batchContext","processor") , new BaseAggregator<ExcepOpe>() {
 
 			protected ZookeeperExecutor executor;
@@ -82,7 +78,11 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 			
 			@Override
 			public ExcepOpe init(Object batchId, TridentCollector collector) {
-				return new ExcepOpe();
+				ExcepOpe excepOpe= new ExcepOpe();
+				TransactionAttempt attempt=(TransactionAttempt) batchId;
+				excepOpe.setBatchId(attempt.getTransactionId());
+				System.out.println("aggregate->init thread["+Thread.currentThread().getName() + "] batch : "+excepOpe.getBatchId());
+				return excepOpe;
 			}
 			
 
@@ -95,9 +95,11 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 					}
 					if(val.getProcessor()==null){
 						IExceptionCheckNodeProcessor processor= (IExceptionCheckNodeProcessor) tuple.getValueByField("processor");
+						processor.setBatchContext(val.getBatchContext());
 						val.setProcessor(processor);
 					}
-					System.out.println("aggregate thread["+Thread.currentThread().getName() + "]");
+					System.out.println("aggregate->aggregate thread["+Thread.currentThread().getName() + "] batch : "+val.getBatchId());
+					
 				}catch (Exception e) {
 					e.printStackTrace();
 					throw new FailedException(e);
@@ -107,8 +109,9 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 
 			@Override
 			public void complete(ExcepOpe val, TridentCollector collector) {
+				System.out.println("aggregate->complete thread["+Thread.currentThread().getName() + "] batch : "+val.getBatchId());
 				try {
-					//val.getProcessor().persist();
+//					val.getProcessor().persist();
 					System.out.println("c");
 				} catch (Exception e) {
 					e.printStackTrace();

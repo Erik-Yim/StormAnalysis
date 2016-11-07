@@ -178,8 +178,14 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 				break;
 			}catch (Exception e) {
 				e.printStackTrace();
-				error(e);
 				try {
+					try{
+						error(e);
+						synchronized (this) {
+							wait(1000);
+						}
+					}catch (Exception e1) {
+					}
 					nodeWorker.release();
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {

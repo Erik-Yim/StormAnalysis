@@ -9,6 +9,8 @@ import DataAn.storm.DefaultDeviceRecord;
 
 public class DenoiseOpe implements Serializable {
 	
+	private long batchId;
+	
 	private BatchContext batchContext;
 	
 	Map<Long, List<DefaultDeviceRecord>> defaultDeviceRecords;
@@ -28,5 +30,14 @@ public class DenoiseOpe implements Serializable {
 	public void setDefaultDeviceRecords(Map<Long, List<DefaultDeviceRecord>> defaultDeviceRecords) {
 		this.defaultDeviceRecords = defaultDeviceRecords;
 	}
+
+	public long getBatchId() {
+		return batchId;
+	}
+
+	public void setBatchId(long batchId) {
+		this.batchId = batchId;
+	}
+	
 	
 }

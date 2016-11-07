@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.common.util.concurrent.AtomicDouble;
-
 import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
@@ -133,7 +131,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 						}
 						Map<String ,Object> jobMap =  new HashMap<>();
 									
-						jobMap.put("datestime", cDtos.get(i).getDateTime());
+						jobMap.put("datetime", cDtos.get(i).getDateTime());
 						jobMap.put("versions", cDtos.get(i).getVerisons());
 						jobMap.put("series", cDtos.get(i).getSeries());
 						jobMap.put("star", cDtos.get(i).getStar());

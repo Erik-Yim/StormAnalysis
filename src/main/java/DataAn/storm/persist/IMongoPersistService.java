@@ -17,34 +17,38 @@ public interface IMongoPersistService {
 
 	public void persist(MongoPeristModel mongoPeristModel,Map context);
 	
+	 
+	IMongoPersistService INSTANCE=new IMongoPersistService() {                
+		@Override
+		public void persist(MongoPeristModel mongoPeristModel, Map context) {
+			String series =  (String) context.get("series");
+			String star =  (String) context.get("star");
+			
+			Map<String, Object> content= JJSON.get().parse(mongoPeristModel.getContent());
+			MongodbUtil mg = MongodbUtil.getInstance();
+			MongoCollection<Document> collection = mg.getCollection(series+"_"+star, mongoPeristModel.getCollection());
+//			//List<Document> documentList = new ArrayList<Document>();
+			Document doc = new Document();
+			for(Map.Entry<String, Object> entry : content.entrySet()){
+				if("datetime".equals(entry.getKey())) doc.put(entry.getKey(),
+						DateUtil.format(entry.getValue()+""));
+				doc.put(entry.getKey(),entry.getValue());						
+			}
+			Long num = collection.count(Filters.and(Filters.eq("key", mongoPeristModel.getKey()),Filters.eq("id", mongoPeristModel.getId()),Filters.lte("recordTime", mongoPeristModel.getRecordTime())));
+			if(num>=0){
+				//Document doc = Document.parse(mongoPeristModel.getContent());
+				collection.insertOne(doc);
+				//mg.insertOne("series_start", mongoPeristModel.getCollection(), mongoPeristModel.getContent());	
+			}
+							
+			System.out.println(" save into mongodb----> "+ mongoPeristModel.getCollection() +" content["+mongoPeristModel.getContent()+"]");
+		}
+	};
+	
 	class MongoPersistServiceGetter {
 		
 		public static IMongoPersistService getMongoPersistService(Map context){
-			return new IMongoPersistService() {                
-				@Override
-				public void persist(MongoPeristModel mongoPeristModel, Map context) {
-					String series =  (String) context.get("series");
-					String star =  (String) context.get("star");
-					
-					Map<String, Object> content= JJSON.get().parse(mongoPeristModel.getContent());
-					MongodbUtil mg = MongodbUtil.getInstance();
-					MongoCollection<Document> collection = mg.getCollection(series+"_"+star, mongoPeristModel.getCollection());
-//					//List<Document> documentList = new ArrayList<Document>();
-					Document doc = new Document();
-					for(Map.Entry<String, Object> entry : content.entrySet()){
-						if("datetime".equals(entry.getKey())) doc.put(entry.getKey(),DateUtil.format(entry.getValue()+""));
-						doc.put(entry.getKey(),entry.getValue());						
-					}
-					Long num = collection.count(Filters.and(Filters.eq("key", mongoPeristModel.getKey()),Filters.eq("id", mongoPeristModel.getId()),Filters.lte("recordTime", mongoPeristModel.getRecordTime())));
-					if(num>=0){
-						//Document doc = Document.parse(mongoPeristModel.getContent());
-						collection.insertOne(doc);
-						//mg.insertOne("series_start", mongoPeristModel.getCollection(), mongoPeristModel.getContent());	
-					}
-									
-					System.out.println(" save into mongodb----> "+ mongoPeristModel.getCollection() +" content["+mongoPeristModel.getContent()+"]");
-				}
-			};
+			return INSTANCE;
 		}
 		
 	}

@@ -10,8 +10,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-import DataAn.storm.Communication;
-import DataAn.storm.ErrorMsg;
 import DataAn.storm.FlowUtils;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
@@ -55,6 +53,7 @@ public abstract class BaseSimpleRichBolt extends org.apache.storm.topology.base.
 		try{
 			doExecute(tuple);
 		}catch (Exception e) {
+			e.printStackTrace();
 			FlowUtils.setError(executor, tuple, e.getMessage());
 			throw new FailedException(e);
 		}
