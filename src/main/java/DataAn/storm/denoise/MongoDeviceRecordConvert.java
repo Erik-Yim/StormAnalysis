@@ -3,6 +3,7 @@ package DataAn.storm.denoise;
 import java.util.HashMap;
 import java.util.Map;
 
+import DataAn.common.utils.DateUtil;
 import DataAn.storm.DefaultDeviceRecord;
 
 public interface MongoDeviceRecordConvert {
@@ -27,6 +28,9 @@ public interface MongoDeviceRecordConvert {
 					for(int i=0;i<param.length;i++){
 						convertMap.put(param[i],paramValue[i]);
 					}
+					convertMap.put("year", DateUtil.format(defaultDeviceRecord.getTime(), "yyyy"));
+					convertMap.put("year_month", DateUtil.format(defaultDeviceRecord.getTime(), "yyyy-MM"));
+					convertMap.put("year_month_day", DateUtil.format(defaultDeviceRecord.getTime(), "yyyy-MM-dd"));
 					return convertMap;
 				}
 			};

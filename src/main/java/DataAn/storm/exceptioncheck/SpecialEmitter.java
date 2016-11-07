@@ -178,8 +178,14 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 				break;
 			}catch (Exception e) {
 				e.printStackTrace();
-				error(e);
 				try {
+					try{
+						error(e);
+						synchronized (this) {
+							wait(1000);
+						}
+					}catch (Exception e1) {
+					}
 					nodeWorker.release();
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {
@@ -249,6 +255,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 						if(fetchObj instanceof Beginning) continue;
 						if(fetchObj instanceof Null) continue;
 						if(fetchObj instanceof Ending){
+							System.out.println("reach------------------ the end "+consumer.getTopicPartition()[0]);
 							reachEnd=true;
 							break;
 						}

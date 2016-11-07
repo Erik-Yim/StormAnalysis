@@ -24,4 +24,9 @@ public class HierarchyDeviceRecord extends DefaultDeviceRecord {
 		this.interval = interval;
 	}
 	
+	@Override
+	public String getCollection() {
+		return super.getCollection()+hierarchyName;
+	}
+	
 }

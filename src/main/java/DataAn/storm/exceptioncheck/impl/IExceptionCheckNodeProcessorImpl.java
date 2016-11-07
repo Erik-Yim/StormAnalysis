@@ -6,14 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.common.util.concurrent.AtomicDouble;
-
-import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
 import DataAn.dto.ParamExceptionDto;
 import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
+import DataAn.storm.StormNames;
 import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
 import DataAn.storm.exceptioncheck.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor;
@@ -91,7 +89,12 @@ public class IExceptionCheckNodeProcessorImpl implements
 					cDto.setLimitTime(ecpc.getDelayTime());
 					cDto.setSequence(sequence);
 					cDto.setVerisons(deviceRecord.versions());
-					csDtoCatch.add(cDto);
+					try{
+						csDtoCatch.add(cDto);
+					}catch (Exception e) {
+						e.printStackTrace();
+					}
+					
 					casDtoMap.put(param[i], csDtoCatch);
 				}
 				if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
@@ -121,7 +124,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");
 		InnerProducer innerProducer=new InnerProducer(conf);
 		SimpleProducer simpleProducer =new SimpleProducer(innerProducer, 
-				"data-persist", 0);	
+				StormNames.DATA_PERSIST_TOPIC, 0);	
 		if(casDtoMap!=null && casDtoMap.size()>0 ){
 			for(String param_Name:casDtoMap.keySet()){			
 				List<CaseSpecialDto> cDtos = casDtoMap.get(param_Name);
@@ -143,7 +146,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 							}
 							Map<String ,Object> jobMap =  new HashMap<>();
 										
-							jobMap.put("datestime", cDtos.get(i).getDateTime());
+							jobMap.put("datetime", cDtos.get(i).getDateTime());
 							jobMap.put("versions", cDtos.get(i).getVerisons());
 							jobMap.put("series", cDtos.get(i).getSeries());
 							jobMap.put("star", cDtos.get(i).getStar());
@@ -160,8 +163,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 							simpleProducer.send(mpModel);									
 							i=i+limitTime;	
 						}else{i++;}										
-						
-					}
+					}else{i++;}
 					
 				}
 			//	MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_SpecialCase", documentList);

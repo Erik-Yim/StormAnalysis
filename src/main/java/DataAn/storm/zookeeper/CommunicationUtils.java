@@ -87,7 +87,7 @@ public class CommunicationUtils implements Serializable{
 					return Integer.parseInt(lastStr.substring(lastStr.lastIndexOf("-")+1));
 				}
 				
-			}, 10000, 30000, TimeUnit.MILLISECONDS);
+			}, 1000, 10000, TimeUnit.MILLISECONDS);
 			;
 		}
 	}

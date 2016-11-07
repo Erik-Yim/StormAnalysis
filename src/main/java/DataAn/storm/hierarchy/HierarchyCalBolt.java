@@ -9,9 +9,13 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
+import DataAn.storm.hierarchy.IMarkIntervalService.IMarkIntervalServiceGetter;
+
 @SuppressWarnings({"serial","rawtypes"})
 public class HierarchyCalBolt extends BaseSimpleRichBolt {
 
+	private IMarkIntervalService markIntervalService=IMarkIntervalServiceGetter.get();
+	
 	private List<HierarchyModel> hierarchyModels;
 	{
 		try{
@@ -32,16 +36,15 @@ public class HierarchyCalBolt extends BaseSimpleRichBolt {
 
 	@Override
 	protected void doExecute(Tuple tuple) throws Exception {
-		HierarchyDeviceRecord deviceRecord= 
-				(HierarchyDeviceRecord) tuple.getValueByField("record");
-		System.out.println(HierarchyCalBolt.class+" thread["+Thread.currentThread().getName() 
-				+ "] tuple ["+deviceRecord.getTime()+","
-				+deviceRecord.getSequence()+"] _ >");
-		
-		IMarkIntervalService markIntervalService=new SimpleMarkIntervalService();
-		Long[] intervals=markIntervalService.markIntervals(deviceRecord, hierarchyModels);
-		for(Long interval:intervals){
-			emit(new Values(deviceRecord,interval));
+		List<HierarchyDeviceRecord> hierarchyDeviceRecords= 
+				(List<HierarchyDeviceRecord>) tuple.getValueByField("records");
+		for(HierarchyDeviceRecord deviceRecord:hierarchyDeviceRecords){
+			HierarchyModel[] intervals=markIntervalService.markIntervals(deviceRecord, hierarchyModels);
+			for(HierarchyModel interval:intervals){
+				deviceRecord.setInterval(interval.getInterval());
+				deviceRecord.setHierarchyName(interval.getName());
+				emit(new Values(deviceRecord,interval.getInterval()));
+			}
 		}
 	}
 

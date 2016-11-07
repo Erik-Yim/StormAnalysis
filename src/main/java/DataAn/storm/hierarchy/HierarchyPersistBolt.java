@@ -7,9 +7,15 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
+import DataAn.storm.StormNames;
+import DataAn.storm.kafka.InnerProducer;
+import DataAn.storm.kafka.SimpleProducer;
+
 @SuppressWarnings({"serial","rawtypes"})
 public class HierarchyPersistBolt extends BaseSimpleRichBolt {
 
+	private SimpleProducer producer;
+	
 	public HierarchyPersistBolt() {
 		super(new Fields());
 	}
@@ -17,6 +23,9 @@ public class HierarchyPersistBolt extends BaseSimpleRichBolt {
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
+		InnerProducer innerProducer=new InnerProducer(stormConf);
+		producer =new SimpleProducer(innerProducer, 
+				StormNames.DATA_PERSIST_TOPIC, 0);	
 	}
 	
 	@Override
@@ -24,13 +33,11 @@ public class HierarchyPersistBolt extends BaseSimpleRichBolt {
 		HierarchyDeviceRecord deviceRecord= 
 				(HierarchyDeviceRecord) tuple.getValueByField("record");
 		Long interval=(Long) tuple.getValueByField("interval");
-		System.out.println(HierarchyPersistBolt.class+" thread["+Thread.currentThread().getName() 
-				+ "] tuple ["+deviceRecord.getTime()+","
-				+deviceRecord.getSequence()+"]  interval ["+interval+"] _ >");
-		
-		deviceRecord.setInterval(interval);
+		System.out.println(" thread["+Thread.currentThread().getName() 
+				+ "] tuple ["+deviceRecord.getTime()+",_time "+deviceRecord.get_time()+", sequence:"
+				+deviceRecord.getSequence()+"]  interval ["+interval+"] _ <");
 		IHierarchyDeviceRecordPersist deviceRecordPersist=new SimpleHierarchyDeviceRecordPersist();
-		deviceRecordPersist.persist(deviceRecord, getStormConf());
+		deviceRecordPersist.persist(producer,deviceRecord, getStormConf());
 		
 	}
 

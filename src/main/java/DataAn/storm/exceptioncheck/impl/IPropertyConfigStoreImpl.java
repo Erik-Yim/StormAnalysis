@@ -24,7 +24,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		String star =  (String) context.get("star");
 		String parameterType =  (String) context.get("device");
 
-		 String entity = HttpUtil.get("http://192.168.0.78:8080/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		 String entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		 
 		 Map<String, Class<ExceptionCasePointConfig>> classMap = new HashMap<String, Class<ExceptionCasePointConfig>>();
 		 classMap.put("parameterInfos", ExceptionCasePointConfig.class);

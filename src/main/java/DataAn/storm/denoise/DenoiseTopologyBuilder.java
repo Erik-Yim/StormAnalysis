@@ -11,6 +11,7 @@ import org.apache.storm.trident.operation.BaseAggregator;
 import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
+import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
@@ -18,6 +19,7 @@ import org.apache.storm.tuple.Values;
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.FlowUtils;
+import DataAn.storm.StormNames;
 import DataAn.storm.denoise.IDenoiseFilterNodeProcessor.IDenoiseFilterNodeProcessorGetter;
 import DataAn.storm.denoise.IDeviceRecordPersit.IDeviceRecordPersitGetter;
 import DataAn.storm.kafka.BoundProducer;
@@ -36,7 +38,6 @@ public class DenoiseTopologyBuilder implements Serializable {
 		TridentTopology tridentTopology=new TridentTopology();
 		
 		tridentTopology.newStream("denoise-task-stream", new KafkaDenoiseSpout())
-		.shuffle()
 		.each(new Fields("record","batchContext"), new BaseFunction() {
 
 			protected ZookeeperExecutor executor;
@@ -68,49 +69,6 @@ public class DenoiseTopologyBuilder implements Serializable {
 				}
 			}
 		},new Fields())
-		.parallelismHint(2)
-//		.each(new Fields("record","batchContext"), new BaseFunction() {
-//			
-//			private Map conf;
-//			
-//			protected ZookeeperExecutor executor;
-//			
-//			private BoundProducer boundProducer;
-//			
-//			private SimpleProducer simpleProducer;
-//			
-//			@Override
-//			public void prepare(Map conf, TridentOperationContext context) {
-//				this.conf=conf;
-//				executor=new ZooKeeperClient()
-//						.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
-//						.namespace(ZooKeeperNameKeys.getNamespace(conf))
-//						.build();
-//				InnerProducer innerProducer=new InnerProducer(conf);
-//				boundProducer=new BoundProducer(innerProducer);
-//				simpleProducer=new SimpleProducer(innerProducer,
-//						"data-persist", 0);
-//			}
-//			
-//			@Override
-//			public void execute(TridentTuple tuple, TridentCollector collector) {
-//				
-//				try{
-//					Map<Long, List<DefaultDeviceRecord>> defaultDeviceRecords= (Map<Long, List<DefaultDeviceRecord>>)
-//							tuple.getValueByField("record");
-//					BatchContext batchContext=(BatchContext) tuple.getValueByField("batchContext");
-//					IDeviceRecordPersit persit=IDeviceRecordPersitGetter.get();
-//					for(List<DefaultDeviceRecord> deviceRecords:defaultDeviceRecords.values()){
-//						persit.persist(boundProducer, simpleProducer,conf, 
-//								batchContext, deviceRecords.toArray(new DefaultDeviceRecord[]{}));
-//					}
-//				}catch (Exception e) {
-//					FlowUtils.setError(executor, tuple, e.getMessage());
-//					throw new FailedException(e);
-//				}
-//			}
-//		},new Fields())
-		.shuffle()
 		.aggregate(new Fields("record","batchContext"), new BaseAggregator<DenoiseOpe>() {
 			
 			private Map conf;
@@ -131,12 +89,15 @@ public class DenoiseTopologyBuilder implements Serializable {
 				InnerProducer innerProducer=new InnerProducer(conf);
 				boundProducer=new BoundProducer(innerProducer);
 				simpleProducer=new SimpleProducer(innerProducer,
-						"data-persist", 0);
+						StormNames.DATA_PERSIST_TOPIC, 0);
 			}
 			
 			@Override
 			public DenoiseOpe init(Object batchId, TridentCollector collector) {
-				return new DenoiseOpe();
+				DenoiseOpe denoiseOpe= new DenoiseOpe();
+				TransactionAttempt attempt=(TransactionAttempt) batchId;
+				denoiseOpe.setBatchId(attempt.getTransactionId());
+				return denoiseOpe;
 			}
 			
 			@Override
@@ -150,9 +111,10 @@ public class DenoiseTopologyBuilder implements Serializable {
 								tuple.getValueByField("record");
 						val.setDefaultDeviceRecords(defaultDeviceRecords);
 					}
-					System.out.println("aggregate thread["+Thread.currentThread().getName() + "]");
+					System.out.println("aggregate->aggregate thread["+Thread.currentThread().getName() + "] batch : "+val.getBatchId());
 				}catch (Exception e) {
 					e.printStackTrace();
+					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), e.getMessage());
 					throw new FailedException(e);
 				}
 			}
@@ -161,6 +123,8 @@ public class DenoiseTopologyBuilder implements Serializable {
 			public void complete(DenoiseOpe val, TridentCollector collector) {
 				BatchContext batchContext=null;
 				try{
+					System.out.println("aggregate->complete thread["+Thread.currentThread().getName() + "] batch : "+val.getBatchId());
+					
 					Map<Long, List<DefaultDeviceRecord>> defaultDeviceRecords=
 							val.getDefaultDeviceRecords();
 					batchContext=
@@ -171,6 +135,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 								batchContext, deviceRecords.toArray(new DefaultDeviceRecord[]{}));
 					}
 				}catch (Exception e) {
+					e.printStackTrace();
 					FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
 					throw new FailedException(e);
 				}

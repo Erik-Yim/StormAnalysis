@@ -198,8 +198,14 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 				break;
 			}catch (Exception e) {
 				e.printStackTrace();
-				error(e);
 				try {
+					try{
+						error(e);
+						synchronized (this) {
+							wait(1000);
+						}
+					}catch (Exception e1) {
+					}
 					nodeWorker.release();
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {
@@ -250,7 +256,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			
 			failCount=0;
 			long time=0;
-			Map<Long, List<DefaultDeviceRecord>> maps=Maps.newHashMap();
+			Map<Long, List<DefaultDeviceRecord>> maps=Maps.newLinkedHashMap();
 			List<DefaultDeviceRecord> records=new ArrayList<DefaultDeviceRecord>();
 			FetchObj fetchObj=null;
 			while(true){
