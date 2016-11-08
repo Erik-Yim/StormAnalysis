@@ -210,6 +210,7 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 						if(fetchObj instanceof Beginning) continue;
 						if(fetchObj instanceof Null) continue;
 						if(fetchObj instanceof Ending){
+							System.out.println("reach------------------ the end "+consumer.getTopicPartition()[0]);
 							reachEnd=true;
 							break;
 						}

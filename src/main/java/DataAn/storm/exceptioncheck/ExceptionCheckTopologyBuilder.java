@@ -19,7 +19,10 @@ import org.apache.storm.tuple.Values;
 import DataAn.storm.BatchContext;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.FlowUtils;
+import DataAn.storm.StormNames;
 import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor.IExceptionCheckNodeProcessorGetter;
+import DataAn.storm.kafka.InnerProducer;
+import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 import DataAn.storm.zookeeper.ZooKeeperNameKeys;
@@ -68,12 +71,17 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 
 			protected ZookeeperExecutor executor;
 			
+			private SimpleProducer simpleProducer;
+			
 			@Override
 			public void prepare(Map conf, TridentOperationContext context) {
 				executor=new ZooKeeperClient()
 						.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 						.namespace(ZooKeeperNameKeys.getNamespace(conf))
 						.build();
+				InnerProducer innerProducer=new InnerProducer(conf);
+				simpleProducer=new SimpleProducer(innerProducer,
+						StormNames.DATA_PERSIST_TOPIC, 0);
 			}
 			
 			@Override
@@ -111,7 +119,7 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 			public void complete(ExcepOpe val, TridentCollector collector) {
 				System.out.println("aggregate->complete thread["+Thread.currentThread().getName() + "] batch : "+val.getBatchId());
 				try {
-					val.getProcessor().persist();
+					val.getProcessor().persist(simpleProducer);
 					System.out.println("c");
 				} catch (Exception e) {
 					e.printStackTrace();

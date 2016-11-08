@@ -8,6 +8,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
 import DataAn.storm.StormNames;
+import DataAn.storm.hierarchy.IHierarchyDeviceRecordPersist.IHierarchyDeviceRecordPersistGetter;
 import DataAn.storm.kafka.InnerProducer;
 import DataAn.storm.kafka.SimpleProducer;
 
@@ -36,7 +37,7 @@ public class HierarchyPersistBolt extends BaseSimpleRichBolt {
 		System.out.println(" thread["+Thread.currentThread().getName() 
 				+ "] tuple ["+deviceRecord.getTime()+",_time "+deviceRecord.get_time()+", sequence:"
 				+deviceRecord.getSequence()+"]  interval ["+interval+"] _ <");
-		IHierarchyDeviceRecordPersist deviceRecordPersist=new SimpleHierarchyDeviceRecordPersist();
+		IHierarchyDeviceRecordPersist deviceRecordPersist=IHierarchyDeviceRecordPersistGetter.get();
 		deviceRecordPersist.persist(producer,deviceRecord, getStormConf());
 		
 	}

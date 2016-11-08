@@ -5,6 +5,7 @@ import java.io.Serializable;
 import DataAn.storm.BatchContext;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.exceptioncheck.impl.IExceptionCheckNodeProcessorImpl;
+import DataAn.storm.kafka.SimpleProducer;
 
 /**
  * 异常警告节点
@@ -20,7 +21,7 @@ public interface IExceptionCheckNodeProcessor extends Serializable {
 	 * 持久化以BATCH的形式进行
 	 * @throws Exception
 	 */
-	void persist() throws Exception;
+	void persist(SimpleProducer simpleProducer) throws Exception;
 	
 	void setBatchContext(BatchContext batchContext);
 	

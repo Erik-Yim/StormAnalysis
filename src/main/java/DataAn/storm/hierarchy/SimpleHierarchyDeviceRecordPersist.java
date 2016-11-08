@@ -32,6 +32,7 @@ public class SimpleHierarchyDeviceRecordPersist implements IHierarchyDeviceRecor
 		MongoPeristModel mpModel=new MongoPeristModel();
 		mpModel.setSeries(deviceRecord.getSeries());
 		mpModel.setStar(deviceRecord.getStar());
+		mpModel.setVersions(deviceRecord.getVersions());
 		mpModel.setCollection(deviceRecord.getCollection());
 		mpModel.setContent(context);
 		producer.send(mpModel);				
