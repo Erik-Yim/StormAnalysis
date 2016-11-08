@@ -495,7 +495,8 @@ public class NodeSelector implements Serializable{
 		}
 		
 		if(!instance.workflow.workerPaths.containsKey(worker)){
-			throw new RuntimeException("the worker["+worker+"] does not exist.");
+			//throw new RuntimeException("the worker["+worker+"] does not exist.");
+			return ;
 		}
 		
 		final WorkerPathVal workerPathVal=new WorkerPathVal();
@@ -690,7 +691,10 @@ public class NodeSelector implements Serializable{
 			
 			@Override
 			public void call(Node node) {
-				Communication communication=JJSON.get().parse(node.getStringData(), Communication.class);
+				Communication communication=
+						JJSON.get().parse(
+								new String(executor.getPath(node.getPath()),Charset.forName("utf-8"))
+								, Communication.class);
 				Instance instance=createInstance(communication);
 				try{
 					start(instance);

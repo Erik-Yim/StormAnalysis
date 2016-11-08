@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.apache.storm.utils.Utils;
 
 import DataAn.storm.Communication;
+import DataAn.storm.StormNames;
 import DataAn.storm.zookeeper.CommunicationUtils;
 import DataAn.storm.zookeeper.ZooKeeperClient;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
@@ -18,7 +19,7 @@ public class TaskStartTrigger {
 		
 		Map conf=new HashMap<>();
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
-		ZooKeeperNameKeys.setNamespace(conf, "test-zhongjin");
+		ZooKeeperNameKeys.setNamespace(conf, StormNames.TEST_NAMESPACE);
 		ZookeeperExecutor executor=new ZooKeeperClient()
 		.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 		.namespace(ZooKeeperNameKeys.getNamespace(conf))

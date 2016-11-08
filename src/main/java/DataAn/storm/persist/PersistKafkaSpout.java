@@ -24,7 +24,9 @@ import DataAn.storm.FlowUtils;
 import DataAn.storm.kafka.BaseConsumer;
 import DataAn.storm.kafka.BaseConsumer.FetchObjs;
 import DataAn.storm.kafka.BaseConsumer.SimpleConsumer;
+import DataAn.storm.kafka.BaseFetchObj;
 import DataAn.storm.kafka.FetchObj;
+import DataAn.storm.kafka.FetchObjParser;
 import DataAn.storm.kafka.InnerConsumer;
 import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.NodeWorker;
@@ -38,6 +40,15 @@ import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 @SuppressWarnings({ "rawtypes", "serial" })
 public class PersistKafkaSpout extends BaseRichSpout {
 	
+    private static final FetchObjParser parser=new FetchObjParser() {
+        
+        @Override
+        public BaseFetchObj parse(String object) {
+            return JJSON.get().parse(object, MongoPeristModel.class);
+        }
+    };
+
+    
 	protected Map conf;
 	
 	private AtomicLong atomicLong=new AtomicLong(0);
@@ -82,11 +93,11 @@ public class PersistKafkaSpout extends BaseRichSpout {
 	}
 	
 	private void prepare(){
-		String topicPartition=communication.getTemporaryTopicPartition();
+		String topicPartition=communication.getPersistTopicPartition();
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
 				.manualPartitionAssign(topicPartition.split(","))
 				.group("data-comsumer");
-		consumer=BaseConsumer.simpleConsumer(innerConsumer);
+		consumer=BaseConsumer.simpleConsumer(innerConsumer,parser);
 		for(String string:consumer.getTopicPartition()){
 			consumer.seek(string, 0);
 		}
@@ -118,7 +129,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
 		long sequence=workerPathVal.getSequence();
-		this.communication = FlowUtils.getDenoise(executor,sequence);
+		this.communication = FlowUtils.getPersist(executor,sequence);
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();

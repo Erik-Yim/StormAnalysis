@@ -100,14 +100,16 @@ public class CommunicationUtils implements Serializable{
 		String time=new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 		communication.setStatus(NodeStatus.READY);
 		communication.setTopicPartition("data-prototype-11-1478509715525:0");
-		communication.setTemporaryTopicPartition(
-				StormNames.DATA_TEMPORARY_TOPIC
-				+"-"+disAtomicLong.getSequence()+"-"+time
-				+":0");
-		communication.setPersistTopicPartition(
-				StormNames.DATA_PERSIST_TOPIC
-				+"-"+disAtomicLong.getSequence()+"-"+time
-				+":0");
+//		communication.setTemporaryTopicPartition(
+//				StormNames.DATA_TEMPORARY_TOPIC
+//				+"-"+disAtomicLong.getSequence()+"-"+time
+//				+":0");
+		communication.setTemporaryTopicPartition("data-denoise-4-20161107191327:0");
+//		communication.setPersistTopicPartition(
+//				StormNames.DATA_PERSIST_TOPIC
+//				+"-"+disAtomicLong.getSequence()+"-"+time
+//				+":0");
+		communication.setPersistTopicPartition("data-persist-topology:0");
 		String path="/flow-tasks/"+"t-";
 		executor.createPath(path, JJSON.get().formatObject(communication).getBytes(Charset.forName("utf-8")),
 				CreateMode.PERSISTENT_SEQUENTIAL);
@@ -121,6 +123,7 @@ public class CommunicationUtils implements Serializable{
 		FlowUtils.setDenoise(executor, communication);
 		FlowUtils.setExcep(executor, communication);
 		FlowUtils.setHierarchy(executor, communication);
+		FlowUtils.setPersist(executor, communication);
 	}
 	
 	public void remove(Communication communication){
