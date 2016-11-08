@@ -119,8 +119,9 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 			public void complete(ExcepOpe val, TridentCollector collector) {
 				System.out.println("aggregate->complete thread["+Thread.currentThread().getName() + "] batch : "+val.getBatchId());
 				try {
-					val.getProcessor().persist(simpleProducer);
-					System.out.println("c");
+					if(val.getProcessor()!=null){
+						val.getProcessor().persist(simpleProducer);
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), e.getMessage());

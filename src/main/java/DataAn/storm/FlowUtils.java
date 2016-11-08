@@ -69,6 +69,21 @@ public abstract class FlowUtils {
 	}
 	
 	
+	public static Communication getPersist(ZookeeperExecutor executor,long sequence){
+		String path="/flow/"+sequence+"/communication/persist";
+		if(executor.exists(path)){
+			byte[] bytes=executor.getPath(path);
+			return JJSON.get().parse(new String(bytes, Charset.forName("utf-8")), Communication.class);
+		}
+		return null;
+	}
+	
+	public static void setPersist(ZookeeperExecutor executor,Communication communication){
+		String path="/flow/"+communication.getSequence()+"/communication/persist";
+		executor.setPath(path, JJSON.get().formatObject(communication));
+	}
+	
+	
 	public static ErrorMsg getError(ZookeeperExecutor executor,long sequence){
 		String path="/flow/"+sequence+"/error";
 		if(executor.exists(path)){
@@ -83,6 +98,10 @@ public abstract class FlowUtils {
 		String path="/flow/"+errorMsg.getSequence()+"/error";
 		executor.setPath(path, 
 				JJSON.get().formatObject(errorMsg));
+		
+		String workflowDone="/flow/"+errorMsg.getSequence()+"/done";
+		executor.setPath(workflowDone, 
+				"1");
 	}
 	
 	public static void setError(ZookeeperExecutor executor,Tuple tuple, String message){

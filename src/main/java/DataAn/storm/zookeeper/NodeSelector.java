@@ -373,6 +373,7 @@ public class NodeSelector implements Serializable{
 		
 		private Map<String, InstanceNode> instanceNodes=Maps.newConcurrentMap();
 		
+		private Map<Integer, InstanceNode> backInstanceNodes=Maps.newConcurrentMap();
 	}
 	
 	private class Master{
@@ -445,7 +446,7 @@ public class NodeSelector implements Serializable{
 			instanceNode.id=c.id;
 			instanceNode.nodeData=c;
 			instance.instanceNodes.put(instancePath, instanceNode);
-			
+			instance.backInstanceNodes.put(c.getId(),instanceNode);
 			if(c.hasChildren()){
 				instance.childPathWatcherPaths.add(instancePath);
 				if(instance.rootPath==null||"".equals(instance.rootPath)){
@@ -477,11 +478,11 @@ public class NodeSelector implements Serializable{
 		});
 	}
 	
-	private long instanceSequence(String path){
-		String instancePrefix=basePath+"/instance/"+name+"/"; 
-		String tempStr=path.substring(instancePrefix.length());
-		return Long.parseLong(tempStr.substring(0,tempStr.indexOf("/")));
-	}
+//	private long instanceSequence(String path){
+//		String instancePrefix=basePath+"/instance/"+name+"/"; 
+//		String tempStr=path.substring(instancePrefix.length());
+//		return Long.parseLong(tempStr.substring(0,tempStr.indexOf("/")));
+//	}
 	
 	private int pathSequence(String path){
 		String lastStr=path.substring(path.lastIndexOf("/"));
@@ -495,7 +496,8 @@ public class NodeSelector implements Serializable{
 		}
 		
 		if(!instance.workflow.workerPaths.containsKey(worker)){
-			throw new RuntimeException("the worker["+worker+"] does not exist.");
+			//throw new RuntimeException("the worker["+worker+"] does not exist.");
+			return ;
 		}
 		
 		final WorkerPathVal workerPathVal=new WorkerPathVal();
@@ -572,6 +574,19 @@ public class NodeSelector implements Serializable{
 							if(_path.equals(instance.rootPath)){
 								communicationUtils.remove(instance.communication);
 							}
+							
+							InstanceNode instanceNode=  instance.backInstanceNodes.get(1000);
+							if(instanceNode!=null){
+								if(_path.equals(instanceNode.path)){
+									//set complete 
+									final String workflowDonePath="/flow/"+instance.sequence+"/done";
+									if(!executor.exists(workflowDonePath)){
+										executor.createPath(workflowDonePath);
+									}
+									executor.setPath(workflowDonePath, "1");
+								}
+							}
+							
 						}
 						
 						Collections.sort(nodes, new Comparator<Node>() {
@@ -678,6 +693,11 @@ public class NodeSelector implements Serializable{
 		createInstancePath(instance.workflow.nodeData,instance);
 		attachInstanceChildPathWatcher(instance);
 		master.instances.put(sequence, instance);
+		
+		final String path="/flow/"+communication.getSequence()+"/error";
+		if(!executor.exists(path)){
+			executor.createPath(path);
+		}
 		return instance;
 	}
 	
@@ -690,7 +710,10 @@ public class NodeSelector implements Serializable{
 			
 			@Override
 			public void call(Node node) {
-				Communication communication=JJSON.get().parse(node.getStringData(), Communication.class);
+				Communication communication=
+						JJSON.get().parse(
+								new String(executor.getPath(node.getPath()),Charset.forName("utf-8"))
+								, Communication.class);
 				Instance instance=createInstance(communication);
 				try{
 					start(instance);
