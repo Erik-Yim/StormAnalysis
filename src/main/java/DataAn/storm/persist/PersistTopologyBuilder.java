@@ -14,7 +14,7 @@ public class PersistTopologyBuilder implements Serializable {
 
 		TopologyBuilder topologyBuilder=new TopologyBuilder();
 		topologyBuilder.setSpout("persist-task-spout", new PersistKafkaSpout());
-		topologyBuilder.setBolt("persist-task-persist-bolt", new SimplePersistBolt(new Fields("logging")),2)
+		topologyBuilder.setBolt("persist-task-persist-bolt", new SimplePersistBolt(new Fields("logging")),20)
 		.shuffleGrouping("persist-task-spout");
 		return topologyBuilder.createTopology();
 		

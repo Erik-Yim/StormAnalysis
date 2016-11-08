@@ -130,9 +130,6 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		new IPropertyConfigStoreImpl().initialize(context);
 		triggered = true;
 		final String path="/flow/"+communication.getSequence()+"/error";
-		if(!executor.exists(path)){
-			executor.createPath(path);
-		}
 		this.errorCache= executor.watchPath(path, new NodeCallback() {
 			
 			@Override
@@ -311,11 +308,18 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 
 	@Override
 	public void success(TransactionAttempt tx) {
-		BatchMeta batchMeta= store.get(tx.getTransactionId());
-		for(Entry<String, Scope> entry:batchMeta.getTopicPartitionOffset().entrySet()){
-			consumer.commitSync(entry.getKey(), entry.getValue().end);
-		}
-		System.out.println("-------SpecialEmitter  success ---------");
+		try{
+			BatchMeta batchMeta= store.get(tx.getTransactionId());
+			if(batchMeta!=null){
+				for(Entry<String, Scope> entry:batchMeta.getTopicPartitionOffset().entrySet()){
+					consumer.commitSync(entry.getKey(), entry.getValue().end);
+				}
+			}
+		}catch (Exception e) {
+			setHasError(true);
+			error(e);
+		} 
+		
 	}
 
 	@Override

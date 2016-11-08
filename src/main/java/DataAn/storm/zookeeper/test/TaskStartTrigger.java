@@ -35,8 +35,11 @@ public class TaskStartTrigger {
 		CommunicationUtils communicationUtils=new CommunicationUtils(executor,true);
 		Utils.sleep(3000);
 		communicationUtils.add(communication);
+//		communication.setSequence(33);
+//		communication.setZkPath("/flow-tasks/t-0000000000");
+//		communicationUtils.remove(communication);
 		
-		Utils.sleep(1000000);
+		Utils.sleep(10000);
 	}
 	
 }

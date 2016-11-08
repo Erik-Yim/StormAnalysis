@@ -9,6 +9,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
+import DataAn.storm.Communication;
 import DataAn.storm.hierarchy.IMarkIntervalService.IMarkIntervalServiceGetter;
 
 @SuppressWarnings({"serial","rawtypes"})
@@ -26,7 +27,7 @@ public class HierarchyCalBolt extends BaseSimpleRichBolt {
 	}
 	
 	public HierarchyCalBolt() {
-		super(new Fields("record","interval"));
+		super(new Fields("record","communication","interval"));
 	}
 	
 	@Override
@@ -38,12 +39,14 @@ public class HierarchyCalBolt extends BaseSimpleRichBolt {
 	protected void doExecute(Tuple tuple) throws Exception {
 		List<HierarchyDeviceRecord> hierarchyDeviceRecords= 
 				(List<HierarchyDeviceRecord>) tuple.getValueByField("records");
+		Communication communication= 
+				(Communication) tuple.getValueByField("communication");
 		for(HierarchyDeviceRecord deviceRecord:hierarchyDeviceRecords){
 			HierarchyModel[] intervals=markIntervalService.markIntervals(deviceRecord, hierarchyModels);
 			for(HierarchyModel interval:intervals){
 				deviceRecord.setInterval(interval.getInterval());
 				deviceRecord.setHierarchyName(interval.getName());
-				emit(new Values(deviceRecord,interval.getInterval()));
+				emit(new Values(deviceRecord,communication,interval.getInterval()));
 			}
 		}
 	}

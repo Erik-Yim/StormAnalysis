@@ -2,6 +2,7 @@ package DataAn.storm.persist;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,8 @@ public class PersistKafkaSpout extends BaseRichSpout {
 	
 	private boolean workflowDone;
 	
+	private long latestTime;
+	
 	private NodeCache workflowDoneCache;
 	
 	@Override
@@ -122,6 +125,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 			}catch (Exception e) {
 			}
 		}
+		latestTime=0;
 	}
 	
 	protected void wakeup() {
@@ -135,9 +139,6 @@ public class PersistKafkaSpout extends BaseRichSpout {
 		prepare();
 		triggered = true;
 		final String path="/flow/"+communication.getSequence()+"/error";
-		if(!executor.exists(path)){
-			executor.createPath(path);
-		}
 		this.errorCache=executor.watchPath(path, new NodeCallback() {
 			@Override
 			public void call(Node node) {
@@ -241,14 +242,21 @@ public class PersistKafkaSpout extends BaseRichSpout {
 			}
 			
 			if(workflowDone){
-				release();
-				await();
-				return;
+				if(latestTime>0){
+					long interval=new Date().getTime()-latestTime;
+					if(interval>60000){
+						release();
+						await();
+						return;
+					}
+				}
 			}
 			
 			List<MongoPeristModel> models=new ArrayList<>();
 			FetchObjs fetchObjs=consumer.next(timeout);
 			if(!fetchObjs.isEmpty()){
+				if(latestTime>0)
+					latestTime=0;
 				Iterator<FetchObj> fetchObjIterator= fetchObjs.iterator();
 				while(fetchObjIterator.hasNext()){
 					MongoPeristModel mongoPeristModel=(MongoPeristModel) fetchObjIterator.next();
@@ -256,6 +264,9 @@ public class PersistKafkaSpout extends BaseRichSpout {
 					models.add(mongoPeristModel);
 				}
 				collector.emit(new Values(models));
+			}else{
+				if(latestTime==0)
+				latestTime=new Date().getTime();
 			}
 		}catch (Exception e) {
 			setHasError(true);

@@ -123,9 +123,6 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		prepare();
 		triggered = true;
 		final String path="/flow/"+communication.getSequence()+"/error";
-		if(!executor.exists(path)){
-			executor.createPath(path);
-		}
 		this.errorCache=executor.watchPath(path, new NodeCallback() {
 			@Override
 			public void call(Node node) {

@@ -19,27 +19,27 @@ public class DefaultNodeDataGenerator implements NodeDataGenerator {
 		root.setParallel("1");
 		
 		NodeData vRoot=new NodeData();
-		vRoot.setId(Integer.MAX_VALUE/4);
-		vRoot.setName("vroot"); 
+		vRoot.setId(1000);
+		vRoot.setName("vroot-1"); 
 		vRoot.setParallel("0");
 		vRoot.addParent(root);
 		
-		NodeData beginNodeData=new NodeData();
-		beginNodeData.setId(0);
-		beginNodeData.setName("begin-1");
-		beginNodeData.setParallel("0");
-		beginNodeData.addParent(vRoot);
+//		NodeData beginNodeData=new NodeData();
+//		beginNodeData.setId(0);
+//		beginNodeData.setName("begin-1");
+//		beginNodeData.setParallel("0");
+//		beginNodeData.addParent(vRoot);
 		
 		
 		NodeData denoiseNodeData=new NodeData();
 		denoiseNodeData.setId(1);
-		denoiseNodeData.setName("denoise-1");
+		denoiseNodeData.setName("denoise-2");
 		denoiseNodeData.setParallel("0");
 		denoiseNodeData.addParent(vRoot);
 		
 		NodeData multiNodeData23=new NodeData();
 		multiNodeData23.setId(23);
-		multiNodeData23.setName("multi23-2");
+		multiNodeData23.setName("multi23-3");
 		multiNodeData23.setParallel("1");
 		multiNodeData23.addParent(vRoot);;
 		
@@ -58,7 +58,7 @@ public class DefaultNodeDataGenerator implements NodeDataGenerator {
 		
 		NodeData persistNodeData=new NodeData();
 		persistNodeData.setId(4);
-		persistNodeData.setName("persist-1");
+		persistNodeData.setName("persist-2");
 		persistNodeData.setParallel("0");
 		persistNodeData.addParent(root);
 		

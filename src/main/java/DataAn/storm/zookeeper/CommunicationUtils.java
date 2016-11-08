@@ -98,18 +98,19 @@ public class CommunicationUtils implements Serializable{
 
 	public void add(Communication communication){
 		String time=new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+		communication.setTime(time);
 		communication.setStatus(NodeStatus.READY);
 		communication.setTopicPartition("data-prototype-11-1478509715525:0");
-//		communication.setTemporaryTopicPartition(
-//				StormNames.DATA_TEMPORARY_TOPIC
-//				+"-"+disAtomicLong.getSequence()+"-"+time
-//				+":0");
-		communication.setTemporaryTopicPartition("data-denoise-4-20161107191327:0");
-//		communication.setPersistTopicPartition(
-//				StormNames.DATA_PERSIST_TOPIC
-//				+"-"+disAtomicLong.getSequence()+"-"+time
-//				+":0");
-		communication.setPersistTopicPartition("data-persist-topology:0");
+		communication.setTemporaryTopicPartition(
+				StormNames.DATA_TEMPORARY_TOPIC
+				+"-"+disAtomicLong.getSequence()+"-"+time
+				+":0");
+//		communication.setTemporaryTopicPartition("data-denoise-4-20161107191327:0");
+		communication.setPersistTopicPartition(
+				StormNames.DATA_PERSIST_TOPIC
+				+"-"+disAtomicLong.getSequence()+"-"+time
+				+":0");
+//		communication.setPersistTopicPartition("data-persist-topology:0");
 		String path="/flow-tasks/"+"t-";
 		executor.createPath(path, JJSON.get().formatObject(communication).getBytes(Charset.forName("utf-8")),
 				CreateMode.PERSISTENT_SEQUENTIAL);
@@ -127,7 +128,20 @@ public class CommunicationUtils implements Serializable{
 	}
 	
 	public void remove(Communication communication){
-		executor.deletePath(communication.getZkPath());
+		Communication dest
+		=JJSON.get().parse(new String(executor.getPath(communication.getZkPath()), Charset.forName("utf-8"))
+				,Communication.class);
+		executor.deletePath(dest.getZkPath());
+		String path="/flow-tasks-track/"+dest.getSequence()
+		+"-"+dest.getTime()+"-t-";
+		executor.createPath(path, 
+				JJSON.get().formatObject(dest).getBytes(Charset.forName("utf-8")),CreateMode.PERSISTENT_SEQUENTIAL);
+		
+		final String workflowDonePath="/flow/"+dest.getSequence()+"/done";
+		if(!executor.exists(workflowDonePath)){
+			executor.createPath(workflowDonePath);
+		}
+		executor.setPath(workflowDonePath, "1");
 	}
 
 	

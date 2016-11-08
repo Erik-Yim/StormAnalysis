@@ -30,7 +30,12 @@ public class SimpleProducer implements Serializable {
 	}
 	
 	public void send(FetchObj fetchObj,String topic){
-		send(fetchObj, topic,null); 
+		if(topic.indexOf(":")!=-1){
+			String[] str=topic.split(":");
+			send(fetchObj, str[0], Integer.parseInt(str[1]));
+		}else{
+			send(fetchObj, topic, null);
+		}
 	}
 	
 	public void send(FetchObj fetchObj,String topic,Integer partition){

@@ -35,7 +35,6 @@ import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
 import DataAn.storm.kafka.InnerConsumer;
 import DataAn.storm.kafka.MsgDefs;
-import DataAn.storm.zookeeper.DisAtomicLong;
 import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.NodeWorker;
 import DataAn.storm.zookeeper.NodeWorkers;
@@ -49,6 +48,10 @@ import DataAn.storm.zookeeper.ZooKeeperNameKeys;
 public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	protected Map conf;
+	
+	private long max=2;
+	
+	private long count;
 	
 	protected Iterator<FetchObj> iterator;
 	
@@ -64,7 +67,6 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	private AtomicLong batchAtomicLong=new AtomicLong(0);
 	
-	
 	private SpoutOutputCollector collector;
 	
 	private BoundConsumer consumer;
@@ -76,8 +78,6 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	private Iterator<Entry<Long, Map<Long, List<DefaultDeviceRecord>>>> iter;
 	
 	private Communication communication;
-	
-	private DisAtomicLong disAtomicLong;
 	
 	private int failCount=0;
 	
@@ -117,12 +117,11 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		NodeWorkers.startup(executor,conf);
 		this.workerId=Integer.parseInt(String.valueOf(conf.get("storm.flow.worker.id")));
 		nodeWorker=NodeWorkers.get(workerId);
-		disAtomicLong=new DisAtomicLong(executor);
 	}
 	
 	
-	
 	protected void cleanup(){
+		count=0;
 		iterator=null;
 		offset=new AtomicLong(-1);
 		tuples.clear();
@@ -160,9 +159,6 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		triggered = true;
 		topic=communication.getTemporaryTopicPartition();
 		final String path="/flow/"+communication.getSequence()+"/error";
-		if(!executor.exists(path)){
-			executor.createPath(path);
-		}
 		this.errorCache=executor.watchPath(path, new NodeCallback() {
 			
 			@Override
@@ -316,10 +312,19 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 				}
 				break;
 			}
+			
 			Long batchId=batchAtomicLong.incrementAndGet();
-			tuples.put(batchId, maps);
 			BatchContext batchContext = getBatchContext();
 			batchContext.setBatchId(batchId);
+			
+			count++;
+			if(count>max&&!reachEnd){
+				System.out.println("ingnore : "+count);
+				collector.emit(new Values(Maps.newLinkedHashMap(),getBatchContext()),batchId);
+				return;
+			}
+			
+			tuples.put(batchId, maps);
 			collector.emit(new Values(maps,batchContext),batchId);
 		}catch (Exception e) {
 			setHasError(true);
@@ -357,20 +362,31 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 
 	@Override
 	public void ack(Object msgId) {
-		super.ack(msgId);
-		tuples.remove(msgId);
-		if(!errorTuples.isEmpty()){
-			errorTuples.remove(msgId);
+		try{
+			super.ack(msgId);
+			tuples.remove(msgId);
+			if(!errorTuples.isEmpty()){
+				errorTuples.remove(msgId);
+			}
+		}catch (Exception e) {
+			setHasError(true);
+			error(e);
 		}
+		
 	}
 	
 	@Override
 	public void fail(Object msgId) {
-		super.fail(msgId);
-		if(tuples!=null&&!tuples.isEmpty()){
-			errorTuples.put((Long) msgId, tuples.get(msgId));
+		try{
+			super.fail(msgId);
+			if(tuples!=null&&!tuples.isEmpty()){
+				errorTuples.put((Long) msgId, tuples.get(msgId));
+			}
+			iter=null;
+		}catch (Exception e) {
+			setHasError(true);
+			error(e);
 		}
-		iter=null;
 	}
 	
 	public static class Offset{

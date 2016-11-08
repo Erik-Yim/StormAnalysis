@@ -5,6 +5,7 @@ import java.util.Map;
 
 import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
+import DataAn.storm.Communication;
 import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.persist.MongoPeristModel;
 
@@ -14,7 +15,7 @@ public class SimpleHierarchyDeviceRecordPersist implements IHierarchyDeviceRecor
 	
 	
 	@Override
-	public void persist(SimpleProducer producer, HierarchyDeviceRecord deviceRecord, Map content) {
+	public void persist(SimpleProducer producer, HierarchyDeviceRecord deviceRecord,  Communication communication,Map content) {
 		
 		Map<String ,Object> hierarchyMap =  new HashMap<>();
 		String[] params = deviceRecord.getProperties(); 
@@ -35,7 +36,7 @@ public class SimpleHierarchyDeviceRecordPersist implements IHierarchyDeviceRecor
 		mpModel.setVersions(deviceRecord.getVersions());
 		mpModel.setCollection(deviceRecord.getCollection());
 		mpModel.setContent(context);
-		producer.send(mpModel);				
+		producer.send(mpModel,communication.getPersistTopicPartition());				
 //		System.out.println(SimpleHierarchyDeviceRecordPersist.class
 //				+" persist thread["+Thread.currentThread().getName() 
 //				+ "] tuple ["+deviceRecord.getTime()+","

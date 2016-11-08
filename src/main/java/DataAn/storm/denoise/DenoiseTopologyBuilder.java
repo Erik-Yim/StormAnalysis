@@ -134,8 +134,10 @@ public class DenoiseTopologyBuilder implements Serializable {
 					}
 				}catch (Exception e) {
 					e.printStackTrace();
-					FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
-					throw new FailedException(e);
+					if(batchContext!=null){
+						FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
+						throw new FailedException(e);
+					}
 				}
 			}
 		}, new Fields());
