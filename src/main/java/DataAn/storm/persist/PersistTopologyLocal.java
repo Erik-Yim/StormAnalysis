@@ -17,7 +17,7 @@ public class PersistTopologyLocal {
 		
 		StormTopology stormTopology=new PersistTopologyBuilder().build(persistConfig);
 		Config conf=new Config();
-		conf.put("storm.flow.worker.id", 1);
+		conf.put("storm.flow.worker.id", 4);
 		ZooKeeperNameKeys.setZooKeeperServer(conf, "nim1.storm.com:2182,nim2.storm.com");
 		ZooKeeperNameKeys.setNamespace(conf, "test-zhongjin");
 		KafkaNameKeys.setKafkaServer(conf, "192.168.0.97:9092");

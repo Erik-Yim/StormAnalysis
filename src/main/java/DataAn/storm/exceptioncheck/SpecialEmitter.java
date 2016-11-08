@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.ITridentSpout.Emitter;
 import org.apache.storm.trident.topology.TransactionAttempt;
@@ -72,6 +73,8 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private boolean hasError;
 	
+	private NodeCache errorCache;
+	
 	public SpecialEmitter(Map conf) {
 		this.conf=conf;
 		executor=new ZooKeeperClient()
@@ -98,6 +101,12 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		triggered=false;
 		sequence=-1;
 		hasError=false;
+		if(this.errorCache!=null){
+			try{
+				this.errorCache.close();
+			}catch (Exception e) {
+			}
+		}
 	}
 	
 	public void setHasError(boolean hasError) {
@@ -124,7 +133,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		if(!executor.exists(path)){
 			executor.createPath(path);
 		}
-		executor.watchPath(path, new NodeCallback() {
+		this.errorCache= executor.watchPath(path, new NodeCallback() {
 			
 			@Override
 			public void call(Node node) {
@@ -140,7 +149,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	}
 
 	private void prepare(){
-		String topicPartition=communication.getTopicPartition();
+		String topicPartition=communication.getTemporaryTopicPartition();
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
 				.manualPartitionAssign(topicPartition.split(","))
 				.group("data-comsumer");
@@ -173,19 +182,29 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		while(true){
 			try{
 				nodeWorker.acquire();
-				wakeup();
 				System.out.println(nodeWorker.getId()+ " get lock , executing spout...");
+				try{
+					wakeup();
+				}catch (Exception e) {
+					e.printStackTrace();
+					try {
+						try{
+							error(e);
+							synchronized (this) {
+								wait(1000);
+							}
+						}catch (Exception e1) {
+						}
+						nodeWorker.release();
+						System.out.println(nodeWorker.getId()+ " release lock");
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+				}
 				break;
 			}catch (Exception e) {
 				e.printStackTrace();
 				try {
-					try{
-						error(e);
-						synchronized (this) {
-							wait(1000);
-						}
-					}catch (Exception e1) {
-					}
 					nodeWorker.release();
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {

@@ -2,8 +2,10 @@ package DataAn.storm.zookeeper;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -14,14 +16,15 @@ import org.apache.zookeeper.CreateMode;
 import DataAn.common.utils.JJSON;
 import DataAn.storm.Communication;
 import DataAn.storm.FlowUtils;
+import DataAn.storm.StormNames;
 import DataAn.storm.zookeeper.NodeSelector.NodeStatus;
-import DataAn.storm.zookeeper.ZooKeeperClient.Node;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
 public class CommunicationUtils implements Serializable{
 	
 	private ZookeeperExecutor executor;
 	
+	private DisAtomicLong disAtomicLong;
 	
 	private static CommunicationUtils communicationUtils;
 	
@@ -37,6 +40,7 @@ public class CommunicationUtils implements Serializable{
 	}
 	public CommunicationUtils(final ZookeeperExecutor executor,boolean start) {
 		this.executor = executor;
+		disAtomicLong=new DisAtomicLong(executor);
 		if(start){
 			
 			Executors.newScheduledThreadPool(1, new ThreadFactory() {
@@ -93,7 +97,17 @@ public class CommunicationUtils implements Serializable{
 	}
 
 	public void add(Communication communication){
+		String time=new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 		communication.setStatus(NodeStatus.READY);
+		communication.setTopicPartition("data-prototype-11-1478509715525:0");
+		communication.setTemporaryTopicPartition(
+				StormNames.DATA_TEMPORARY_TOPIC
+				+"-"+disAtomicLong.getSequence()+"-"+time
+				+":0");
+		communication.setPersistTopicPartition(
+				StormNames.DATA_PERSIST_TOPIC
+				+"-"+disAtomicLong.getSequence()+"-"+time
+				+":0");
 		String path="/flow-tasks/"+"t-";
 		executor.createPath(path, JJSON.get().formatObject(communication).getBytes(Charset.forName("utf-8")),
 				CreateMode.PERSISTENT_SEQUENTIAL);

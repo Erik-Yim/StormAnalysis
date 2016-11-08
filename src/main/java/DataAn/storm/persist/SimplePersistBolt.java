@@ -18,7 +18,7 @@ public class SimplePersistBolt extends BaseSimpleRichBolt {
 	@Override
 	protected void doExecute(Tuple tuple) throws Exception {
 		List<MongoPeristModel> mongoPeristModels= 
-				(List<MongoPeristModel>) tuple.getValueByField("record");
+				(List<MongoPeristModel>) tuple.getValueByField("records");
 		IMongoPersistService mongoPersistService=  IMongoPersistService.MongoPersistServiceGetter.getMongoPersistService(getStormConf());
 		try{
 			for(MongoPeristModel mongoPeristModel:mongoPeristModels){

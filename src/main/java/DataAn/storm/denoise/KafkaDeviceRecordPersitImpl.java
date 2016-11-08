@@ -25,7 +25,7 @@ public class KafkaDeviceRecordPersitImpl implements IDeviceRecordPersit{
 		
 		for(IDeviceRecord deviceRecord:deviceRecords){
 			FetchObj fetchObj=parse((DefaultDeviceRecord) deviceRecord);
-			boundProducer.send(fetchObj,batchContext.getDenoiseTopic());
+			boundProducer.send(fetchObj,batchContext.getCommunication().getTemporaryTopicPartition());
 		}
 		
 		for(IDeviceRecord deviceRecord:deviceRecords){
@@ -36,7 +36,7 @@ public class KafkaDeviceRecordPersitImpl implements IDeviceRecordPersit{
 			mongoPeristModel.setStar(deviceRecord.getStar());
 			mongoPeristModel.setContent(JJSON.get().formatObject(
 					MongoDeviceRecordConvertGetter.get(context).convert(context, (DefaultDeviceRecord) deviceRecord)));
-			simpleProducer.send(mongoPeristModel);
+			simpleProducer.send(mongoPeristModel,batchContext.getCommunication().getPersistTopicPartition());
 		}
 	}
 	

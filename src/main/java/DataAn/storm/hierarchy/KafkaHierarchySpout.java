@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -66,6 +67,8 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 	private long sequence;
 	
 	private boolean hasError;
+	
+	private NodeCache errorCache;
 
 	public KafkaHierarchySpout() {
 	}
@@ -84,7 +87,7 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 	}
 	
 	private void prepare(){
-		String topicPartition=communication.getTopicPartition();
+		String topicPartition=communication.getTemporaryTopicPartition();
 		InnerConsumer innerConsumer=new InnerConsumer(conf)
 				.manualPartitionAssign(topicPartition.split(","))
 				.group("data-comsumer");
@@ -101,6 +104,12 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		triggered=false;
 		sequence=-1;
 		hasError=false;
+		if(this.errorCache!=null){
+			try{
+				this.errorCache.close();
+			}catch (Exception e) {
+			}
+		}
 	}
 	
 	protected void wakeup() {
@@ -117,7 +126,7 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		if(!executor.exists(path)){
 			executor.createPath(path);
 		}
-		executor.watchPath(path, new NodeCallback() {
+		this.errorCache=executor.watchPath(path, new NodeCallback() {
 			@Override
 			public void call(Node node) {
 				setHasError(true);
@@ -155,19 +164,29 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		while(true){
 			try{
 				nodeWorker.acquire();
-				wakeup();
 				System.out.println(nodeWorker.getId()+ " get lock , executing spout...");
+				try{
+					wakeup();
+				}catch (Exception e) {
+					e.printStackTrace();
+					try {
+						try{
+							error(e);
+							synchronized (this) {
+								wait(1000);
+							}
+						}catch (Exception e1) {
+						}
+						nodeWorker.release();
+						System.out.println(nodeWorker.getId()+ " release lock");
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+				}
 				break;
 			}catch (Exception e) {
 				e.printStackTrace();
 				try {
-					try{
-						error(e);
-						synchronized (this) {
-							wait(1000);
-						}
-					}catch (Exception e1) {
-					}
 					nodeWorker.release();
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {

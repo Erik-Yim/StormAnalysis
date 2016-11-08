@@ -20,6 +20,10 @@ public class Communication implements Serializable {
 	
 	private String topicPartition;
 	
+	private String persistTopicPartition;
+	
+	private String temporaryTopicPartition;
+	
 	private int workerId;
 	
 	private long offset;
@@ -124,6 +128,21 @@ public class Communication implements Serializable {
 	public void setStatus(String status) {
 		this.status = status;
 	}
-	
+
+	public String getPersistTopicPartition() {
+		return persistTopicPartition;
+	}
+
+	public void setPersistTopicPartition(String persistTopicPartition) {
+		this.persistTopicPartition = persistTopicPartition;
+	}
+
+	public String getTemporaryTopicPartition() {
+		return temporaryTopicPartition;
+	}
+
+	public void setTemporaryTopicPartition(String temporaryTopicPartition) {
+		this.temporaryTopicPartition = temporaryTopicPartition;
+	}
 	
 }

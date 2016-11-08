@@ -1,9 +1,7 @@
 package DataAn.storm.denoise;
 
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -93,6 +92,8 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	private String topic;
 	
 	private boolean hasError;
+
+	private NodeCache errorCache;
 	
 	private void prepare(){
 		String topicPartition=communication.getTopicPartition();
@@ -135,6 +136,12 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		sequence=-1;
 		topic=null;
 		hasError=false;
+		if(this.errorCache!=null){
+			try{
+				this.errorCache.close();
+			}catch (Exception e) {
+			}
+		}
 	}
 	
 	public void setHasError(boolean hasError) {
@@ -151,13 +158,12 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
 		triggered = true;
-		topic="data-denoise-"+disAtomicLong.getSequence()+"-"+
-		new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+		topic=communication.getTemporaryTopicPartition();
 		final String path="/flow/"+communication.getSequence()+"/error";
 		if(!executor.exists(path)){
 			executor.createPath(path);
 		}
-		executor.watchPath(path, new NodeCallback() {
+		this.errorCache=executor.watchPath(path, new NodeCallback() {
 			
 			@Override
 			public void call(Node node) {
@@ -195,19 +201,29 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		while(true){
 			try{
 				nodeWorker.acquire();
-				wakeup();
 				System.out.println(nodeWorker.getId()+ " get lock , executing spout...");
+				try{
+					wakeup();
+				}catch (Exception e) {
+					e.printStackTrace();
+					try {
+						try{
+							error(e);
+							synchronized (this) {
+								wait(1000);
+							}
+						}catch (Exception e1) {
+						}
+						nodeWorker.release();
+						System.out.println(nodeWorker.getId()+ " release lock");
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+				}
 				break;
 			}catch (Exception e) {
 				e.printStackTrace();
 				try {
-					try{
-						error(e);
-						synchronized (this) {
-							wait(1000);
-						}
-					}catch (Exception e1) {
-					}
 					nodeWorker.release();
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {
