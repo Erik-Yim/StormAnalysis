@@ -251,6 +251,16 @@ public class PersistKafkaSpout extends BaseRichSpout {
 					}
 				}
 			}
+			else{
+				if(latestTime>0){
+					long interval=new Date().getTime()-latestTime;
+					if(interval>(60000*6)){
+						release();
+						await();
+						return;
+					}
+				}
+			}
 			
 			List<MongoPeristModel> models=new ArrayList<>();
 			FetchObjs fetchObjs=consumer.next(timeout);

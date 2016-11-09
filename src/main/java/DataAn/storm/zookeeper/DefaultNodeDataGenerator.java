@@ -24,12 +24,11 @@ public class DefaultNodeDataGenerator implements NodeDataGenerator {
 		vRoot.setParallel("0");
 		vRoot.addParent(root);
 		
-//		NodeData beginNodeData=new NodeData();
-//		beginNodeData.setId(0);
-//		beginNodeData.setName("begin-1");
-//		beginNodeData.setParallel("0");
-//		beginNodeData.addParent(vRoot);
-		
+		NodeData beginNodeData=new NodeData();
+		beginNodeData.setId(0);
+		beginNodeData.setName("begin-1");
+		beginNodeData.setParallel("0");
+		beginNodeData.addParent(vRoot);
 		
 		NodeData denoiseNodeData=new NodeData();
 		denoiseNodeData.setId(1);
