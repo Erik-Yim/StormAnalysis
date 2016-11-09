@@ -500,6 +500,8 @@ public class NodeSelector implements Serializable{
 			throw new RuntimeException("the worker["+worker+"] does not exist.");
 		}
 		
+		System.out.println(" find to start worker : "+worker +""); 
+		
 		final WorkerPathVal workerPathVal=new WorkerPathVal();
 		workerPathVal.id=worker;
 		workerPathVal.time=new Date().getTime();
