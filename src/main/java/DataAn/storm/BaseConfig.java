@@ -1,33 +1,26 @@
 package DataAn.storm;
 
 import java.io.Serializable;
-import java.util.HashMap;
 
-public class BaseConfig extends HashMap<String, Object> implements Serializable{
-	
-	private String name;
-	
-	private int count=100;
+import org.apache.storm.Config;
 
+public class BaseConfig extends Config implements Serializable{
+	
+	public static final String name="storm-name";
+
+	public static final String zookeeper="storm-zookeeper";
+	
+	public static final String kafka="storm-kafka";
+	
 	public String getName() {
-		return name;
+		return (String)get(name);
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public String getZooKeeper() {
+		return (String) get(zookeeper);
 	}
 
-	public int getCount() {
-		return count;
+	public String getKafka() {
+		return (String) get(kafka);
 	}
-
-	public void setCount(int count) {
-		this.count = count;
-	}
-	
-	
-	
-	
-
-	
 }

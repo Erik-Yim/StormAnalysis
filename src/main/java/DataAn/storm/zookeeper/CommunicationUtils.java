@@ -15,8 +15,10 @@ import org.apache.zookeeper.CreateMode;
 
 import DataAn.common.utils.JJSON;
 import DataAn.storm.Communication;
+import DataAn.storm.ErrorMsg;
 import DataAn.storm.FlowUtils;
 import DataAn.storm.StormNames;
+import DataAn.storm.status.ISendStatus.ISendStatusGetter;
 import DataAn.storm.zookeeper.NodeSelector.NodeStatus;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
@@ -100,11 +102,11 @@ public class CommunicationUtils implements Serializable{
 		String time=new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 		communication.setTime(time);
 		communication.setStatus(NodeStatus.READY);
-//		communication.setTopicPartition("data-prototype-11-1478509715525:0");
-		communication.setTopicPartition(
-				"data-prototype"
-				+"-"+disAtomicLong.getSequence()+"-"+time
-				+":0");
+		communication.setTopicPartition("data-prototype-11-1478509715525:0");
+//		communication.setTopicPartition(
+//				"data-prototype"
+//				+"-"+disAtomicLong.getSequence()+"-"+time
+//				+":0");
 		communication.setTemporaryTopicPartition(
 				StormNames.DATA_TEMPORARY_TOPIC
 				+"-"+disAtomicLong.getSequence()+"-"+time
@@ -146,6 +148,16 @@ public class CommunicationUtils implements Serializable{
 			executor.createPath(workflowDonePath);
 		}
 		executor.setPath(workflowDonePath, "1");
+		
+		ErrorMsg errorMsg=FlowUtils.getError(executor, communication.getSequence());
+		if(errorMsg!=null){
+			ISendStatusGetter.get().dealError(communication.getVersions(), errorMsg.getMsg());
+		}
+		else{
+			ISendStatusGetter.get().dealSuccess(communication.getVersions());
+			
+		}
+		
 	}
 
 	

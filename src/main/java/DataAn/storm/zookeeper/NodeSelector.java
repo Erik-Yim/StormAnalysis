@@ -710,14 +710,17 @@ public class NodeSelector implements Serializable{
 			
 			@Override
 			public void call(Node node) {
-				Communication communication=
-						JJSON.get().parse(
-								new String(executor.getPath(node.getPath()),Charset.forName("utf-8"))
-								, Communication.class);
-				Instance instance=createInstance(communication);
+				Communication communication=null;
+				Instance instance=null;
 				try{
+					communication=
+							JJSON.get().parse(
+									new String(executor.getPath(node.getPath()),Charset.forName("utf-8"))
+									, Communication.class);
+					instance=createInstance(communication);
 					start(instance);
 				}catch (Exception e) {
+					FlowUtils.setError(executor, communication, e.getMessage());
 					e.printStackTrace();
 					breakFlow(instance);
 				}
