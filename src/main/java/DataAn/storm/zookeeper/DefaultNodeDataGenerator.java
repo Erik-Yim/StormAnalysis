@@ -16,19 +16,25 @@ public class DefaultNodeDataGenerator implements NodeDataGenerator {
 		NodeData root=new NodeData();
 		root.setId(Integer.MAX_VALUE/2);
 		root.setName("root");
-		root.setParallel("1");
-		
-		NodeData vRoot=new NodeData();
-		vRoot.setId(1000);
-		vRoot.setName("vroot-1"); 
-		vRoot.setParallel("0");
-		vRoot.addParent(root);
+		root.setParallel("0");
 		
 		NodeData beginNodeData=new NodeData();
 		beginNodeData.setId(0);
 		beginNodeData.setName("begin-1");
 		beginNodeData.setParallel("0");
-		beginNodeData.addParent(vRoot);
+		beginNodeData.addParent(root);
+		
+		NodeData wRoot=new NodeData();
+		wRoot.setId(999);
+		wRoot.setName("wroot-1"); 
+		wRoot.setParallel("1");
+		wRoot.addParent(root);
+		
+		NodeData vRoot=new NodeData();
+		vRoot.setId(1000);
+		vRoot.setName("vroot-1"); 
+		vRoot.setParallel("0");
+		vRoot.addParent(wRoot);
 		
 		NodeData denoiseNodeData=new NodeData();
 		denoiseNodeData.setId(1);
@@ -40,7 +46,7 @@ public class DefaultNodeDataGenerator implements NodeDataGenerator {
 		multiNodeData23.setId(23);
 		multiNodeData23.setName("multi23-3");
 		multiNodeData23.setParallel("1");
-		multiNodeData23.addParent(vRoot);;
+		multiNodeData23.addParent(vRoot);
 		
 		
 		NodeData exceptionNodeData=new NodeData();
@@ -59,7 +65,7 @@ public class DefaultNodeDataGenerator implements NodeDataGenerator {
 		persistNodeData.setId(4);
 		persistNodeData.setName("persist-2");
 		persistNodeData.setParallel("0");
-		persistNodeData.addParent(root);
+		persistNodeData.addParent(wRoot);
 		
 		return root;
 	}
