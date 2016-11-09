@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 import DataAn.common.utils.HttpUtil;
+import DataAn.storm.persist.IMongoPersistService;
 
 public interface ISendStatus extends Serializable {
 	
@@ -14,8 +15,8 @@ public interface ISendStatus extends Serializable {
 	String dealError(String version,String exceptionInfo);
 	
 	class ISendStatusGetter{		
-		public  ISendStatus get(){
-						
+		public  static ISendStatus get(){
+			 			
 			return new ISendStatus(){
 			
 				@Override
@@ -39,6 +40,9 @@ public interface ISendStatus extends Serializable {
 			};
 			
 		}
+		
 	}
+	
+  
 	
 }

@@ -49,7 +49,7 @@ public class TestClass {
 		ml.setCollection("test111");		
 		Map<String,String> context = new  HashMap<>();
 		MongoPersistServiceGetter.getMongoPersistService(context).persist(ml, context);
-		
+			
 }
 
 
