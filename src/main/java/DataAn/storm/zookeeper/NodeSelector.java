@@ -496,8 +496,7 @@ public class NodeSelector implements Serializable{
 		}
 		
 		if(!instance.workflow.workerPaths.containsKey(worker)){
-			//throw new RuntimeException("the worker["+worker+"] does not exist.");
-			return ;
+			throw new RuntimeException("the worker["+worker+"] does not exist.");
 		}
 		
 		final WorkerPathVal workerPathVal=new WorkerPathVal();
