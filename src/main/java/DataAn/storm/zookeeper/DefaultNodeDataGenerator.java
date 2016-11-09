@@ -26,7 +26,7 @@ public class DefaultNodeDataGenerator implements NodeDataGenerator {
 		
 		NodeData wRoot=new NodeData();
 		wRoot.setId(999);
-		wRoot.setName("wroot-1"); 
+		wRoot.setName("wroot-2"); 
 		wRoot.setParallel("1");
 		wRoot.addParent(root);
 		
