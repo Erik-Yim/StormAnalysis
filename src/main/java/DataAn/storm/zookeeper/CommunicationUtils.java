@@ -144,11 +144,10 @@ public class CommunicationUtils implements Serializable{
 				JJSON.get().formatObject(dest).getBytes(Charset.forName("utf-8")),CreateMode.PERSISTENT_SEQUENTIAL);
 		
 		final String workflowDonePath="/flow/"+dest.getSequence()+"/done";
-		if(!executor.exists(workflowDonePath)){
-			executor.createPath(workflowDonePath);
+		byte[] bytes=executor.getPath(workflowDonePath);
+		if(bytes!=null&&bytes.length>0){
+			executor.setPath(workflowDonePath, new Date().getTime()+"");
 		}
-		executor.setPath(workflowDonePath, "1");
-		
 		ErrorMsg errorMsg=FlowUtils.getError(executor, communication.getSequence());
 		if(errorMsg!=null){
 			ISendStatusGetter.get().dealError(communication.getVersions(), errorMsg.getMsg());

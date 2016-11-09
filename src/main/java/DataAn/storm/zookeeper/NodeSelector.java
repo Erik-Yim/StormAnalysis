@@ -579,10 +579,7 @@ public class NodeSelector implements Serializable{
 								if(_path.equals(instanceNode.path)){
 									//set complete 
 									final String workflowDonePath="/flow/"+instance.sequence+"/done";
-									if(!executor.exists(workflowDonePath)){
-										executor.createPath(workflowDonePath);
-									}
-									executor.setPath(workflowDonePath, "1");
+									executor.setPath(workflowDonePath, new Date().getTime()+"");
 								}
 							}
 							
@@ -693,7 +690,11 @@ public class NodeSelector implements Serializable{
 		attachInstanceChildPathWatcher(instance);
 		master.instances.put(sequence, instance);
 		
-		final String path="/flow/"+communication.getSequence()+"/error";
+		String path="/flow/"+communication.getSequence()+"/error";
+		if(!executor.exists(path)){
+			executor.createPath(path);
+		}
+		path="/flow/"+communication.getSequence()+"/done";
 		if(!executor.exists(path)){
 			executor.createPath(path);
 		}
