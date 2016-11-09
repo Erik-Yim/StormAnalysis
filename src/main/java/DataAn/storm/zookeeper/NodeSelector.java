@@ -184,11 +184,12 @@ public class NodeSelector implements Serializable{
 		private int id;
 		private String name;
 		private String path;
-		private List<NodeData> nodes=new ArrayList<>();
 		/**
 		 * 1 is parrallel, otherwise 0
 		 */
 		private String parallel;
+		private List<NodeData> nodes=new ArrayList<>();
+		
 		
 		private boolean hasChildren(){
 			return !nodes.isEmpty();
