@@ -153,9 +153,6 @@ public class PersistKafkaSpout extends BaseRichSpout {
 		}));
 		
 		final String workflowDonePath="/flow/"+communication.getSequence()+"/done";
-		if(!executor.exists(workflowDonePath)){
-			executor.createPath(workflowDonePath);
-		}
 		this.workflowDoneCache=executor.watchPath(workflowDonePath, new NodeCallback() {
 			@Override
 			public void call(Node node) {
