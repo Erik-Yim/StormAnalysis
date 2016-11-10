@@ -49,7 +49,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	protected Map conf;
 	
-	private long max=2;
+	private long max=Long.MAX_VALUE;
 	
 	private long count;
 	
