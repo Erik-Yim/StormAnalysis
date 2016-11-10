@@ -8,7 +8,7 @@ import DataAn.storm.persist.IMongoPersistService;
 
 public interface ISendStatus extends Serializable {
 	
-	final static String STATUSURL = "http://192.168.0.78:8080";
+	final static String STATUSURL = "http://192.168.0.158:8080";
 	
 	String dealSuccess(String version);
 	
