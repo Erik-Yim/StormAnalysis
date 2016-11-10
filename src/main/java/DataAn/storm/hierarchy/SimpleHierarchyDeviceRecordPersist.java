@@ -1,5 +1,6 @@
 package DataAn.storm.hierarchy;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +16,7 @@ public class SimpleHierarchyDeviceRecordPersist implements IHierarchyDeviceRecor
 	
 	
 	@Override
-	public void persist(SimpleProducer producer, HierarchyDeviceRecord deviceRecord,  Communication communication,Map content) {
+	public void persist(SimpleProducer producer, HierarchyDeviceRecord deviceRecord,HierarchyModel[] intervals,Communication communication,Map content) {
 		
 		Map<String ,Object> hierarchyMap =  new HashMap<>();
 		String[] params = deviceRecord.getProperties(); 
@@ -23,6 +24,7 @@ public class SimpleHierarchyDeviceRecordPersist implements IHierarchyDeviceRecor
 		for(int i =0;i<params.length;i++){
 			hierarchyMap.put(params[i],paramVal[i]);
 		}
+		hierarchyMap.put("_recordtime", DateUtil.format(new Date()));
 		hierarchyMap.put("datetime", deviceRecord.getTime());
 		hierarchyMap.put("year", DateUtil.format(deviceRecord.getTime(), "yyyy"));
 		hierarchyMap.put("year_month", DateUtil.format(deviceRecord.getTime(), "yyyy-MM"));
@@ -34,7 +36,12 @@ public class SimpleHierarchyDeviceRecordPersist implements IHierarchyDeviceRecor
 		mpModel.setSeries(deviceRecord.getSeries());
 		mpModel.setStar(deviceRecord.getStar());
 		mpModel.setVersions(deviceRecord.getVersions());
-		mpModel.setCollection(deviceRecord.getCollection());
+		String[] cols=new String[intervals.length];
+		for(int i=0;i<intervals.length;i++){
+			HierarchyModel hierarchyModel=intervals[i];
+			cols[i]=deviceRecord.getSuperCollection()+hierarchyModel.getName();
+		}
+		mpModel.setCollections(cols);
 		mpModel.setContent(context);
 		producer.send(mpModel,communication.getPersistTopicPartition());				
 //		System.out.println(SimpleHierarchyDeviceRecordPersist.class

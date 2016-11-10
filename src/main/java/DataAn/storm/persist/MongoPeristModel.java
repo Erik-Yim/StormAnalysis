@@ -10,7 +10,7 @@ public class MongoPeristModel extends BaseFetchObj {
 	
 	private String star;
 	
-	private String collection;
+	private String[] collections;
 	
 	private String content;
 	
@@ -33,13 +33,6 @@ public class MongoPeristModel extends BaseFetchObj {
 		this.star = star;
 	}
 
-	public String getCollection() {
-		return collection;
-	}
-
-	public void setCollection(String collection) {
-		this.collection = collection;
-	}
 
 	public String getContent() {
 		return content;
@@ -63,6 +56,14 @@ public class MongoPeristModel extends BaseFetchObj {
 
 	public void setKey(String key) {
 		this.key = key;
+	}
+
+	public String[] getCollections() {
+		return collections;
+	}
+
+	public void setCollections(String[] collections) {
+		this.collections = collections;
 	}
 
 }

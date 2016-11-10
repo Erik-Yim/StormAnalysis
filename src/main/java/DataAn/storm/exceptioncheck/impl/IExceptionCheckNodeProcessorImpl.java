@@ -1,11 +1,13 @@
 package DataAn.storm.exceptioncheck.impl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
 import DataAn.dto.ParamExceptionDto;
@@ -136,7 +138,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 								finalCaseDtosequence.add(cDtos.get(j).getSequence());
 							}
 							Map<String ,Object> jobMap =  new HashMap<>();
-										
+							jobMap.put("_recordtime", DateUtil.format(new Date()));			
 							jobMap.put("datetime", cDtos.get(i).getDateTime());
 							jobMap.put("versions", cDtos.get(i).getVerisons());
 							jobMap.put("series", cDtos.get(i).getSeries());
@@ -148,7 +150,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 							String context = JJSON.get().formatObject(jobMap);
 							
 							MongoPeristModel mpModel=new MongoPeristModel();
-							mpModel.setCollection(deviceName+"_ExceptionJob");
+							mpModel.setCollections(new String[]{deviceName+"_ExceptionJob"});
 							mpModel.setVersions(cDtos.get(i).getVerisons());
 							mpModel.setContent(context);
 							simpleProducer.send(mpModel);									
@@ -172,7 +174,8 @@ public class IExceptionCheckNodeProcessorImpl implements
 					if(paramSe!=null && paramSe.size()>0){
 						for(ParamExceptionDto ped:paramEs){
 							if(!(paramSe.contains(ped.getSequence()))){							
-								Map<String ,Object> ExceptionMap =  new HashMap<>();								
+								Map<String ,Object> ExceptionMap =  new HashMap<>();
+								ExceptionMap.put("_recordtime", DateUtil.format(new Date()));
 								ExceptionMap.put("datetime", ped.getTime());
 								ExceptionMap.put("versions", ped.getVersions());
 								ExceptionMap.put("series", ped.getSeries());
@@ -183,7 +186,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 								ExceptionMap.put("hadRead", "0");	
 								String exceptinContext = JJSON.get().formatObject(ExceptionMap);							
 								MongoPeristModel mpModel=new MongoPeristModel();
-								mpModel.setCollection(deviceName+"_Exception");
+								mpModel.setCollections(new String[]{deviceName+"_Exception"});
 								mpModel.setContent(exceptinContext);
 								mpModel.setVersions(ped.getVersions());
 								simpleProducer.send(mpModel);
