@@ -1,9 +1,14 @@
 package DataAn.storm;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.net.InetAddress;
 import java.nio.charset.Charset;
+import java.util.Date;
 
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Tuple;
+import org.apache.zookeeper.CreateMode;
 
 import DataAn.common.utils.JJSON;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
@@ -96,12 +101,14 @@ public abstract class FlowUtils {
 	
 	public static void setError(ZookeeperExecutor executor,ErrorMsg errorMsg){
 		String path="/flow/"+errorMsg.getSequence()+"/error";
-		executor.setPath(path, 
-				JJSON.get().formatObject(errorMsg));
-		
+		String esg=JJSON.get().formatObject(errorMsg);
+		executor.setPath(path, esg);
 		String workflowDone="/flow/"+errorMsg.getSequence()+"/done";
 		executor.setPath(workflowDone, 
-				"1");
+				new Date().getTime()+"");
+		path=path+"/error-";
+		executor.createPath(path, esg.getBytes(Charset.forName("utf-8")),
+				CreateMode.PERSISTENT_SEQUENTIAL);
 	}
 	
 	public static void setError(ZookeeperExecutor executor,Tuple tuple, String message){
@@ -119,7 +126,18 @@ public abstract class FlowUtils {
 		errorMsg.setMsg(message);
 		errorMsg.setSequence(communication.getSequence());
 		errorMsg.setWorkerId(communication.getWorkerId());
+		InetAddress inetAddress=NetUtils.getLocalAddress();
+		errorMsg.setHostAddress(inetAddress.getHostAddress());
 		setError(executor, errorMsg);
+	}
+	
+	
+	public static String getMsg(Throwable throwable){
+		ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream(1000);
+		PrintStream printStream=new PrintStream(byteArrayOutputStream);
+		throwable.printStackTrace(printStream);
+		printStream.flush();
+		return new String(byteArrayOutputStream.toByteArray(), Charset.forName("UTF-8"));
 	}
 	
 }

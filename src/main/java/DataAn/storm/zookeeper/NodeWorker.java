@@ -31,7 +31,7 @@ public class NodeWorker implements Serializable {
 
 	private Map conf;
 	
-	private String prefix="worker-";
+	public static final String prefix="worker-";
 	
 	private int id;
 	
@@ -183,7 +183,6 @@ public class NodeWorker implements Serializable {
 						processorLeaderLatch.start();
 						processorLeaderLatch.await();
 						createMasterMeta();
-						attachPluginWorkerPathWatcher(path);
 						
 						while(true){
 							try{
@@ -219,6 +218,14 @@ public class NodeWorker implements Serializable {
 	private synchronized void createMasterMeta(){
 		if(master!=null) return;
 		master=new Master();
+		attachPluginWorkerPathWatcher(path());
+		reportWorker();
+	}
+	
+	private synchronized void reportWorker(){
+		String path=nodeSelecter.reportWorkersPath()+"/"+prefix+String.valueOf(id);
+		if(!executor.exists(path))
+			executor.createPath(path, new byte[]{}, CreateMode.EPHEMERAL);
 	}
 	
 	

@@ -10,6 +10,8 @@ public class ErrorMsg implements Serializable {
 
 	private long sequence;
 
+	private String hostAddress;
+	
 	public String getMsg() {
 		return msg;
 	}
@@ -33,7 +35,13 @@ public class ErrorMsg implements Serializable {
 	public void setWorkerId(int workerId) {
 		this.workerId = workerId;
 	}
-	
-	
+
+	public String getHostAddress() {
+		return hostAddress;
+	}
+
+	public void setHostAddress(String hostAddress) {
+		this.hostAddress = hostAddress;
+	}
 	
 }

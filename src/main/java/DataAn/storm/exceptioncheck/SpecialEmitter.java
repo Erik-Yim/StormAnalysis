@@ -167,7 +167,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private void error(Exception e){
 		ErrorMsg errorMsg=new ErrorMsg();
-		errorMsg.setMsg(e.getMessage());
+		errorMsg.setMsg(FlowUtils.getMsg(e));
 		errorMsg.setWorkerId(workerId);
 		errorMsg.setSequence(sequence);
 		FlowUtils.setError(executor, errorMsg);

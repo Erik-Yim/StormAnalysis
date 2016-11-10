@@ -63,7 +63,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 					collector.emit(new Values(defaultDeviceRecords,batchContext));
 				}catch (Exception e) {
 					e.printStackTrace();
-					FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
+					FlowUtils.setError(executor, batchContext.getCommunication(), FlowUtils.getMsg(e));
 					throw new FailedException(e);
 				}
 			}
@@ -112,7 +112,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 					System.out.println("aggregate->aggregate thread["+Thread.currentThread().getName() + "] batch : "+val.getBatchId());
 				}catch (Exception e) {
 					e.printStackTrace();
-					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), e.getMessage());
+					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), FlowUtils.getMsg(e));
 					throw new FailedException(e);
 				}
 			}
@@ -135,7 +135,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 				}catch (Exception e) {
 					e.printStackTrace();
 					if(batchContext!=null){
-						FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
+						FlowUtils.setError(executor, batchContext.getCommunication(), FlowUtils.getMsg(e));
 						throw new FailedException(e);
 					}
 				}
