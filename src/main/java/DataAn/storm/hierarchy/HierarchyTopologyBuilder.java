@@ -16,7 +16,7 @@ public class HierarchyTopologyBuilder implements Serializable {
 		topologyBuilder.setBolt("hierarchy-task-cal-bolt", new HierarchyCalBolt(),10)
 		.shuffleGrouping("hierarchy-task-spout");
 		topologyBuilder.setBolt("hierarchy-task-persist-bolt", new HierarchyPersistBolt(),20)
-		.fieldsGrouping("hierarchy-task-cal-bolt",new Fields("interval"));
+		.fieldsGrouping("hierarchy-task-cal-bolt",new Fields("intervals"));
 		return topologyBuilder.createTopology();
 	}
 	
