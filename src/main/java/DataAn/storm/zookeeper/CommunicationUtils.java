@@ -102,11 +102,11 @@ public class CommunicationUtils implements Serializable{
 		String time=new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 		communication.setTime(time);
 		communication.setStatus(NodeStatus.READY);
-		communication.setTopicPartition("data-prototype-11-1478509715525:0");
-//		communication.setTopicPartition(
-//				"data-prototype"
-//				+"-"+disAtomicLong.getSequence()+"-"+time
-//				+":0");
+//		communication.setTopicPartition("data-prototype-11-1478509715525:0");
+		communication.setTopicPartition(
+				"data-prototype"
+				+"-"+disAtomicLong.getSequence()+"-"+time
+				+":0");
 		communication.setTemporaryTopicPartition(
 				StormNames.DATA_TEMPORARY_TOPIC
 				+"-"+disAtomicLong.getSequence()+"-"+time
