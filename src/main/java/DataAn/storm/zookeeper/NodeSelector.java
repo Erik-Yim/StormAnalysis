@@ -566,15 +566,13 @@ public class NodeSelector implements Serializable{
 							}
 						}
 						
-						long instanceId=instance.sequence;
-						
+						long instanceId=instance.sequence;						
 						if(done){
 							complete(_path);
 							close(instanceId, _path, CacheType.CHILD);
 							if(_path.equals(instance.rootPath)){
 								communicationUtils.remove(instance.communication);
-							}
-							
+							}							
 							InstanceNode instanceNode=  instance.backInstanceNodes.get(1000);
 							if(instanceNode!=null){
 								if(_path.equals(instanceNode.path)){
@@ -582,8 +580,7 @@ public class NodeSelector implements Serializable{
 									final String workflowDonePath="/flow/"+instance.sequence+"/done";
 									executor.setPath(workflowDonePath, new Date().getTime()+"");
 								}
-							}
-							
+							}							
 						}
 						
 						Collections.sort(nodes, new Comparator<Node>() {

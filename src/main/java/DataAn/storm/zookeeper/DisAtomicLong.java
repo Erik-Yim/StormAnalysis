@@ -3,9 +3,10 @@ package DataAn.storm.zookeeper;
 import java.io.Serializable;
 
 import org.apache.curator.framework.recipes.atomic.AtomicValue;
+import org.apache.curator.framework.recipes.shared.SharedCount;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-
+import com.google.common.collect.Lists;
 import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
 public class DisAtomicLong implements Serializable{
@@ -15,6 +16,7 @@ public class DisAtomicLong implements Serializable{
 	public DisAtomicLong(ZookeeperExecutor executor) {
 		atomicLong=new DistributedAtomicLong(executor.backend(),
 				"/locks/atomic-long", new ExponentialBackoffRetry(1000, 3));
+	
 	}
 	
 	public long getSequence(){
