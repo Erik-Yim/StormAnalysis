@@ -10,7 +10,7 @@ import DataAn.storm.kafka.SimpleProducer;
 public interface IHierarchyDeviceRecordPersist extends Serializable {
 
 	
-	void persist(SimpleProducer producer,HierarchyDeviceRecord deviceRecord, Communication communication, Map context);
+	void persist(SimpleProducer producer,HierarchyDeviceRecord deviceRecord,HierarchyModel[] intervals, Communication communication, Map context);
 	
 	IHierarchyDeviceRecordPersist INSTANCE=new SimpleHierarchyDeviceRecordPersist();
 	

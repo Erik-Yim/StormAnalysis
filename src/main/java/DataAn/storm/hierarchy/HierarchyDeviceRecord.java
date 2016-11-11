@@ -29,4 +29,7 @@ public class HierarchyDeviceRecord extends DefaultDeviceRecord {
 		return super.getCollection()+hierarchyName;
 	}
 	
+	public String getSuperCollection() {
+		return super.getCollection();
+	}
 }

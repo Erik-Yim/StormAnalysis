@@ -62,7 +62,7 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 					collector.emit(new Values(processor));
 				}catch (Exception e) {
 					e.printStackTrace();
-					FlowUtils.setError(executor, batchContext.getCommunication(), e.getMessage());
+					FlowUtils.setError(executor, batchContext.getCommunication(), FlowUtils.getMsg(e));
 					throw new FailedException(e);
 				}
 			}
@@ -124,7 +124,7 @@ public class ExceptionCheckTopologyBuilder implements Serializable {
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
-					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), e.getMessage());
+					FlowUtils.setError(executor, val.getBatchContext().getCommunication(), FlowUtils.getMsg(e));
 					throw new FailedException(e);
 				}
 			}

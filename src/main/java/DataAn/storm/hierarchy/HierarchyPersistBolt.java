@@ -34,8 +34,10 @@ public class HierarchyPersistBolt extends BaseSimpleRichBolt {
 				(HierarchyDeviceRecord) tuple.getValueByField("record");
 		Communication communication= 
 				(Communication) tuple.getValueByField("communication");
+		HierarchyModel[] intervals= 
+				(HierarchyModel[]) tuple.getValueByField("intervals");
 		IHierarchyDeviceRecordPersist deviceRecordPersist=IHierarchyDeviceRecordPersistGetter.get();
-		deviceRecordPersist.persist(producer,deviceRecord,communication, getStormConf());
+		deviceRecordPersist.persist(producer,deviceRecord,intervals,communication, getStormConf());
 		
 	}
 

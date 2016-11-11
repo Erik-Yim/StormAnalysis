@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
@@ -119,6 +121,13 @@ public class NodeSelector implements Serializable{
 						e.printStackTrace();
 					}
 				}
+				if(master.reportWorkerCache!=null){
+					try {
+						master.reportWorkerCache.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 				master.instances.clear();
 				master=null;
 			}
@@ -148,6 +157,10 @@ public class NodeSelector implements Serializable{
 	
 	String pluginWorkersPath(){
 		return basePath+"/pluginWorkers/"+name+"-workers";
+	}
+	
+	String reportWorkersPath(){
+		return basePath+"/reportWorkers/"+name+"-workers";
 	}
 	
 	String instancePath(String path,Instance instance){
@@ -236,6 +249,25 @@ public class NodeSelector implements Serializable{
 			this.path=parent.getPath()+"/"+name;
 			parent.nodes.add(this);
 		}
+		
+		private Object getWorkers(){
+			if(nodes==null||nodes.isEmpty()){
+				return NodeWorker.prefix+getId();
+			}
+			else{
+				List<String> strings=new ArrayList<>();
+				for(NodeData nodeData:nodes){
+					Object childStrings=nodeData.getWorkers();
+					if(childStrings instanceof String){
+						strings.add((String) childStrings);
+					}else{
+						strings.addAll((List<String>) childStrings);
+					}
+				}
+				return strings;
+			}
+		}
+		
 		
 		private boolean containsWorker(int worker){
 			boolean contains=id==worker;
@@ -386,6 +418,8 @@ public class NodeSelector implements Serializable{
 	
 		private NodeCache workflowTriggerCache;
 		
+		private PathChildrenCache reportWorkerCache;
+		
 		private Map<Long,Instance> instances=Maps.newConcurrentMap();
 	
 	
@@ -499,6 +533,8 @@ public class NodeSelector implements Serializable{
 		if(!instance.workflow.workerPaths.containsKey(worker)){
 			throw new RuntimeException("the worker["+worker+"] does not exist.");
 		}
+		
+		System.out.println(" find to start worker : "+worker +""); 
 		
 		final WorkerPathVal workerPathVal=new WorkerPathVal();
 		workerPathVal.id=worker;
@@ -626,7 +662,7 @@ public class NodeSelector implements Serializable{
 						}
 					}catch (Exception e) {
 						e.printStackTrace();
-						FlowUtils.setError(executor, instance.communication, e.getMessage());
+						FlowUtils.setError(executor, instance.communication, FlowUtils.getMsg(e));
 						breakFlow(instance);
 					}
 				}
@@ -675,6 +711,7 @@ public class NodeSelector implements Serializable{
 		master=new Master();
 		attachWorkersPathWatcher(workflow);
 		attachWorfkowTriggerWatcher();
+		attachWorfkowReportWorkersWatcher();
 	}
 	
 	private Instance createInstance(Communication communication){
@@ -699,6 +736,44 @@ public class NodeSelector implements Serializable{
 		return instance;
 	}
 	
+	private ScheduledExecutorService delayService=Executors.newScheduledThreadPool(1, new ThreadFactory() {
+				@Override
+				public Thread newThread(Runnable r) {
+					return new Thread(r, workflowPath()+"{watch children}");
+				}
+			});
+	
+	private void attachWorfkowReportWorkersWatcher(){
+		final String path=reportWorkersPath();
+		PathChildrenCache cache= executor.watchChildrenPath(path, new ZooKeeperClient.NodeChildrenCallback() {
+			@Override
+			public void call(List<Node> nodes) {
+				delayService.schedule(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							List<String> strings= executor.backend().getChildren().forPath(path);
+							List<String> workers=(List<String>) workflow.nodeData.getWorkers();
+							for(String worker:workers){
+								if(!strings.contains(worker)){
+									System.out.println("worker : "+worker +" is shutdown");
+								}
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}, 10, TimeUnit.SECONDS);
+			}
+		}, Executors.newFixedThreadPool(1, new ThreadFactory() {
+				@Override
+				public Thread newThread(Runnable r) {
+					return new Thread(r, workflowPath()+"{watch children}");
+				}
+			}),PathChildrenCacheEvent.Type.CHILD_REMOVED);
+		master.reportWorkerCache=cache;
+	}
+	
 	private void attachWorfkowTriggerWatcher(){
 		final String path=workflowTrigger();
 		if(!executor.exists(path)){
@@ -718,7 +793,7 @@ public class NodeSelector implements Serializable{
 					instance=createInstance(communication);
 					start(instance);
 				}catch (Exception e) {
-					FlowUtils.setError(executor, communication, e.getMessage());
+					FlowUtils.setError(executor, communication, FlowUtils.getMsg(e));
 					e.printStackTrace();
 					breakFlow(instance);
 				}

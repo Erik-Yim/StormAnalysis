@@ -27,7 +27,7 @@ public class HierarchyCalBolt extends BaseSimpleRichBolt {
 	}
 	
 	public HierarchyCalBolt() {
-		super(new Fields("record","communication","interval"));
+		super(new Fields("record","communication","intervals"));
 	}
 	
 	@Override
@@ -43,11 +43,7 @@ public class HierarchyCalBolt extends BaseSimpleRichBolt {
 				(Communication) tuple.getValueByField("communication");
 		for(HierarchyDeviceRecord deviceRecord:hierarchyDeviceRecords){
 			HierarchyModel[] intervals=markIntervalService.markIntervals(deviceRecord, hierarchyModels);
-			for(HierarchyModel interval:intervals){
-				deviceRecord.setInterval(interval.getInterval());
-				deviceRecord.setHierarchyName(interval.getName());
-				emit(new Values(deviceRecord,communication,interval.getInterval()));
-			}
+			emit(new Values(deviceRecord,communication,intervals));
 		}
 	}
 

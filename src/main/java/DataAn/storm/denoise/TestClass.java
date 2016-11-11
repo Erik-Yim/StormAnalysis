@@ -46,7 +46,7 @@ public class TestClass {
 		ml.setKey("02342");
 		String content= "{\"name\":\"test\",\"datetime\":\"2010-02-28:00:00:00\"}";
 		ml.setContent(content);
-		ml.setCollection("test111");		
+		ml.setCollections(new String[]{"test111"});		
 		Map<String,String> context = new  HashMap<>();
 		MongoPersistServiceGetter.getMongoPersistService(context).persist(ml, context);
 			

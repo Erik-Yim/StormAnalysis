@@ -11,7 +11,14 @@ public class DenoiseConfigParser  {
 
 	public DenoiseConfig parse(String[] args) throws Exception{
 		DenoiseConfig conf=StormUtils.getBaseConfig(DenoiseConfig.class);
-		conf.put(BaseConfig.name, "denoise-task");
+		if(args.length>0){
+			conf.put(BaseConfig.name, args[0]);
+			if(args.length>1){
+				conf.put(ZooKeeperNameKeys.ZOOKEEPER_SERVER_NAMESPACE, args[1]);
+			}
+		}else{
+			conf.put(BaseConfig.name, "denoise-task");
+		}
 		conf.put("storm.flow.worker.id", 1);
 		ZooKeeperNameKeys.setZooKeeperServer(conf, 
 				conf.getZooKeeper());

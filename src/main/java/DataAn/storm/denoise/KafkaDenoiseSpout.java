@@ -49,7 +49,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	protected Map conf;
 	
-	private long max=2;
+	private long max=Long.MAX_VALUE;
 	
 	private long count;
 	
@@ -185,7 +185,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 	
 	private void error(Exception e){
 		ErrorMsg errorMsg=new ErrorMsg();
-		errorMsg.setMsg(e.getMessage());
+		errorMsg.setMsg(FlowUtils.getMsg(e));
 		errorMsg.setWorkerId(workerId);
 		errorMsg.setSequence(sequence);
 		FlowUtils.setError(executor, errorMsg);

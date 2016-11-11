@@ -1,5 +1,6 @@
 package DataAn.storm.denoise;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +20,7 @@ public interface MongoDeviceRecordConvert {
 					String[] param = defaultDeviceRecord.getProperties();
 					String[] paramValue = defaultDeviceRecord.getPropertyVals();
 					Map<String, Object> convertMap =  new HashMap<>();
+					convertMap.put("_recordtime", DateUtil.format(new Date()));
 					convertMap.put("id", defaultDeviceRecord.getId());
 					convertMap.put("name", defaultDeviceRecord.getName());
 					convertMap.put("series", defaultDeviceRecord.getSeries());
