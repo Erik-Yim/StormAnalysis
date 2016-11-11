@@ -10,6 +10,8 @@ public class BaseConfig extends Config implements Serializable{
 
 	public static final String zookeeper="storm-zookeeper";
 	
+	public static final String zookeeper_namespace="storm-zookeeper-namespace";
+	
 	public static final String kafka="storm-kafka";
 	
 	public String getName() {
@@ -18,6 +20,10 @@ public class BaseConfig extends Config implements Serializable{
 
 	public String getZooKeeper() {
 		return (String) get(zookeeper);
+	}
+	
+	public String getNamespace() {
+		return (String) get(zookeeper_namespace);
 	}
 
 	public String getKafka() {
