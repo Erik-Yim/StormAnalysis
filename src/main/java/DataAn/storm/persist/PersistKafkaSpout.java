@@ -167,8 +167,9 @@ public class PersistKafkaSpout extends BaseRichSpout {
 		}));
 	}
 	
-	private void release(){
+	private void release(String msg){
 		try {
+			System.out.println("realse lock  by : "+msg);
 			nodeWorker.release();
 			System.out.println(nodeWorker.getId()+ " release lock");
 		} catch (Exception e) {
@@ -204,7 +205,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 							}
 						}catch (Exception e1) {
 						}
-						nodeWorker.release();
+						release(FlowUtils.getMsg(e));
 						System.out.println(nodeWorker.getId()+ " release lock");
 					} catch (Exception e1) {
 						e1.printStackTrace();
@@ -214,7 +215,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 			}catch (Exception e) {
 				e.printStackTrace();
 				try {
-					nodeWorker.release();
+					release(FlowUtils.getMsg(e));
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {
 					e1.printStackTrace();
@@ -233,7 +234,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 			}
 			
 			if(hasError){
-				release();
+				release("occur ------------------ the error ");
 				await();
 				return;
 			}
@@ -242,7 +243,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 				if(latestTime>0){
 					long interval=new Date().getTime()-latestTime;
 					if(interval>60000){
-						release();
+						release("exceed the max wait time 60s as the whole workflow executing time.");
 						await();
 						return;
 					}
@@ -252,7 +253,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 				if(latestTime>0){
 					long interval=new Date().getTime()-latestTime;
 					if(interval>(60000*6)){
-						release();
+						release("exceed the max wait time 6min as the whole workflow does not execute.");
 						await();
 						return;
 					}
