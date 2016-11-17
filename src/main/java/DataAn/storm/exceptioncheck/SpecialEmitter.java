@@ -156,8 +156,9 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		}
 	}
 	
-	private void release(){
+	private void release(String msg){
 		try {
+			System.out.println("realse lock  by : "+msg);
 			nodeWorker.release();
 			System.out.println(nodeWorker.getId()+ " release lock");
 		} catch (Exception e) {
@@ -192,7 +193,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 							}
 						}catch (Exception e1) {
 						}
-						nodeWorker.release();
+						release(FlowUtils.getMsg(e));
 						System.out.println(nodeWorker.getId()+ " release lock");
 					} catch (Exception e1) {
 						e1.printStackTrace();
@@ -202,7 +203,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 			}catch (Exception e) {
 				e.printStackTrace();
 				try {
-					nodeWorker.release();
+					release(FlowUtils.getMsg(e));
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {
 					e1.printStackTrace();
@@ -219,13 +220,13 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 			}
 			
 			if(reachEnd){
-				release();
+				release("reach------------------ the end ");
 				await();
 				return ;
 			}
 			
 			if(hasError){
-				release();
+				release("occur ------------------ the error ");
 				await();
 				return;
 			}

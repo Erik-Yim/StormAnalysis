@@ -174,8 +174,9 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		}));
 	}
 	
-	private void release(){
+	private void release(String msg){
 		try {
+			System.out.println("realse lock  by : "+msg);
 			nodeWorker.release();
 			System.out.println(nodeWorker.getId()+ " release lock");
 		} catch (Exception e) {
@@ -210,7 +211,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 							}
 						}catch (Exception e1) {
 						}
-						nodeWorker.release();
+						release(FlowUtils.getMsg(e));
 						System.out.println(nodeWorker.getId()+ " release lock");
 					} catch (Exception e1) {
 						e1.printStackTrace();
@@ -220,7 +221,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			}catch (Exception e) {
 				e.printStackTrace();
 				try {
-					nodeWorker.release();
+					release(FlowUtils.getMsg(e));
 					System.out.println(nodeWorker.getId()+ " release lock");
 				} catch (Exception e1) {
 					e1.printStackTrace();
@@ -238,7 +239,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			}
 			
 			if(hasError){
-				release();
+				release("occur ------------------ the error ");
 				await();
 				return;
 			}
@@ -246,7 +247,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			if(!errorTuples.isEmpty()){
 				if(failCount>3){
 					error(new RuntimeException("some error..."));
-					release();
+					release("exceed the max fail count.");
 					await();
 					return;
 				}
@@ -263,7 +264,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			}
 			
 			if(reachEnd){
-				release();
+				release("reach------------------ the end ");
 				await();
 				return ;
 			}
