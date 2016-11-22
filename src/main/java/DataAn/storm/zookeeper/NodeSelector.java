@@ -2,6 +2,8 @@ package DataAn.storm.zookeeper;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +29,7 @@ import DataAn.common.utils.JJSON;
 import DataAn.storm.Communication;
 import DataAn.storm.ErrorMsg;
 import DataAn.storm.FlowUtils;
+import DataAn.storm.NetUtils;
 import DataAn.storm.kafka.InnerProducer;
 import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.zookeeper.ZooKeeperClient.Node;
@@ -158,6 +161,10 @@ public class NodeSelector implements Serializable{
 	
 	String pluginWorkersPath(){
 		return basePath+"/pluginWorkers/"+name+"-workers";
+	}
+	
+	String leaderRegisterPath(){
+		return basePath+"/leader-host";
 	}
 	
 	String reportWorkersPath(){
@@ -718,6 +725,7 @@ public class NodeSelector implements Serializable{
 		attachWorkersPathWatcher(workflow);
 		attachWorfkowTriggerWatcher();
 		attachWorfkowReportWorkersWatcher();
+		registerLeaderInZookeeper();
 	}
 	
 	private Instance createInstance(Communication communication){
@@ -748,6 +756,24 @@ public class NodeSelector implements Serializable{
 					return new Thread(r, workflowPath()+"{watch children}");
 				}
 			});
+	
+	private void registerLeaderInZookeeper(){
+		InetAddress inetAddress=NetUtils.getLocalAddress();
+		String hostAddress=inetAddress.getHostAddress();
+		String pid = ManagementFactory.getRuntimeMXBean().getName();  
+        int indexOf = pid.indexOf('@');  
+        if (indexOf > 0){  
+            pid = pid.substring(0, indexOf);  
+        }  
+        String msg=hostAddress+"[pid-"+pid+"]";
+		if(!executor.exists(leaderRegisterPath())){
+			executor.createPath(leaderRegisterPath(), msg.getBytes(Charset.forName("utf-8")));
+		}
+		else{
+			executor.setPath(leaderRegisterPath(), msg);
+		}
+	}
+	
 	
 	private void attachWorfkowReportWorkersWatcher(){
 		final String path=reportWorkersPath();
