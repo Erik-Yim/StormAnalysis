@@ -18,6 +18,7 @@ import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.zookeeper.CreateMode;
 
+import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.storm.kafka.InnerProducer;
 import DataAn.storm.kafka.SimpleProducer;
@@ -59,7 +60,7 @@ public class NodeWorker implements Serializable {
 		this.conf=conf;
 		InnerProducer innerProducer=new InnerProducer(conf);
 		simpleProducer =new SimpleProducer(innerProducer, 
-				"wokflow-instance", 0);
+				"workflow-instance-track", 0);
 		this.executor=nodeSelecter.getExecutor();
 		processorLeaderLatch=new LeaderLatch(executor.backend(),
 				processorLeaderPath());
@@ -139,8 +140,9 @@ public class NodeWorker implements Serializable {
 				@Override
 				public void call(Node node) {
 					try{
+						final String stringData=node.getStringData();
 						final WorkerPathVal workerPathVal=
-								JJSON.get().parse(node.getStringData(),WorkerPathVal.class);
+								JJSON.get().parse(stringData,WorkerPathVal.class);
 						final String tempPath=executor.createEphSequencePath(path+"/temp-");
 						WorkerTemporary workerTemporary=new WorkerTemporary();
 						workerTemporary.setTempPath(tempPath);
@@ -154,6 +156,8 @@ public class NodeWorker implements Serializable {
 								workTracking.setInstancePath(tempPath);
 								workTracking.setStatus(NodeStatus.PROCESSING);
 								workTracking.setRecordTime(new Date().getTime());
+								workTracking.set_recordTime(DateUtil.format(new Date()));
+								workTracking.setDesc(stringData);
 								simpleProducer.send(workTracking);
 							}
 						});

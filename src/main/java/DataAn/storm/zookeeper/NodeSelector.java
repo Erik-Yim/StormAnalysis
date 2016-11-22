@@ -22,6 +22,7 @@ import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.storm.shade.com.google.common.collect.Maps;
 
+import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.storm.Communication;
 import DataAn.storm.ErrorMsg;
@@ -497,7 +498,8 @@ public class NodeSelector implements Serializable{
 	}
 	
 	void complete(final String path){
-		final InstanceNodeVal instanceNodeVal=JJSON.get().parse(new String(executor.getPath(path),Charset.forName("utf-8")), InstanceNodeVal.class);
+		final String stringData=new String(executor.getPath(path),Charset.forName("utf-8"));
+		final InstanceNodeVal instanceNodeVal=JJSON.get().parse(stringData, InstanceNodeVal.class);
 		instanceNodeVal.status=NodeStatus.COMPLETE;
 		executor.setPath(path, JJSON.get().formatObject(instanceNodeVal));
 		executorService.execute(new Runnable() {
@@ -508,6 +510,8 @@ public class NodeSelector implements Serializable{
 				workTracking.setInstancePath(path);
 				workTracking.setStatus(NodeStatus.COMPLETE);
 				workTracking.setRecordTime(new Date().getTime());
+				workTracking.set_recordTime(DateUtil.format(new Date()));
+				workTracking.setDesc(stringData);
 				simpleProducer.send(workTracking);
 			}
 		});
@@ -551,6 +555,8 @@ public class NodeSelector implements Serializable{
 				workTracking.setInstancePath(instancePath);
 				workTracking.setStatus(NodeStatus.READY);
 				workTracking.setRecordTime(new Date().getTime());
+				workTracking.set_recordTime(DateUtil.format(new Date()));
+				workTracking.setDesc(JJSON.get().formatObject(workerPathVal));
 				simpleProducer.send(workTracking);
 			}
 		});
