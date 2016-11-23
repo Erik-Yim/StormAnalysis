@@ -12,6 +12,10 @@ public class WorkTracking extends BaseFetchObj  {
 	private String status;
 	
 	private String instancePath;
+	
+	private String _recordTime;
+	
+	private String desc;
 
 	public String getWorkerId() {
 		return workerId;
@@ -45,4 +49,21 @@ public class WorkTracking extends BaseFetchObj  {
 		this.instancePath = instancePath;
 	}
 
+	public String get_recordTime() {
+		return _recordTime;
+	}
+
+	public void set_recordTime(String _recordTime) {
+		this._recordTime = _recordTime;
+	}
+
+	public String getDesc() {
+		return desc;
+	}
+
+	public void setDesc(String desc) {
+		this.desc = desc;
+	}
+
+	
 }
