@@ -1,5 +1,7 @@
 package DataAn.storm.persist;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.bson.Document;
@@ -10,13 +12,15 @@ import com.mongodb.client.model.Filters;
 import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.mongo.client.MongodbUtil;
+import DataAn.mongo.init.InitMongo;
 
 public interface IMongoPersistService {
 
 	public void persist(MongoPeristModel mongoPeristModel,Map context);
 	
-	 
-	IMongoPersistService INSTANCE=new IMongoPersistService() {                
+	public void persist(List<MongoPeristModel> mongoPeristModels,Map context);
+	
+	IMongoPersistService INSTANCE=new IMongoPersistService() {  
 		@Override
 		public void persist(MongoPeristModel mongoPeristModel, Map context) {
 			String series =  mongoPeristModel.getSeries();
@@ -24,14 +28,14 @@ public interface IMongoPersistService {
 			
 			Map<String, Object> content= JJSON.get().parse(mongoPeristModel.getContent());
 			MongodbUtil mg = MongodbUtil.getInstance();
+			String databaseName = InitMongo.getDataBaseNameBySeriesAndStar(series, star);
 			String[] cols=mongoPeristModel.getCollections();
 			for(String collectionStr:cols){
-				MongoCollection<Document> collection = mg.getCollection("db_"+series+"_"+star, collectionStr);
-//				//List<Document> documentList = new ArrayList<Document>();
+				MongoCollection<Document> collection = mg.getCollection(databaseName, collectionStr);
 				Document doc = new Document();
 				for(Map.Entry<String, Object> entry : content.entrySet()){
-					if("datetime".equals(entry.getKey())) doc.put(entry.getKey(),
-							DateUtil.format(entry.getValue()+""));
+					if("datetime".equals(entry.getKey())) 
+						doc.put(entry.getKey(),DateUtil.format(entry.getValue()+""));
 					doc.put(entry.getKey(),entry.getValue());						
 				}
 				Long num = collection.count(Filters.and(Filters.eq("key", mongoPeristModel.getKey()),Filters.eq("id", mongoPeristModel.getId()),Filters.lte("recordTime", mongoPeristModel.getRecordTime())));
@@ -40,8 +44,22 @@ public interface IMongoPersistService {
 					collection.insertOne(doc);
 					//mg.insertOne("series_start", mongoPeristModel.getCollection(), mongoPeristModel.getContent());	
 				}
-								
 				System.out.println(" save into mongodb----> "+ collectionStr +" content["+mongoPeristModel.getContent()+"]");
+			}
+			
+		}
+		@Override
+		public void persist(List<MongoPeristModel> mongoPeristModels,
+				Map context) {
+			String series =  mongoPeristModels.get(0).getSeries();
+			String star = mongoPeristModels.get(0).getStar() ;
+			MongodbUtil mg = MongodbUtil.getInstance();
+			String databaseName = InitMongo.getDataBaseNameBySeriesAndStar(series, star);
+			
+			Map<String, Object> content= JJSON.get().parse(mongoPeristModels.get(0).getContent());
+			String[] cols=mongoPeristModels.get(0).getCollections();
+			for(String collectionStr:cols){
+				MongoCollection<Document> collection = mg.getCollection(databaseName, collectionStr);
 			}
 			
 		}
