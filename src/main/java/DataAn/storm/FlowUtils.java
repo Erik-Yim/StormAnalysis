@@ -102,6 +102,7 @@ public abstract class FlowUtils {
 	public static void setError(ZookeeperExecutor executor,ErrorMsg errorMsg){
 		String path="/flow/"+errorMsg.getSequence()+"/error";
 		String esg=JJSON.get().formatObject(errorMsg);
+		System.out.println("----------------------------------------error-----------------------\r\n"+esg);
 		executor.setPath(path, esg);
 		String workflowDone="/flow/"+errorMsg.getSequence()+"/done";
 		executor.setPath(workflowDone, 
