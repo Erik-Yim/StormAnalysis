@@ -223,21 +223,6 @@ public class MongodbUtil {
 
 	/**
 	* @Title: insert
-	* @Description: 为相应的集合添加数据
-	* @param databaseName 数据库名称
-	* @param collectionName 集合名称
-	* @author Shenwp
-	* @date 2016年7月6日
-	* @version 1.0
-	*/
-	public void insertOne(String databaseName,String collectionName, Map<String, Object> map){
-		MongoCollection<Document> collection = this.getCollection(databaseName, collectionName);
-		Document doc = new Document(map);
-		collection.insertOne(doc);
-	}
-
-	/**
-	* @Title: insert
 	* @Description: 批量插入数据
 	* @param databaseName 数据库名称 InitMongo.DATABASE_J9STAR2
 	* @param collectionName 集合名称 tb+年
