@@ -23,45 +23,101 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 		@Override
 		public void cleanup(List<? extends IDeviceRecord> deviceRecords) {
 			try{
-				String [] vals = null;
-				String [] param = null;
-				Set<String> invalid = new HashSet<>();
-				for(IDeviceRecord idr:deviceRecords){
-					if(!idr.isContent()) continue;
-					vals = idr.getPropertyVals();
-					param = idr.getProperties();
-					for(int i=0;i<vals.length;i++){							
-						if(vals[i].contains("#")){
-							invalid.add(param[i]);
+				String  devicename = deviceRecords.get(0).getName();
+				if(devicename.equals("flywheel"))
+				{
+						String [] vals = null;
+						String [] param = null;
+						Set<String> invalid = new HashSet<>();
+						for(IDeviceRecord idr:deviceRecords){
+							if(!idr.isContent()) continue;
+							vals = idr.getPropertyVals();
+							param = idr.getProperties();
+							for(int i=0;i<vals.length;i++){							
+								if(vals[i].contains("#")){
+									invalid.add(param[i]);
+								}
+							}
+						}
+					
+					for(IDeviceRecord idr:deviceRecords){
+						if(!idr.isContent()) continue;
+						param = idr.getProperties();
+						vals = idr.getPropertyVals();
+						String [] newparam= new String[param.length-invalid.size()];
+						String [] newvals= new String[param.length-invalid.size()];
+						int j = 0;						
+						for(int i=0;i<param.length;i++){							
+							if(!(invalid.contains(param[i]))){
+								newparam[j] = param[i];
+								newvals[j] = vals[i];
+								j++;
+							}
+							
+						}
+						((DefaultDeviceRecord)idr).setProperties(newparam);
+						((DefaultDeviceRecord)idr).setPropertyVals(newvals);
+					}												
+				}
+				
+				if(devicename.equals("top"))
+				{
+					String [] vals = null;
+					String [] param = null;
+					Set<String> invalid = new HashSet<>();
+					//获取所有的陀螺的x、y、z三个轴的角速度的sequence值,
+					List<ParameterDto> paramlist = DenoiseUtils.getParamtoDenoiseList();
+					for(IDeviceRecord idr:deviceRecords){
+						if(!idr.isContent()) continue;
+						vals = idr.getPropertyVals();
+						param = idr.getProperties();
+						for(int i=0;i<vals.length;i++){							
+							if(vals[i].contains("#")){
+								invalid.add(param[i]);
+							}
+							else
+							{
+								for(ParameterDto paramdto:paramlist)
+								{
+									if(param[i].equals(paramdto.getCode()))
+									{
+										if((Double.parseDouble(vals[i])<-2.2)|(2.2<Double.parseDouble(vals[i])))
+										{
+											invalid.add(param[i]);
+										}
+									}
+								}
+							}
+							
 						}
 					}
-				}
-			
-			for(IDeviceRecord idr:deviceRecords){
-				if(!idr.isContent()) continue;
-				param = idr.getProperties();
-				vals = idr.getPropertyVals();
-				String [] newparam= new String[param.length-invalid.size()];
-				String [] newvals= new String[param.length-invalid.size()];
-				int j = 0;						
-				for(int i=0;i<param.length;i++){							
-					if(!(invalid.contains(param[i]))){
-						newparam[j] = param[i];
-						newvals[j] = vals[i];
-						j++;
-					}
-					
-				}
-				((DefaultDeviceRecord)idr).setProperties(newparam);
-				((DefaultDeviceRecord)idr).setPropertyVals(newvals);
-			}												
 				
+				for(IDeviceRecord idr:deviceRecords){
+					if(!idr.isContent()) continue;
+					param = idr.getProperties();
+					vals = idr.getPropertyVals();
+					String [] newparam= new String[param.length-invalid.size()];
+					String [] newvals= new String[param.length-invalid.size()];
+					int j = 0;						
+					for(int i=0;i<param.length;i++){							
+						if(!(invalid.contains(param[i]))){
+							newparam[j] = param[i];
+							newvals[j] = vals[i];
+							j++;
+						}
+						
+					}
+					((DefaultDeviceRecord)idr).setProperties(newparam);
+					((DefaultDeviceRecord)idr).setPropertyVals(newvals);
+				}						
+				}
+
 			}catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 		}
 	};
-	
+
 	class IDenoiseFilterNodeProcessorGetter{
 		
 		public static IDenoiseFilterNodeProcessor get(){

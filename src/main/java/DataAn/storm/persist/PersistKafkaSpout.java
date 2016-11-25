@@ -76,11 +76,11 @@ public class PersistKafkaSpout extends BaseRichSpout {
 	
 	private NodeCache errorCache;
 	
-	private boolean workflowDone;
+	private long latestPollTime;
 	
-	private long latestTime;
+	private long latestHeartBeatTime;
 	
-	private NodeCache workflowDoneCache;
+	private NodeCache keepAliveNodeCache;
 	
 	@Override
 	public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
@@ -112,20 +112,20 @@ public class PersistKafkaSpout extends BaseRichSpout {
 		triggered=false;
 		sequence=-1;
 		hasError=false;
+		latestPollTime=0;
 		if(this.errorCache!=null){
 			try{
 				this.errorCache.close();
 			}catch (Exception e) {
 			}
 		}
-		workflowDone=false;
-		if(this.workflowDoneCache!=null){
+		latestHeartBeatTime=0;
+		if(this.keepAliveNodeCache!=null){
 			try{
-				this.workflowDoneCache.close();
+				this.keepAliveNodeCache.close();
 			}catch (Exception e) {
 			}
 		}
-		latestTime=0;
 	}
 	
 	protected void wakeup() {
@@ -152,11 +152,11 @@ public class PersistKafkaSpout extends BaseRichSpout {
 			}
 		}));
 		
-		final String workflowDonePath="/flow/"+communication.getSequence()+"/done";
-		this.workflowDoneCache=executor.watchPath(workflowDonePath, new NodeCallback() {
+		final String workflowDonePath="/flow/"+communication.getSequence()+"/persist/heartbeats";
+		this.keepAliveNodeCache=executor.watchPath(workflowDonePath, new NodeCallback() {
 			@Override
 			public void call(Node node) {
-				workflowDone=true;
+				latestHeartBeatTime=new Date().getTime();
 			}
 		} , Executors.newFixedThreadPool(1, new ThreadFactory() {
 			
@@ -239,42 +239,51 @@ public class PersistKafkaSpout extends BaseRichSpout {
 				return;
 			}
 			
-			if(workflowDone){
-				if(latestTime>0){
-					long interval=new Date().getTime()-latestTime;
-					if(interval>60000){
-						release("exceed the max wait time 60s as the whole workflow executing time.");
-						await();
-						return;
-					}
+			if(latestHeartBeatTime!=0){
+				long interval=new Date().getTime()-latestHeartBeatTime;
+				if(interval>120000){ //2minutes
+					release("all bolts process completely.");
+					await();
+					return;
 				}
 			}
-			else{
-				if(latestTime>0){
-					long interval=new Date().getTime()-latestTime;
-					if(interval>(60000*6)){
-						release("exceed the max wait time 6min as the whole workflow does not execute.");
-						await();
-						return;
-					}
-				}
-			}
+			
+//			if(workflowDone){
+//				if(latestPollTime>0){
+//					long interval=new Date().getTime()-latestPollTime;
+//					if(interval>60000){
+//						release("exceed the max wait time 60s as the whole workflow executing time.");
+//						await();
+//						return;
+//					}
+//				}
+//			}
+//			else{
+//				if(latestPollTime>0){
+//					long interval=new Date().getTime()-latestPollTime;
+//					if(interval>(60000*6)){
+//						release("exceed the max wait time 6min as the whole workflow does not execute.");
+//						await();
+//						return;
+//					}
+//				}
+//			}
 			
 			List<MongoPeristModel> models=new ArrayList<>();
 			FetchObjs fetchObjs=consumer.next(timeout);
 			if(!fetchObjs.isEmpty()){
-				if(latestTime>0)
-					latestTime=0;
+//				if(latestPollTime>0)
+//					latestPollTime=0;
 				Iterator<FetchObj> fetchObjIterator= fetchObjs.iterator();
 				while(fetchObjIterator.hasNext()){
 					MongoPeristModel mongoPeristModel=(MongoPeristModel) fetchObjIterator.next();
 					mongoPeristModel.setSequence(atomicLong.incrementAndGet());
 					models.add(mongoPeristModel);
 				}
-				collector.emit(new Values(models));
+				collector.emit(new Values(models,communication));
 			}else{
-				if(latestTime==0)
-				latestTime=new Date().getTime();
+//				if(latestPollTime==0)
+//					latestPollTime=new Date().getTime();
 			}
 		}catch (Exception e) {
 			setHasError(true);
@@ -290,7 +299,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("records"));
+		declarer.declare(new Fields("records","communication"));
 	}
 
 	@Override

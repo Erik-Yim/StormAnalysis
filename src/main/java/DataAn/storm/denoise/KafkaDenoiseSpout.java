@@ -246,7 +246,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 			
 			if(!errorTuples.isEmpty()){
 				if(failCount>3){
-					error(new RuntimeException("some error..."));
+					error(new RuntimeException("exceed the max fail count --- ; "+JJSON.get().formatObject(errorTuples)));
 					release("exceed the max fail count.");
 					await();
 					return;

@@ -1,4 +1,4 @@
-package stormAnalysis;
+package DataAn.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.tuple.Fields;
 
 
 @SuppressWarnings("serial")
@@ -14,8 +13,10 @@ public class PersistTopologyBuilder implements Serializable {
 
 		TopologyBuilder topologyBuilder=new TopologyBuilder();
 		topologyBuilder.setSpout("persist-task-spout", new PersistKafkaSpout());
-		topologyBuilder.setBolt("persist-task-persist-bolt", new SimplePersistBolt(new Fields("logging")),20)
+		topologyBuilder.setBolt("persist-task-persist-bolt", new SimplePersistBolt(),20)
 		.shuffleGrouping("persist-task-spout");
+		topologyBuilder.setBolt("heartbeat", new SendHeartBeatBolt())
+		.globalGrouping("persist-task-persist-bolt");
 		return topologyBuilder.createTopology();
 		
 	}
