@@ -47,7 +47,7 @@ public interface IMongoPersistService {
 //					collection.insertOne(doc);
 //					//mg.insertOne("series_start", mongoPeristModel.getCollection(), mongoPeristModel.getContent());	
 //				}
-				//System.out.println(" save into mongodb----> "+ collectionStr +" content["+mongoPeristModel.getContent()+"]");
+				System.out.println(" save into mongodb----> "+ collectionStr +" content["+mongoPeristModel.getContent()+"]");
 			}
 			
 		}
