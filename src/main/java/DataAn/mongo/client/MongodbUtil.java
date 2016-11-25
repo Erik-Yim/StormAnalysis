@@ -51,7 +51,7 @@ public class MongodbUtil {
 		}
 		if(mg == null){
 			if (isShard && DataTypeUtil.isNotEmpty(InitMongo.SERVER_HOSTS)) {
-				System.out.println("-----启动集群分片数据库：{}" + InitMongo.SERVER_HOSTS);
+				System.out.println("-----启动集群分片数据库：{}" + InitMongo.SERVER_HOSTS + ":" +InitMongo.DB_SERVER_PORT);
 				LogUtil.getInstance().getLogger(this.getClass()).info("-----启动集群分片数据库：{}",InitMongo.SERVER_HOSTS);
 				List<ServerAddress> addresses = new ArrayList<ServerAddress>();
 				String[] list = InitMongo.SERVER_HOSTS.split(",");
@@ -61,12 +61,12 @@ public class MongodbUtil {
 				}
 				mg = new MongoClient(addresses);
 			}else{
-				System.out.println("启动数据库：{}" + InitMongo.DB_SERVER_HOST);
+				System.out.println("启动数据库：{}" + InitMongo.DB_SERVER_HOST + ":" +InitMongo.DB_SERVER_PORT);
 				LogUtil.getInstance().getLogger(this.getClass()).info("启动数据库：{}",InitMongo.DB_SERVER_HOST);
 				mg = new MongoClient(InitMongo.DB_SERVER_HOST, InitMongo.DB_SERVER_PORT);
 			}
 			//dbs.put(InitMongo.DATABASE_TEST, getDB(InitMongo.DATABASE_TEST));
-			dbs.put(InitMongo.DB_J9STAR2, getDB(InitMongo.DB_J9STAR2));
+//			dbs.put(InitMongo.DB_J9STAR2, getDB(InitMongo.DB_J9STAR2));
 			//test
 //			mg = new MongoClient("127.0.0.1", 10000);
 //			dbs.put(InitMongo.DATABASE_TEST, getDB(InitMongo.DATABASE_TEST));

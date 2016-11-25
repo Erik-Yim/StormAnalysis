@@ -621,15 +621,18 @@ public class NodeSelector implements Serializable{
 							close(instanceId, _path, CacheType.CHILD);
 							if(_path.equals(instance.rootPath)){
 								communicationUtils.remove(instance.communication);
-							}							
-							InstanceNode instanceNode=  instance.backInstanceNodes.get(1000);
-							if(instanceNode!=null){
-								if(_path.equals(instanceNode.path)){
-									//set complete 
-									final String workflowDonePath="/flow/"+instance.sequence+"/done";
-									executor.setPath(workflowDonePath, new Date().getTime()+"");
-								}
-							}							
+								//set complete 
+								final String workflowDonePath="/flow/"+instance.sequence+"/done";
+								executor.setPath(workflowDonePath, DateUtil.format(new Date()));
+							}			
+//							InstanceNode instanceNode=  instance.backInstanceNodes.get(1000);
+//							if(instanceNode!=null){
+//								if(_path.equals(instanceNode.path)){
+//									//set complete 
+//									final String workflowDonePath="/flow/"+instance.sequence+"/done";
+//									executor.setPath(workflowDonePath, new Date().getTime()+"");
+//								}
+//							}							
 						}
 						
 						Collections.sort(nodes, new Comparator<Node>() {
