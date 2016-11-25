@@ -16,7 +16,6 @@ public interface MongoDeviceRecordConvert {
 			return new MongoDeviceRecordConvert() {
 				@Override
 				public Map<String, Object> convert(Map conf, DefaultDeviceRecord defaultDeviceRecord) {
-					// TODO Auto-generated method stub
 					String[] param = defaultDeviceRecord.getProperties();
 					String[] paramValue = defaultDeviceRecord.getPropertyVals();
 					Map<String, Object> convertMap =  new HashMap<>();
@@ -30,9 +29,10 @@ public interface MongoDeviceRecordConvert {
 					for(int i=0;i<param.length;i++){
 						convertMap.put(param[i],paramValue[i]);
 					}
-					convertMap.put("year", DateUtil.format(defaultDeviceRecord.getTime(), "yyyy"));
-					convertMap.put("year_month", DateUtil.format(defaultDeviceRecord.getTime(), "yyyy-MM"));
-					convertMap.put("year_month_day", DateUtil.format(defaultDeviceRecord.getTime(), "yyyy-MM-dd"));
+					Date datetime = DateUtil.format(defaultDeviceRecord.getTime());
+					convertMap.put("year", DateUtil.format(datetime, "yyyy"));
+					convertMap.put("year_month", DateUtil.format(datetime, "yyyy-MM"));
+					convertMap.put("year_month_day", DateUtil.format(datetime, "yyyy-MM-dd"));
 					return convertMap;
 				}
 			};
