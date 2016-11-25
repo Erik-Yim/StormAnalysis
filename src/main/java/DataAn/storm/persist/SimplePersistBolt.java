@@ -24,20 +24,18 @@ public class SimplePersistBolt extends BaseSimpleRichBolt {
 		Communication communication= 
 				(Communication) tuple.getValueByField("communication");
 		IMongoPersistService mongoPersistService=  IMongoPersistService.MongoPersistServiceGetter.getMongoPersistService(getStormConf());
+		
+		long begin = System.currentTimeMillis();
+		System.out.println("begin insert many... list size： " +  + mongoPeristModels.size());
+		
 		mongoPersistService.persist(mongoPeristModels, getStormConf());
+//		Notify notify=mongoPeristModels.get(0).getNotify();
+		
+		long end = System.currentTimeMillis();
+		System.out.println("end insert many time: " + (end - begin) +  " mm");
 		
 		emit(new Values(new Date().getTime(),communication));
-		
-//		try{
-//			for(MongoPeristModel mongoPeristModel:mongoPeristModels){
-//				mongoPersistService.persist(mongoPeristModel, getStormConf());
-//				Notify notify=mongoPeristModel.getNotify();
-//			}
-//			//TODO send notification
-//		}catch (Exception e) {
-//			// TODO: handle exception
-//		}
-		
+	
 		
 	}
 
