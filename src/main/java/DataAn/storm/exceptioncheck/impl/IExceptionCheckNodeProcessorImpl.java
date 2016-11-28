@@ -1,5 +1,7 @@
 package DataAn.storm.exceptioncheck.impl;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,15 +32,20 @@ public class IExceptionCheckNodeProcessorImpl implements
 	
 	private BatchContext batchContext;
 	
+	//??
 	Map<String,List<Long>> paramSequence =new HashMap<>();
 	
+	//用于 异常报警    存放所有参数的异常点集合信息（异常点参数名，该参数的异常点信息集合）
 	Map<String,List<ParamExceptionDto>> exceptionDtoMap =new HashMap<>();
 	
-	
+	//用于  特殊工况  存放所有参数的异常点集合信息（异常点参数名，该参数的异常点信息集合，用list是因为有持续时间）
 	Map<String,List<CaseSpecialDto>> casDtoMap =new HashMap<>();
 	
+	
+	//此Map 用于区分一个点的 特殊 工况 还是异常报警的点
 	Map<String,List<CaseSpecialDto>> finalCaseDtoMap =new HashMap<>();
 	
+	//用于临时缓存，保存一个所有参数(包括异常点参数和普通参数)
 	Map<String,List<CaseSpecialDto>> joblistCatch =new HashMap<>();
 	Map<String,List<ParamExceptionDto>> exelistCatch =new HashMap<>();
 	
@@ -54,26 +61,33 @@ public class IExceptionCheckNodeProcessorImpl implements
 		 deviceName =deviceRecord.getName();	
 		String[] paramValues = deviceRecord.getPropertyVals();
 		String[] param = deviceRecord.getProperties();
-	
-			for(int i=0;i<paramValues.length;i++){
-				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
-				if(csDtoCatch==null){
-					csDtoCatch = new ArrayList<CaseSpecialDto>();
-					joblistCatch.put(param[i], csDtoCatch);
-				}
-				List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
-				if(paramEs==null){
-					paramEs =  new ArrayList<ParamExceptionDto>();
-					exelistCatch.put(param[i], paramEs);
-				}
-				
-			}
-				
+		//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
 		for(int i=0;i<paramValues.length;i++){
+			List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
+			if(csDtoCatch==null){
+				csDtoCatch = new ArrayList<CaseSpecialDto>();
+				joblistCatch.put(param[i], csDtoCatch);
+			}
+			List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
+			if(paramEs==null){
+				paramEs =  new ArrayList<ParamExceptionDto>();
+				exelistCatch.put(param[i], paramEs);
+			}
+			
+		}
+		
+		
+		//判断一条记录的每一个参数的特殊工况信息。
+		for(int i=0;i<paramValues.length;i++){
+			
+			//飞轮特殊工况条件说明信息
 			ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
 			
 			long sequence =new AtomicLong(0).incrementAndGet();
+			//如果为空说明该参数不在要求监控的参数列表里面，不需要统计该参数
 			if(ecpc!=null){
+				//判断特殊工况最大值
+				//如果参数值 > 设定的最大值 ，将该值1.存进该参数的异常点集合 2.将该异常点集合存进casDtoMap()
 				if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
 					List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
 					CaseSpecialDto cDto = new CaseSpecialDto();
@@ -89,13 +103,16 @@ public class IExceptionCheckNodeProcessorImpl implements
 					cDto.setSequence(sequence);
 					cDto.setVerisons(deviceRecord.versions());
 					try{
+						//将该异常点放进 该参数的异常点list
 						csDtoCatch.add(cDto);
 					}catch (Exception e) {
 						e.printStackTrace();
 					}
-					
+					//将该参数的异常点List放进  异常点集合（该集合包含所有参数）
 					casDtoMap.put(param[i], csDtoCatch);
 				}
+				
+				//判断异常报警最大值  最小值
 				if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
 		
 					List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
@@ -119,21 +136,48 @@ public class IExceptionCheckNodeProcessorImpl implements
 
 	@Override
 	public void persist(SimpleProducer simpleProducer) throws Exception {			
+		//判断特殊工况  异常点在满足次数限定时 持续的时间是否满足
 		if(casDtoMap!=null && casDtoMap.size()>0 ){
-			for(String param_Name:casDtoMap.keySet()){			
+			//判断每个参数
+			for(String param_Name:casDtoMap.keySet()){
 				List<CaseSpecialDto> cDtos = casDtoMap.get(param_Name);
 			//	List<Document> documentList = new ArrayList<Document>();
 				List<CaseSpecialDto> finalCaseDtos =  new ArrayList<>();
 				List<Long> finalCaseDtosequence =  new ArrayList<>();
-				for(int i=0;i<cDtos.size();){				
+				for(int i=0;i<cDtos.size();){
+					
+					//TODO 限定次数和持续时间感觉可以放在For循环外面，因为同一个参数的 count 和 limitTime都是相同的
+					//出现次数限定
 					int count = cDtos.get(i).getFrequency();
+					//持续时间限定
 					int limitTime = (int) cDtos.get(i).getLimitTime();
+					
+					//TODO判断当前点+限定次数是否小于 总个数，即该批数据内异常点的总个数是否>特殊工况限定的个数
 					if((i+count-1)<cDtos.size()){
-						//int endTime = (int)((DateUtil.fromDateStringToLong(cDtos.get(i+count-1).getDateTime()))/60000);
+						/*//int endTime = (int)((DateUtil.fromDateStringToLong(cDtos.get(i+count-1).getDateTime()))/60000);
 						int endTime = (int)((cDtos.get(i+count-1).get_time())/60000);
 						//int startTime =(int)((DateUtil.fromDateStringToLong(cDtos.get(i).getDateTime()))/60000);
-						int startTime =(int)((cDtos.get(i+count-1).get_time())/60000);
-						if((endTime-startTime)>=limitTime){
+						int startTime =(int)((cDtos.get(i+count-1).get_time())/60000);*/
+						//将字符串转换成日期类型计算时间差
+						SimpleDateFormat dfs = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						java.util.Date begin = null;
+						try {
+							begin = dfs.parse(cDtos.get(i).getDateTime());
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						java.util.Date end = null;
+						try {
+							end = dfs.parse(cDtos.get(i+count).getDateTime());
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						//这里时间间隔单位为秒
+						long between=(end.getTime()-begin.getTime())/1000;//除以1000是为了转换成秒
+						//if((endTime-startTime)>=limitTime){
+						if(between>=limitTime){
 							for(int j =i;j<i+count;j++){
 								finalCaseDtos.add(cDtos.get(j));
 								finalCaseDtosequence.add(cDtos.get(j).getSequence());
@@ -155,7 +199,8 @@ public class IExceptionCheckNodeProcessorImpl implements
 							mpModel.setVersions(cDtos.get(i).getVerisons());
 							mpModel.setContent(context);
 							simpleProducer.send(mpModel);									
-							i=i+limitTime;	
+							//i=i+limitTime;
+							i=i+count;
 						}else{i++;}										
 					}else{i++;}
 					
