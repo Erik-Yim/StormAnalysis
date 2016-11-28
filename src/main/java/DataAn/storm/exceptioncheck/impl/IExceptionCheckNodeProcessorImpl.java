@@ -14,6 +14,7 @@ import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
 import DataAn.dto.ParamExceptionDto;
 import DataAn.storm.BatchContext;
+import DataAn.storm.Communication;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
 import DataAn.storm.exceptioncheck.ExceptionConfigModel;
@@ -29,6 +30,13 @@ import DataAn.storm.persist.MongoPeristModel;
 @SuppressWarnings("serial")
 public class IExceptionCheckNodeProcessorImpl implements
 		IExceptionCheckNodeProcessor {
+	
+	private Communication communication;
+	
+	public IExceptionCheckNodeProcessorImpl(Communication communication) {
+		this.communication=communication;
+	}
+	
 	
 	private BatchContext batchContext;
 	
@@ -135,7 +143,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 	}
 
 	@Override
-	public void persist(SimpleProducer simpleProducer) throws Exception {			
+	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {			
 		//判断特殊工况  异常点在满足次数限定时 持续的时间是否满足
 		if(casDtoMap!=null && casDtoMap.size()>0 ){
 			//判断每个参数
@@ -198,7 +206,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 							mpModel.setCollections(new String[]{deviceName+"_ExceptionJob"});
 							mpModel.setVersions(cDtos.get(i).getVerisons());
 							mpModel.setContent(context);
-							simpleProducer.send(mpModel);									
+							simpleProducer.send(mpModel,communication.getPersistTopicPartition());									
 							//i=i+limitTime;
 							i=i+count;
 						}else{i++;}										
@@ -235,7 +243,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 								mpModel.setCollections(new String[]{deviceName+"_Exception"});
 								mpModel.setContent(exceptinContext);
 								mpModel.setVersions(ped.getVersions());
-								simpleProducer.send(mpModel);
+								simpleProducer.send(mpModel,communication.getPersistTopicPartition());
 							}
 						}
 					}
