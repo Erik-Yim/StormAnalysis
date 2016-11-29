@@ -21,6 +21,7 @@ import DataAn.storm.exceptioncheck.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor;
 import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.persist.MongoPeristModel;
+import DataAn.storm.exceptioncheck.ExceptionUtils;
 
 /**
  * 根据配置信息 {@link ExceptionConfigModel} 计算异常和特殊作业 {@link #process(IDeviceRecord)}
@@ -67,6 +68,9 @@ public class IExceptionCheckNodeProcessorImpl implements
 		 series =deviceRecord.getSeries();
 		 star =deviceRecord.getStar();
 		 deviceName =deviceRecord.getName();	
+		//判断飞轮预警
+		 if(deviceName.equals("flywheel"))
+		 {
 		String[] paramValues = deviceRecord.getPropertyVals();
 		String[] param = deviceRecord.getProperties();
 		//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
@@ -140,6 +144,11 @@ public class IExceptionCheckNodeProcessorImpl implements
 	
 		}		
 		return exceptionDtoMap;	
+		 }else if(deviceName.equals("top"))//如果是陀螺
+		 {
+			 
+		 }
+		return null;
 	}
 
 	@Override
@@ -218,11 +227,94 @@ public class IExceptionCheckNodeProcessorImpl implements
 				paramSequence.put(param_Name, finalCaseDtosequence);
 			}
 		}
-
+		/*//判断异常点是否属在特殊工况的点的范围内，如果在，则不将其列入异常点的范围
 		if(exceptionDtoMap!=null && exceptionDtoMap.size()>0){
 			for(String paramExce:exceptionDtoMap.keySet()){
 				List<ParamExceptionDto> paramEs = exceptionDtoMap.get(paramExce);
 			//	List<Document> documentList = new ArrayList<Document>();
+				if(finalCaseDtoMap.keySet().contains(paramExce)){
+					List<Long> paramSe = paramSequence.get(paramExce);			
+					if(paramSe!=null && paramSe.size()>0){
+						for(ParamExceptionDto ped:paramEs){
+							if(!(paramSe.contains(ped.getSequence()))){							
+								Map<String ,Object> ExceptionMap =  new HashMap<>();
+								ExceptionMap.put("_recordtime", DateUtil.format(new Date()));
+								ExceptionMap.put("datetime", ped.getTime());
+								ExceptionMap.put("versions", ped.getVersions());
+								ExceptionMap.put("series", ped.getSeries());
+								ExceptionMap.put("star", ped.getStar());
+								ExceptionMap.put("deviceName", ped.getDeviceName());	
+								ExceptionMap.put("paramName", ped.getParamName());	
+								ExceptionMap.put("value", ped.getValue());
+								ExceptionMap.put("hadRead", "0");	
+								String exceptinContext = JJSON.get().formatObject(ExceptionMap);							
+								MongoPeristModel mpModel=new MongoPeristModel();
+								mpModel.setCollections(new String[]{deviceName+"_Exception"});
+								mpModel.setContent(exceptinContext);
+								mpModel.setVersions(ped.getVersions());
+								simpleProducer.send(mpModel,communication.getPersistTopicPartition());
+							}
+						}
+					}
+				}			
+			}
+		}*/
+		//判断异常点的持续时间范围，并和特殊工况做区分
+		if(exceptionDtoMap!=null && exceptionDtoMap.size()>0){
+			for(String paramExce:exceptionDtoMap.keySet()){
+				List<ParamExceptionDto> paramEs = exceptionDtoMap.get(paramExce);
+				
+				//TODO int limitTime = (int) cDtos.get(i).getLimitTime();
+				int limitTime_exception = 20;
+				for(int i=0;i<paramEs.size();)
+				{
+					//将字符串转换成日期类型计算时间差
+					SimpleDateFormat dfs = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					java.util.Date begin = null;
+					try {
+						begin = dfs.parse(paramEs.get(i).getTime());
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					java.util.Date end = null;
+	
+					//这里时间间隔单位为秒
+					long between=(end.getTime()-begin.getTime())/1000;//除以1000是为了转换成秒
+					
+					int number=0;
+					for(int n=i;(paramEs.get(n+1)!=null);n++)
+					{
+						//判断两个点是否连续
+						long btn = ExceptionUtils.Datesubtract(paramEs.get(n).getTime(),paramEs.get(n+1).getTime());
+						number++;
+						if(btn<2)
+						continue;
+						//判断持续时间是否满足要求
+						long duration =ExceptionUtils.Datesubtract(paramEs.get(i).getTime(),paramEs.get(n).getTime());
+						if(duration>=limitTime_exception){
+							//TODO 是否需要判断该区间是否与特殊工况的区间冲突？
+							if(finalCaseDtoMap.keySet().contains(paramExce))
+							{
+								
+							}
+							//TODO　持久化，将开始点和结束点保存
+						}
+						else{//异常点的持续时间不满足要求
+							n=n+number;
+							number=0;
+						}
+						i=n;						
+					}
+					i=i++;
+				}
+				
+				
+				
+				
+				
+				
+				
 				if(finalCaseDtoMap.keySet().contains(paramExce)){
 					List<Long> paramSe = paramSequence.get(paramExce);			
 					if(paramSe!=null && paramSe.size()>0){
