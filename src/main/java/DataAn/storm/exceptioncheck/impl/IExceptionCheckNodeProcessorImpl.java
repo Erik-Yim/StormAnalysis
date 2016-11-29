@@ -50,7 +50,6 @@ public class IExceptionCheckNodeProcessorImpl implements
 	//用于  特殊工况  存放所有参数的异常点集合信息（异常点参数名，该参数的异常点信息集合，用list是因为有持续时间）
 	Map<String,List<CaseSpecialDto>> casDtoMap =new HashMap<>();
 	
-	
 	//此Map 用于区分一个点的 特殊 工况 还是异常报警的点
 	Map<String,List<CaseSpecialDto>> finalCaseDtoMap =new HashMap<>();
 	
@@ -58,6 +57,11 @@ public class IExceptionCheckNodeProcessorImpl implements
 	Map<String,List<CaseSpecialDto>> joblistCatch =new HashMap<>();
 	Map<String,List<ParamExceptionDto>> exelistCatch =new HashMap<>();
 	
+	//临时变量，用于保存陀螺的上一条记录。
+	IDeviceRecord topTempRecord=null;
+	//用于存储陀螺角速度的变化绝对值，供计算机动次数使用
+	Map<String,List<CaseSpecialDto>> topjidongDtoMap =new HashMap<>();
+	Map<String,List<CaseSpecialDto>> topjidongjobDtoMap =new HashMap<>();
 	
 	String series ="";
 	String star ="";
@@ -71,81 +75,171 @@ public class IExceptionCheckNodeProcessorImpl implements
 		//判断飞轮预警
 		 if(deviceName.equals("flywheel"))
 		 {
-		String[] paramValues = deviceRecord.getPropertyVals();
-		String[] param = deviceRecord.getProperties();
-		//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
-		for(int i=0;i<paramValues.length;i++){
-			List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
-			if(csDtoCatch==null){
-				csDtoCatch = new ArrayList<CaseSpecialDto>();
-				joblistCatch.put(param[i], csDtoCatch);
-			}
-			List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
-			if(paramEs==null){
-				paramEs =  new ArrayList<ParamExceptionDto>();
-				exelistCatch.put(param[i], paramEs);
-			}
-			
-		}
-		
-		
-		//判断一条记录的每一个参数的特殊工况信息。
-		for(int i=0;i<paramValues.length;i++){
-			
-			//飞轮特殊工况条件说明信息
-			ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
-			
-			long sequence =new AtomicLong(0).incrementAndGet();
-			//如果为空说明该参数不在要求监控的参数列表里面，不需要统计该参数
-			if(ecpc!=null){
-				//判断特殊工况最大值
-				//如果参数值 > 设定的最大值 ，将该值1.存进该参数的异常点集合 2.将该异常点集合存进casDtoMap()
-				if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
-					List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
-					CaseSpecialDto cDto = new CaseSpecialDto();
-					cDto.setDateTime(deviceRecord.getTime());
-					cDto.setSeries(deviceRecord.getSeries());
-					cDto.setStar(deviceRecord.getStar());
-					cDto.setParamName(param[i]);
-					cDto.setFrequency(ecpc.getCount());
-
-					cDto.setLimitValue(ecpc.getJobMax());
-
-					cDto.setLimitTime(ecpc.getDelayTime());
-					cDto.setSequence(sequence);
-					cDto.setVerisons(deviceRecord.versions());
-					try{
-						//将该异常点放进 该参数的异常点list
-						csDtoCatch.add(cDto);
-					}catch (Exception e) {
-						e.printStackTrace();
-					}
-					//将该参数的异常点List放进  异常点集合（该集合包含所有参数）
-					casDtoMap.put(param[i], csDtoCatch);
+			String[] paramValues = deviceRecord.getPropertyVals();
+			String[] param = deviceRecord.getProperties();
+			//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
+			for(int i=0;i<paramValues.length;i++){
+				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
+				if(csDtoCatch==null){
+					csDtoCatch = new ArrayList<CaseSpecialDto>();
+					joblistCatch.put(param[i], csDtoCatch);
+				}
+				List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
+				if(paramEs==null){
+					paramEs =  new ArrayList<ParamExceptionDto>();
+					exelistCatch.put(param[i], paramEs);
 				}
 				
-				//判断异常报警最大值  最小值
-				if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
-		
-					List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
-					ParamExceptionDto peDto =  new ParamExceptionDto();
-					peDto.setParamName(deviceRecord.getProperties()[i]);
-					peDto.setSeries(deviceRecord.getSeries());
-					peDto.setStar(deviceRecord.getStar());
-					peDto.setValue(paramValues[i]);
-					peDto.setTime(deviceRecord.getTime());	
-					peDto.setSequence(sequence);
-					peDto.setVersions(deviceRecord.versions());
-					paramEs.add(peDto);	
-					exceptionDtoMap.put(param[i], paramEs);
-				}
-															
 			}
+			
+			
+			//判断一条记录的每一个参数的特殊工况信息。
+			for(int i=0;i<paramValues.length;i++){
+				
+				//飞轮特殊工况条件说明信息
+				ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
+				
+				long sequence =new AtomicLong(0).incrementAndGet();
+				//如果为空说明该参数不在要求监控的参数列表里面，不需要统计该参数
+				if(ecpc!=null){
+					//判断特殊工况最大值
+					//如果参数值 > 设定的最大值 ，将该值1.存进该参数的异常点集合 2.将该异常点集合存进casDtoMap()
+					if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
+						List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
+						CaseSpecialDto cDto = new CaseSpecialDto();
+						cDto.setDateTime(deviceRecord.getTime());
+						cDto.setSeries(deviceRecord.getSeries());
+						cDto.setStar(deviceRecord.getStar());
+						cDto.setParamName(param[i]);
+						cDto.setFrequency(ecpc.getCount());
 	
-		}		
-		return exceptionDtoMap;	
+						cDto.setLimitValue(ecpc.getJobMax());
+	
+						cDto.setLimitTime(ecpc.getDelayTime());
+						cDto.setSequence(sequence);
+						cDto.setVerisons(deviceRecord.versions());
+						try{
+							//将该异常点放进 该参数的异常点list
+							csDtoCatch.add(cDto);
+						}catch (Exception e) {
+							e.printStackTrace();
+						}
+						//将该参数的异常点List放进  异常点集合（该集合包含所有参数）
+						casDtoMap.put(param[i], csDtoCatch);
+					}
+					
+					//判断异常报警最大值  最小值
+					if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
+			
+						List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
+						ParamExceptionDto peDto =  new ParamExceptionDto();
+						peDto.setParamName(deviceRecord.getProperties()[i]);
+						peDto.setSeries(deviceRecord.getSeries());
+						peDto.setStar(deviceRecord.getStar());
+						peDto.setValue(paramValues[i]);
+						peDto.setTime(deviceRecord.getTime());	
+						peDto.setSequence(sequence);
+						peDto.setVersions(deviceRecord.versions());
+						paramEs.add(peDto);	
+						exceptionDtoMap.put(param[i], paramEs);
+					}
+																
+				}
+		
+			}		
+			return exceptionDtoMap;	
 		 }else if(deviceName.equals("top"))//如果是陀螺
 		 {
+			 	/*if(null==topTempRecord)
+			 	{topTempRecord=deviceRecord;}
+			 	else{				 	
+					String[] paramValues = deviceRecord.getPropertyVals();
+					String[] param = deviceRecord.getProperties();
+					//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
+					for(int i=0;i<paramValues.length;i++){
+						List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) topjidongjobDtoMap.get(param[i]);
+						
+						if(csDtoCatch==null){
+							csDtoCatch = new ArrayList<CaseSpecialDto>();
+							topjidongjobDtoMap.put(param[i], csDtoCatch);
+						}
+					}			 		
+			 	}
+			 	
+			 	
+				String[] paramValues = deviceRecord.getPropertyVals();
+				String[] param = deviceRecord.getProperties();
+				//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
+				for(int i=0;i<paramValues.length;i++){
+					List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
+					if(csDtoCatch==null){
+						csDtoCatch = new ArrayList<CaseSpecialDto>();
+						joblistCatch.put(param[i], csDtoCatch);
+					}
+					List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
+					if(paramEs==null){
+						paramEs =  new ArrayList<ParamExceptionDto>();
+						exelistCatch.put(param[i], paramEs);
+					}
+					
+				}
+				
+				
+				//判断一条记录的每一个参数的特殊工况信息。
+				for(int i=0;i<paramValues.length;i++){
+					
+					//飞轮特殊工况条件说明信息
+					ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
+					
+					long sequence =new AtomicLong(0).incrementAndGet();
+					//如果为空说明该参数不在要求监控的参数列表里面，不需要统计该参数
+					if(ecpc!=null){
+						//判断特殊工况最大值
+						//如果参数值 > 设定的最大值 ，将该值1.存进该参数的异常点集合 2.将该异常点集合存进casDtoMap()
+						if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
+							List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
+							CaseSpecialDto cDto = new CaseSpecialDto();
+							cDto.setDateTime(deviceRecord.getTime());
+							cDto.setSeries(deviceRecord.getSeries());
+							cDto.setStar(deviceRecord.getStar());
+							cDto.setParamName(param[i]);
+							cDto.setFrequency(ecpc.getCount());
+		
+							cDto.setLimitValue(ecpc.getJobMax());
+		
+							cDto.setLimitTime(ecpc.getDelayTime());
+							cDto.setSequence(sequence);
+							cDto.setVerisons(deviceRecord.versions());
+							try{
+								//将该异常点放进 该参数的异常点list
+								csDtoCatch.add(cDto);
+							}catch (Exception e) {
+								e.printStackTrace();
+							}
+							//将该参数的异常点List放进  异常点集合（该集合包含所有参数）
+							casDtoMap.put(param[i], csDtoCatch);
+						}
+						
+						//判断异常报警最大值  最小值
+						if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
+				
+							List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
+							ParamExceptionDto peDto =  new ParamExceptionDto();
+							peDto.setParamName(deviceRecord.getProperties()[i]);
+							peDto.setSeries(deviceRecord.getSeries());
+							peDto.setStar(deviceRecord.getStar());
+							peDto.setValue(paramValues[i]);
+							peDto.setTime(deviceRecord.getTime());	
+							peDto.setSequence(sequence);
+							peDto.setVersions(deviceRecord.versions());
+							paramEs.add(peDto);	
+							exceptionDtoMap.put(param[i], paramEs);
+						}
+																	
+					}
+			
+				}		
+				return exceptionDtoMap;	*/
 			 
 		 }
 		return null;
@@ -162,7 +256,6 @@ public class IExceptionCheckNodeProcessorImpl implements
 				List<CaseSpecialDto> finalCaseDtos =  new ArrayList<>();
 				List<Long> finalCaseDtosequence =  new ArrayList<>();
 				for(int i=0;i<cDtos.size();){
-					
 					//TODO 限定次数和持续时间感觉可以放在For循环外面，因为同一个参数的 count 和 limitTime都是相同的
 					//出现次数限定
 					int count = cDtos.get(i).getFrequency();
@@ -293,12 +386,47 @@ public class IExceptionCheckNodeProcessorImpl implements
 						//判断持续时间是否满足要求
 						long duration =ExceptionUtils.Datesubtract(paramEs.get(i).getTime(),paramEs.get(n).getTime());
 						if(duration>=limitTime_exception){
-							//TODO 是否需要判断该区间是否与特殊工况的区间冲突？
+							/*//TODO 是否需要判断该区间是否与特殊工况的区间冲突？
 							if(finalCaseDtoMap.keySet().contains(paramExce))
 							{
 								
-							}
+							}*/
 							//TODO　持久化，将开始点和结束点保存
+							ParamExceptionDto beginpoint= paramEs.get(i); 
+							Map<String ,Object> ExceptionMap =  new HashMap<>();
+							ExceptionMap.put("_recordtime", DateUtil.format(new Date()));
+							ExceptionMap.put("datetime", beginpoint.getTime());
+							ExceptionMap.put("versions", beginpoint.getVersions());
+							ExceptionMap.put("series", beginpoint.getSeries());
+							ExceptionMap.put("star", beginpoint.getStar());
+							ExceptionMap.put("deviceName", beginpoint.getDeviceName());	
+							ExceptionMap.put("paramName", beginpoint.getParamName());	
+							ExceptionMap.put("value", beginpoint.getValue());
+							ExceptionMap.put("hadRead", "0");	
+							String exceptinContext = JJSON.get().formatObject(ExceptionMap);							
+							MongoPeristModel mpModel=new MongoPeristModel();
+							mpModel.setCollections(new String[]{deviceName+"_Exception"});
+							mpModel.setContent(exceptinContext);
+							mpModel.setVersions(beginpoint.getVersions());
+							simpleProducer.send(mpModel,communication.getPersistTopicPartition());
+							
+							ParamExceptionDto endpoint= paramEs.get(n); 
+							//Map<String ,Object> ExceptionMap =  new HashMap<>();
+							ExceptionMap.put("_recordtime", DateUtil.format(new Date()));
+							ExceptionMap.put("datetime", endpoint.getTime());
+							ExceptionMap.put("versions", endpoint.getVersions());
+							ExceptionMap.put("series", endpoint.getSeries());
+							ExceptionMap.put("star", endpoint.getStar());
+							ExceptionMap.put("deviceName", endpoint.getDeviceName());	
+							ExceptionMap.put("paramName", endpoint.getParamName());	
+							ExceptionMap.put("value", endpoint.getValue());
+							ExceptionMap.put("hadRead", "0");
+							String exceptinContext2 = JJSON.get().formatObject(ExceptionMap);							
+							MongoPeristModel mpModel2=new MongoPeristModel();
+							mpModel2.setCollections(new String[]{deviceName+"_Exception"});
+							mpModel2.setContent(exceptinContext2);
+							mpModel2.setVersions(endpoint.getVersions());
+							simpleProducer.send(mpModel2,communication.getPersistTopicPartition());
 						}
 						else{//异常点的持续时间不满足要求
 							n=n+number;
@@ -308,12 +436,6 @@ public class IExceptionCheckNodeProcessorImpl implements
 					}
 					i=i++;
 				}
-				
-				
-				
-				
-				
-				
 				
 				if(finalCaseDtoMap.keySet().contains(paramExce)){
 					List<Long> paramSe = paramSequence.get(paramExce);			

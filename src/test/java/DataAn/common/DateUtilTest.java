@@ -7,7 +7,6 @@ import java.util.Date;
 import org.junit.Test;
 
 import DataAn.common.utils.DateUtil;
-
 public class DateUtilTest {
 
 	@Test
@@ -43,5 +42,25 @@ public class DateUtilTest {
 		long second1=between%60;
 		System.out.println(""+day1+"天"+hour1+"小时"+minute1+"分"+second1+"秒");
 		
+	}
+	
+	@Test
+	public void doubleabs(){
+		String a="0.005";
+		String b="-0.00005";
+		Double x=0.0;
+		Double y=0.0;
+		try{x=Double.valueOf(a);}
+		catch(Exception e)
+		{
+		}
+		try{y=Double.valueOf(b);}
+		catch(Exception e)
+		{}
+		
+		Double c=y-x;
+		System.out.println(b+"-"+a+"="+c);
+		c=Math.abs(c);
+		System.out.println("c的绝对值为："+c);
 	}
 }
