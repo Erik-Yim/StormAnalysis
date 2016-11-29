@@ -171,6 +171,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private void release(String msg){
 		try {
+			System.out.println("ready to persist exception-check , with release reason "+msg);
 			processor.persist(simpleProducer,communication);
 			System.out.println("realse lock  by : "+msg);
 			nodeWorker.release();
