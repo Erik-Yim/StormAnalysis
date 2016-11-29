@@ -16,7 +16,6 @@ import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.ITridentSpout.Emitter;
 import org.apache.storm.trident.topology.TransactionAttempt;
-import org.apache.storm.tuple.Values;
 
 import DataAn.common.utils.JJSON;
 import DataAn.storm.BatchContext;
@@ -26,6 +25,8 @@ import DataAn.storm.Communication;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.ErrorMsg;
 import DataAn.storm.FlowUtils;
+import DataAn.storm.StormNames;
+import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor.IExceptionCheckNodeProcessorGetter;
 import DataAn.storm.exceptioncheck.impl.IPropertyConfigStoreImpl;
 import DataAn.storm.kafka.BaseConsumer;
 import DataAn.storm.kafka.BaseConsumer.BoundConsumer;
@@ -35,7 +36,9 @@ import DataAn.storm.kafka.DefaultFetchObj;
 import DataAn.storm.kafka.Ending;
 import DataAn.storm.kafka.FetchObj;
 import DataAn.storm.kafka.InnerConsumer;
+import DataAn.storm.kafka.InnerProducer;
 import DataAn.storm.kafka.Null;
+import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.zookeeper.NodeSelector.WorkerPathVal;
 import DataAn.storm.zookeeper.NodeWorker;
 import DataAn.storm.zookeeper.NodeWorkers;
@@ -52,7 +55,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	private AtomicLong atomicLong=new AtomicLong(0);
 	
 	private BoundConsumer consumer;
-	
+
 	private int timeout=30000;
 	
 	private Map<Long, BatchMeta> store=new ConcurrentHashMap<>();
@@ -75,6 +78,10 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private NodeCache errorCache;
 	
+	private IExceptionCheckNodeProcessor processor;
+	
+	private SimpleProducer simpleProducer;
+	
 	public SpecialEmitter(Map conf) {
 		this.conf=conf;
 		executor=new ZooKeeperClient()
@@ -84,6 +91,10 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		NodeWorkers.startup(executor,conf);
 		this.workerId=Integer.parseInt(String.valueOf(conf.get("storm.flow.worker.id")));
 		nodeWorker=NodeWorkers.get(workerId);
+		
+		InnerProducer innerProducer=new InnerProducer(conf);
+		simpleProducer=new SimpleProducer(innerProducer,
+				StormNames.DATA_PERSIST_TOPIC, 0);
 	}
 
 	private BatchMeta getLatest(long batchId){
@@ -107,6 +118,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 			}catch (Exception e) {
 			}
 		}
+		processor=null;
 	}
 	
 	public void setHasError(boolean hasError) {
@@ -143,6 +155,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 				return new Thread(r, path);
 			}
 		}));
+		processor=IExceptionCheckNodeProcessorGetter.getNew(communication);
 	}
 
 	private void prepare(){
@@ -158,6 +171,8 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	private void release(String msg){
 		try {
+			System.out.println("ready to persist exception-check , with release reason "+msg);
+			processor.persist(simpleProducer,communication);
 			System.out.println("realse lock  by : "+msg);
 			nodeWorker.release();
 			System.out.println(nodeWorker.getId()+ " release lock");
@@ -285,13 +300,23 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 					break;
 				}
 			}
-			collector.emit(new Values(defaultDeviceRecords,batchContext));
+			emit(defaultDeviceRecords,batchContext);
 		}catch (Exception e) {
 			setHasError(true);
 			error(e);
 		}
 		
 	}
+	
+	
+	
+	private void emit(List<DefaultDeviceRecord> defaultDeviceRecords,BatchContext batchContext){
+		
+		for (DefaultDeviceRecord defaultDeviceRecord : defaultDeviceRecords) {
+			processor.process(defaultDeviceRecord);
+		}
+	}
+	
 	
 	private DefaultDeviceRecord parse(DefaultFetchObj defaultFetchObj){
 		DefaultDeviceRecord defaultDeviceRecord=new DefaultDeviceRecord();		
