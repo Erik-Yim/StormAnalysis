@@ -125,6 +125,7 @@ public class DenoiseTopologyBuilder implements Serializable {
 					
 					Map<Long, List<DefaultDeviceRecord>> defaultDeviceRecords=
 							val.getDefaultDeviceRecords();
+					if(defaultDeviceRecords==null) return ;
 					batchContext=
 							val.getBatchContext();
 					IDeviceRecordPersit persit=IDeviceRecordPersitGetter.get();
