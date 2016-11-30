@@ -132,7 +132,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-		long sequence=workerPathVal.getSequence();
+		sequence=workerPathVal.getSequence();
 		this.communication = FlowUtils.getPersist(executor,sequence);
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());

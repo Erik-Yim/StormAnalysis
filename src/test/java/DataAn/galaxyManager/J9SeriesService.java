@@ -2,34 +2,94 @@ package DataAn.galaxyManager;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Resource;
-
 import org.bson.Document;
-
 import DataAn.common.utils.DateUtil;
+import DataAn.common.utils.UUIDGeneratorUtil;
 import DataAn.galaxyManager.option.J9SeriesParamConfigService;
+import DataAn.storm.Communication;
+import DataAn.storm.kafka.DefaultFetchObj;
+
 
 public class J9SeriesService {
-
 	
+	public List<DefaultFetchObj> readCSVFileToDefaultFetchObj(Communication communication) throws Exception {
+				
+		String filePath = communication.getFilePath();
+		String series = communication.getSeries();
+		String star = communication.getStar();
+		String name = communication.getName();
+		String versions = communication.getVersions();
+		
+		InputStream in = null;
+		BufferedReader reader = null;
+		try {
+			
+			//获取j9系列参数列表
+			Map<String,String> j9SeriesPatameterMap = J9SeriesParamConfigService.getJ9Series_FlywheelParamConfigMap();
+			
+			in = new BufferedInputStream(new FileInputStream(new File(filePath)));
+			reader = new BufferedReader(new InputStreamReader(in, "gb2312"));// 换成你的文件名
+			String title = reader.readLine();// 第一行信息，为标题信息，不用,如果需要，注释掉
+			//CSV格式文件为逗号分隔符文件，这里根据逗号切分
+			String[] array = title.split(",");
+			String[] properties = new String[array.length - 1];
+			for (int i = 1; i < array.length; i++) {
+				//将中文字符串转换为英文
+				properties[i - 1] = j9SeriesPatameterMap.get(array[i]);
+			}
+			String line = null;
+			String date = "";
+			Date dateTime = null;
+			
+			List<DefaultFetchObj> defaultFetchObjs = new ArrayList<DefaultFetchObj>();
+			DefaultFetchObj defaultFetchObj = null;		
+			while ((line = reader.readLine()) != null) {
+				//CSV格式文件为逗号分隔符文件，这里根据逗号切分
+				String[] items = line.split(",");
+				date = items[0].trim();
+				dateTime = DateUtil.format(date, "yyyy年MM月dd日HH时mm分ss秒");
+				
+				String[] propertyVals = new String[array.length - 1];
+				for (int i = 1; i < items.length; i++) {
+					//获取值除时间外
+					propertyVals[i - 1] = items[i];
+				}
+				//
+				defaultFetchObj = new DefaultFetchObj();
+				defaultFetchObj.setId(UUIDGeneratorUtil.getUUID());
+				defaultFetchObj.setName(name);
+				defaultFetchObj.setSeries(series);
+				defaultFetchObj.setStar(star);
+				defaultFetchObj.setTime(DateUtil.format(dateTime));
+				defaultFetchObj.set_time(dateTime.getTime());
+				defaultFetchObj.setProperties(properties);
+				defaultFetchObj.setPropertyVals(propertyVals);
+				defaultFetchObj.setVersions(versions);
+				defaultFetchObjs.add(defaultFetchObj);
+
+			}
+			return defaultFetchObjs;
+		} finally{
+			if(reader != null){
+				reader.close();
+			}
+			if(in != null){
+				in.close();
+			}
+		}
+		
+		
+	}
+
 	public List<Document> readCSVFileToDoc(String filePath, String versions) throws Exception {
 		InputStream in = null;
 		try {

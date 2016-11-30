@@ -2,6 +2,7 @@ package DataAn.storm.hierarchy;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
+import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.storm.Communication;
 import DataAn.storm.ErrorMsg;
@@ -117,7 +119,7 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-		long sequence=workerPathVal.getSequence();
+		sequence=workerPathVal.getSequence();
 		this.communication = FlowUtils.getDenoise(executor,sequence);
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
@@ -258,8 +260,9 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 			}
 			if(!reachEnd){
 				String topicPartition=communication.getTemporaryTopicPartition();
-				consumer.seek(topicPartition.split(":")[0], lastOffset);
+				consumer.seek(topicPartition, lastOffset);
 			}
+			System.out.println(DateUtil.format(new Date(), "yyyyMMddHHmmss")+" emit data (hash code) : "+hierarchyDeviceRecords.hashCode());
 			collector.emit(new Values(hierarchyDeviceRecords,communication));
 		}catch (Exception e) {
 			setHasError(true);
