@@ -21,7 +21,6 @@ public class MongodbFsUtil {
 					singleton = new MongodbFsUtil();
 				}
 			}
-			singleton = new MongodbFsUtil();
 		}
 		return singleton;
 	}
