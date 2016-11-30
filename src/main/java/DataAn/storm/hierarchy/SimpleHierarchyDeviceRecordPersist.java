@@ -26,11 +26,11 @@ public class SimpleHierarchyDeviceRecordPersist implements IHierarchyDeviceRecor
 		}
 		hierarchyMap.put("_recordtime", DateUtil.format(new Date()));
 		hierarchyMap.put("datetime", deviceRecord.getTime());
-		hierarchyMap.put("year", DateUtil.format(deviceRecord.getTime(), "yyyy"));
-		hierarchyMap.put("year_month", DateUtil.format(deviceRecord.getTime(), "yyyy-MM"));
-		hierarchyMap.put("year_month_day", DateUtil.format(deviceRecord.getTime(), "yyyy-MM-dd"));
+		Date datetime = DateUtil.format(deviceRecord.getTime());
+		hierarchyMap.put("year", DateUtil.format(datetime, "yyyy"));
+		hierarchyMap.put("year_month", DateUtil.format(datetime, "yyyy-MM"));
+		hierarchyMap.put("year_month_day", DateUtil.format(datetime, "yyyy-MM-dd"));
 		hierarchyMap.put("versions", deviceRecord.getVersions());
-
 		String context = JJSON.get().formatObject(hierarchyMap);	
 		MongoPeristModel mpModel=new MongoPeristModel();
 		mpModel.setSeries(deviceRecord.getSeries());
