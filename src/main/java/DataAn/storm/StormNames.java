@@ -8,6 +8,6 @@ public interface StormNames extends Serializable{
 	
 	String DATA_TEMPORARY_TOPIC="data-temporary-repo";
 
-	String TEST_NAMESPACE="nnuull";
+	String TEST_NAMESPACE="sit-tes"; //sit-test nnuull
 
 }

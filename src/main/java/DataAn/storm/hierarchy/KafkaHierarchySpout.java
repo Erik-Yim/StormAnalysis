@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
@@ -215,8 +216,11 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 				await();
 				return ;
 			}
-			
+			Random random=new Random();
+			long lastRecordTime=0;
+			long lastOffset=0;
 			List<HierarchyDeviceRecord> hierarchyDeviceRecords=new ArrayList<>();
+			List<HierarchyDeviceRecord> temp=null;
 			FetchObj fetchObj=null;
 			while(true){
 				FetchObjs fetchObjs=consumer.next(timeout);
@@ -233,10 +237,28 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 						}
 						HierarchyDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
 						defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
-						hierarchyDeviceRecords.add(defaultDeviceRecord);
+						if(lastRecordTime==0){
+							lastRecordTime=defaultDeviceRecord.get_time();
+							lastOffset=fetchObj.offset();
+							temp=new ArrayList<>();
+							temp.add(defaultDeviceRecord);
+						}else if(lastRecordTime==defaultDeviceRecord.get_time()){
+							temp.add(defaultDeviceRecord);
+						}else{
+							lastRecordTime=defaultDeviceRecord.get_time();
+							lastOffset=fetchObj.offset();
+							int randInt=random.nextInt(temp.size());
+							hierarchyDeviceRecords.add(temp.get(randInt));
+							temp=new ArrayList<>();
+							temp.add(defaultDeviceRecord);
+						}
 					}
 					break;
 				}
+			}
+			if(!reachEnd){
+				String topicPartition=communication.getTemporaryTopicPartition();
+				consumer.seek(topicPartition.split(":")[0], lastOffset);
 			}
 			collector.emit(new Values(hierarchyDeviceRecords,communication));
 		}catch (Exception e) {

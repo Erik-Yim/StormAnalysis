@@ -3,6 +3,7 @@ package DataAn.storm.exceptioncheck;
 import java.io.Serializable;
 
 import DataAn.storm.BatchContext;
+import DataAn.storm.Communication;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.exceptioncheck.impl.IExceptionCheckNodeProcessorImpl;
 import DataAn.storm.kafka.SimpleProducer;
@@ -21,15 +22,42 @@ public interface IExceptionCheckNodeProcessor extends Serializable {
 	 * 持久化以BATCH的形式进行
 	 * @throws Exception
 	 */
-	void persist(SimpleProducer simpleProducer) throws Exception;
+	void persist(SimpleProducer simpleProducer,Communication communication) throws Exception;
 	
 	void setBatchContext(BatchContext batchContext);
 	
 	BatchContext getBatchContext();
 	
 	class IExceptionCheckNodeProcessorGetter{
-		public static IExceptionCheckNodeProcessor getNew(){
-			return new IExceptionCheckNodeProcessorImpl();
+		public static IExceptionCheckNodeProcessor getNew(Communication communication){
+//			return new IExceptionCheckNodeProcessorImpl(communication);
+			
+			return new IExceptionCheckNodeProcessor() {
+				
+				@Override
+				public void setBatchContext(BatchContext batchContext) {
+					// TODO Auto-generated method stub
+					
+				}
+				
+				@Override
+				public Object process(IDeviceRecord deviceRecord) {
+					// TODO Auto-generated method stub
+					return null;
+				}
+				
+				@Override
+				public void persist(SimpleProducer simpleProducer, Communication communication) throws Exception {
+					// TODO Auto-generated method stub
+					
+				}
+				
+				@Override
+				public BatchContext getBatchContext() {
+					// TODO Auto-generated method stub
+					return null;
+				}
+			};
 		}
 	}
 	
