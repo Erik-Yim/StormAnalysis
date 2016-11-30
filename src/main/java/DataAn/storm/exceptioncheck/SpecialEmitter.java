@@ -129,7 +129,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
-		long sequence=workerPathVal.getSequence();
+		sequence=workerPathVal.getSequence();
 //		long sequence=1000;
 		this.communication = FlowUtils.getExcep(executor,sequence);
 		communication.setWorkerId(workerId);
