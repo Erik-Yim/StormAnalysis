@@ -341,8 +341,6 @@ private Communication communication;
 			}			
 		}
 	}
-				
-
 	}
 	
 	
