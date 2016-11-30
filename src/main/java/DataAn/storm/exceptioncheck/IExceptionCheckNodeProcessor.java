@@ -30,7 +30,34 @@ public interface IExceptionCheckNodeProcessor extends Serializable {
 	
 	class IExceptionCheckNodeProcessorGetter{
 		public static IExceptionCheckNodeProcessor getNew(Communication communication){
-			return new IExceptionCheckNodeProcessorImpl(communication);
+//			return new IExceptionCheckNodeProcessorImpl(communication);
+			
+			return new IExceptionCheckNodeProcessor() {
+				
+				@Override
+				public void setBatchContext(BatchContext batchContext) {
+					// TODO Auto-generated method stub
+					
+				}
+				
+				@Override
+				public Object process(IDeviceRecord deviceRecord) {
+					// TODO Auto-generated method stub
+					return null;
+				}
+				
+				@Override
+				public void persist(SimpleProducer simpleProducer, Communication communication) throws Exception {
+					// TODO Auto-generated method stub
+					
+				}
+				
+				@Override
+				public BatchContext getBatchContext() {
+					// TODO Auto-generated method stub
+					return null;
+				}
+			};
 		}
 	}
 	
