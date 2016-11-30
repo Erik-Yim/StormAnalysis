@@ -258,7 +258,7 @@ public class KafkaHierarchySpout extends BaseRichSpout {
 			}
 			if(!reachEnd){
 				String topicPartition=communication.getTemporaryTopicPartition();
-				consumer.seek(topicPartition.split(":")[0], lastOffset);
+				consumer.seek(topicPartition, lastOffset);
 			}
 			collector.emit(new Values(hierarchyDeviceRecords,communication));
 		}catch (Exception e) {
