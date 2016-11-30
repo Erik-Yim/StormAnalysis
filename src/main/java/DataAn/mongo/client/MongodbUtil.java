@@ -40,7 +40,6 @@ public class MongodbUtil {
 					singleton = new MongodbUtil();
 				}
 			}
-			singleton = new MongodbUtil();
 		}
 		return singleton;
 	}
