@@ -246,37 +246,37 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 				return;
 			}
 			
-			long batchId=(long) tx.getTransactionId();
-			BatchMeta currMetadata=null;
-			if(store.containsKey(batchId)){
-				currMetadata=store.get(batchId);
-			}
-			else{
-				currMetadata=new BatchMeta();
-				currMetadata.setBatchId(batchId);
-				BatchMeta prevMetadata=getLatest(batchId);
-				long offset=-1;
-				if(prevMetadata!=null){
-					if(prevMetadata!=null){
-						offset=prevMetadata.getOffsetStartEnd(consumer.getTopicPartition()[0]);
-					}
-				}
-				long offsetAdd=offset+1;
-				currMetadata.setTopicPartitionOffsetStart(consumer.getTopicPartition()[0],
-						offsetAdd);
-				currMetadata.setTopicPartitionOffsetEnd(consumer.getTopicPartition()[0],
-						offsetAdd);
-				store.put(batchId, currMetadata);
-			}
-			BatchContext batchContext=new BatchContext();
-			batchContext.setBatchId(batchId);
-			batchContext.setConf(conf);
-			batchContext.setCommunication(communication);
-			
+//			long batchId=(long) tx.getTransactionId();
+//			BatchMeta currMetadata=null;
+//			if(store.containsKey(batchId)){
+//				currMetadata=store.get(batchId);
+//			}
+//			else{
+//				currMetadata=new BatchMeta();
+//				currMetadata.setBatchId(batchId);
+//				BatchMeta prevMetadata=getLatest(batchId);
+//				long offset=-1;
+//				if(prevMetadata!=null){
+//					if(prevMetadata!=null){
+//						offset=prevMetadata.getOffsetStartEnd(consumer.getTopicPartition()[0]);
+//					}
+//				}
+//				long offsetAdd=offset+1;
+//				currMetadata.setTopicPartitionOffsetStart(consumer.getTopicPartition()[0],
+//						offsetAdd);
+//				currMetadata.setTopicPartitionOffsetEnd(consumer.getTopicPartition()[0],
+//						offsetAdd);
+//				store.put(batchId, currMetadata);
+//			}
+//			BatchContext batchContext=new BatchContext();
+//			batchContext.setBatchId(batchId);
+//			batchContext.setConf(conf);
+//			batchContext.setCommunication(communication);
+//			
 			List<DefaultDeviceRecord> defaultDeviceRecords=new ArrayList<>();
-			for(Entry<String, Scope> entry:currMetadata.getTopicPartitionOffset().entrySet()){
-				consumer.seek(entry.getKey(), entry.getValue().start);
-			}
+//			for(Entry<String, Scope> entry:currMetadata.getTopicPartitionOffset().entrySet()){
+//				consumer.seek(entry.getKey(), entry.getValue().start);
+//			}
 			FetchObj fetchObj=null;
 			while(true){
 				FetchObjs fetchObjs2=consumer.next(timeout);
@@ -292,15 +292,15 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 							break;
 						}
 						DefaultDeviceRecord defaultDeviceRecord=parse((DefaultFetchObj) fetchObj);
-						defaultDeviceRecord.setBatchContext(batchContext);
+//						defaultDeviceRecord.setBatchContext(batchContext);
 						defaultDeviceRecord.setSequence(atomicLong.incrementAndGet());
 						defaultDeviceRecords.add(defaultDeviceRecord);
-						currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
+//						currMetadata.setTopicPartitionOffsetEnd(fetchObj.offset());
 					}
 					break;
 				}
 			}
-			emit(defaultDeviceRecords,batchContext);
+			emit(defaultDeviceRecords,null);
 		}catch (Exception e) {
 			setHasError(true);
 			error(e);
