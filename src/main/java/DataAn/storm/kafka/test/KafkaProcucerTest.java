@@ -11,7 +11,7 @@ public class KafkaProcucerTest {
 	public static void main(String[] args) {
 
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "192.168.0.97:9092");
+		props.put("bootstrap.servers", "192.168.1.128:9092");
 		props.put("acks", "all");
 		props.put("retries", 0);
 		props.put("batch.size", 16384);
@@ -22,8 +22,9 @@ public class KafkaProcucerTest {
 
 		Producer<String, String> producer = new KafkaProducer<>(props);
 		for (int i = 0; i < 100; i++){
-			producer.send(new ProducerRecord<String, String>("my-replicated-topic", Integer.toString(i), Integer.toString(i)));
+			producer.send(new ProducerRecord<String, String>("test", Integer.toString(i), Integer.toString(i)));
 		}
+		//必须关闭
 		producer.close();
 	}
 

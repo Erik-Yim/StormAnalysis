@@ -63,4 +63,9 @@ public class DateUtilTest {
 		c=Math.abs(c);
 		System.out.println("c的绝对值为："+c);
 	}
+	
+	@Test
+	public void test2(){
+		
+	}
 }

@@ -1,5 +1,8 @@
 package DataAn.storm.exceptioncheck;
 
+import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
+import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
+
 public class ParamProperty {
 		
 	private  String paramName;

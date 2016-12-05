@@ -1,4 +1,4 @@
-package DataAn.fileSystem.option;
+package DataAn.galaxy.option;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +67,16 @@ public enum J9Series_Star_ParameterType {
 		return list;
 	}
 	
+	public static List<String> getFlywheelTypeOnParamTypeName() {
+		List<String> list = new ArrayList<String>();
+		list.add("Xa");
+		list.add("Ya");
+		list.add("Za");
+		list.add("Xb");
+		list.add("Yb");
+		list.add("Zb");
+		return list;
+	}
 	/**
 	* Description:  获取飞轮数据类型 通过参数分类  "电流","转速","温度","指令","供电状态","角动量"
 	* @return  

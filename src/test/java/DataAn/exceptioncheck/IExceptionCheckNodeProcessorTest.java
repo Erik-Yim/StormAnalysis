@@ -2,16 +2,18 @@ package DataAn.exceptioncheck;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import DataAn.common.utils.UUIDGeneratorUtil;
-import DataAn.fileSystem.option.J9SeriesType;
-import DataAn.fileSystem.option.J9Series_Star_ParameterType;
-import DataAn.fileSystem.option.SeriesType;
-import DataAn.galaxyManager.J9SeriesService;
+import DataAn.galaxy.option.J9SeriesType;
+import DataAn.galaxy.option.J9Series_Star_ParameterType;
+import DataAn.galaxy.option.SeriesType;
+import DataAn.galaxy.service.J9SeriesService;
 import DataAn.storm.Communication;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor;
+import DataAn.storm.exceptioncheck.impl.IPropertyConfigStoreImpl;
 import DataAn.storm.kafka.DefaultFetchObj;
 
 public class IExceptionCheckNodeProcessorTest {
@@ -41,13 +43,23 @@ public class IExceptionCheckNodeProcessorTest {
 	}
 	
 	@Test
-	public void test() throws Exception{
+	public void test(){
+		String series = SeriesType.J9_SERIES.getName();
+		String star = J9SeriesType.STRA2.getValue();
+		Map<String,String> paramCode_deviceName_map = new IPropertyConfigStoreImpl().getParamCode_deviceName_map(new String[]{series,star});
+		for (String key : paramCode_deviceName_map.keySet()) {
+			System.out.println(key + " : " + paramCode_deviceName_map.get(key));
+		}
+	}
+	@Test
+	public void testProcess() throws Exception{
 		List<DefaultDeviceRecord> defaultDeviceRecords = this.getDefaultDeviceRecordList(communication);
 		
 		System.out.println("defaultDeviceRecords: " + defaultDeviceRecords.size());
 		for (DefaultDeviceRecord defaultDeviceRecord : defaultDeviceRecords) {
 			processor.process(defaultDeviceRecord);
 		}
+		//processor.persist(null, communication);
 	}
 	
 	private List<DefaultDeviceRecord> getDefaultDeviceRecordList(Communication communication) throws Exception{
