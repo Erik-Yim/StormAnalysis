@@ -3,8 +3,8 @@ package DataAn.storm.exceptioncheck.impl;
 import DataAn.storm.BatchContext;
 import DataAn.storm.Communication;
 import DataAn.storm.IDeviceRecord;
-import DataAn.storm.exceptioncheck.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor;
+import DataAn.storm.exceptioncheck.model.ExceptionConfigModel;
 import DataAn.storm.kafka.SimpleProducer;
 
 /**

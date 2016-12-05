@@ -13,7 +13,7 @@ public class KafkaConsumerTest {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) {
 		Properties props = new Properties();
-	     props.put("bootstrap.servers", "192.168.0.97:9092");
+	     props.put("bootstrap.servers", "192.168.1.128:9092");
 	     props.put("group.id", "test");
 	     props.put("enable.auto.commit", "false");
 	     props.put("auto.commit.interval.ms", "1000");
@@ -21,7 +21,7 @@ public class KafkaConsumerTest {
 	     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 	     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 	     KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
-	     consumer.assign(Arrays.asList(new org.apache.kafka.common.TopicPartition("bound-replicated-10",0)));
+	     consumer.assign(Arrays.asList(new org.apache.kafka.common.TopicPartition("test",0)));
 	     while (true) {
 //	    	 consumer.seek(new org.apache.kafka.common.TopicPartition("bound-replicated-3",0), 0);
 	         ConsumerRecords<String, String> records = consumer.poll(100);

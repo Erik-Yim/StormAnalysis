@@ -1,4 +1,4 @@
-package DataAn.galaxyManager;
+package DataAn.galaxy.service;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -11,10 +11,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.bson.Document;
+
 import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.UUIDGeneratorUtil;
-import DataAn.galaxyManager.option.J9SeriesParamConfigService;
 import DataAn.storm.Communication;
 import DataAn.storm.kafka.DefaultFetchObj;
 
