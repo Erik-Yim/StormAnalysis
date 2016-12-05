@@ -32,7 +32,7 @@ private Communication communication;
 	
 	private BatchContext batchContext;
 	
-	//??
+	//
 	Map<String,List<Long>> paramSequence =new HashMap<>();
 	
 	//用于 异常报警    存放所有参数的异常点集合信息（异常点参数名，该参数的异常点信息集合）
@@ -58,7 +58,7 @@ private Communication communication;
 		 star =deviceRecord.getStar();
 		 deviceName =deviceRecord.getName();	
 		 String[] paramValues = deviceRecord.getPropertyVals();
-			String[] param = deviceRecord.getProperties();
+		 String[] param = deviceRecord.getProperties();
 			//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
 			for(int i=0;i<paramValues.length;i++){
 				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
@@ -106,7 +106,7 @@ private Communication communication;
 						}catch (Exception e) {
 							e.printStackTrace();
 						}
-						//将该参数的异常点List放进  异常点集合（该集合包含所有参数）
+						//将该参数的异常点List放进  异常点集合（该集合包含在配置界面配置了的参数）
 						casDtoMap.put(param[i], csDtoCatch);
 					}
 					
@@ -128,7 +128,7 @@ private Communication communication;
 																
 				}
 		
-			}		
+			}
 			return exceptionDtoMap;	
 	
 	}
@@ -141,9 +141,9 @@ private Communication communication;
 		//判断每个参数
 		for(String param_Name:casDtoMap.keySet()){
 			List<CaseSpecialDto> cDtos = casDtoMap.get(param_Name);
-		//	List<Document> documentList = new ArrayList<Document>();
 			List<CaseSpecialDto> finalCaseDtos =  new ArrayList<>();
 			List<Long> finalCaseDtosequence =  new ArrayList<>();
+			
 			for(int i=0;i<cDtos.size();){
 				//TODO 限定次数和持续时间感觉可以放在For循环外面，因为同一个参数的 count 和 limitTime都是相同的
 				//出现次数限定
@@ -199,10 +199,12 @@ private Communication communication;
 						mpModel.setContent(context);
 						simpleProducer.send(mpModel,communication.getPersistTopicPartition());									
 						//i=i+limitTime;
+						//TODO//这里i的值存在问题，当满足条件是如何去下一个开始点？应该跳过限定时间内所有的点
 						i=i+count;
 					}else{i++;}										
-				}else{i++;}
-				
+				}
+				//当前点的id+限定次数 超过异常点的总数时，说明没有足够的点，终止for循环
+				else{break;}				
 			}
 		//	MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_SpecialCase", documentList);
 			finalCaseDtoMap.put(param_Name, finalCaseDtos);
@@ -250,20 +252,6 @@ private Communication communication;
 			int limitTime_exception = 20;
 			for(int i=0;i<paramEs.size();)
 			{
-				//将字符串转换成日期类型计算时间差
-				SimpleDateFormat dfs = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				java.util.Date begin = null;
-				try {
-					begin = dfs.parse(paramEs.get(i).getTime());
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				java.util.Date end = null;
-
-				//这里时间间隔单位为秒
-				long between=(end.getTime()-begin.getTime())/1000;//除以1000是为了转换成秒
-				
 				int number=0;
 				for(int n=i;(paramEs.get(n+1)!=null);n++)
 				{

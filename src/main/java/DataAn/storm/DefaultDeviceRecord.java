@@ -1,5 +1,7 @@
 package DataAn.storm;
 
+import java.util.Arrays;
+
 import DataAn.storm.kafka.MsgDefs;
 import DataAn.storm.kafka.Notify;
 
@@ -168,5 +170,18 @@ public class DefaultDeviceRecord implements IDeviceRecord {
 	public String versions() {
 		return this.versions;
 	}
+
+	@Override
+	public String toString() {
+		return "DefaultDeviceRecord [versions=" + versions + ", notify="
+				+ notify + ", sequence=" + sequence + ", id=" + id + ", name="
+				+ name + ", series=" + series + ", star=" + star + ", time="
+				+ time + ", _time=" + _time + ", properties="
+				+ Arrays.toString(properties) + ", propertyVals="
+				+ Arrays.toString(propertyVals) + ", batchContext="
+				+ batchContext + ", isPersist=" + isPersist + ", status="
+				+ status + "]";
+	}
+	
 	
 }

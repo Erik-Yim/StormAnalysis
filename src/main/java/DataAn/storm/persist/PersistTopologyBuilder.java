@@ -13,7 +13,7 @@ public class PersistTopologyBuilder implements Serializable {
 
 		TopologyBuilder topologyBuilder=new TopologyBuilder();
 		topologyBuilder.setSpout("persist-task-spout", new PersistKafkaSpout());
-		topologyBuilder.setBolt("persist-task-persist-bolt", new SimplePersistBolt(),20)
+		topologyBuilder.setBolt("persist-task-persist-bolt", new SimplePersistBolt(),1)
 		.shuffleGrouping("persist-task-spout");
 		topologyBuilder.setBolt("heartbeat", new SendHeartBeatBolt())
 		.globalGrouping("persist-task-persist-bolt");

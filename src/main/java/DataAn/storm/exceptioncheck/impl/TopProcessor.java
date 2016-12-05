@@ -48,6 +48,13 @@ private Communication communication;
 	Map<String,List<CaseSpecialDto>> joblistCatch =new HashMap<>();
 	Map<String,List<ParamExceptionDto>> exelistCatch =new HashMap<>();
 	
+	
+	//临时变量，用于保存陀螺的上一条记录。
+	IDeviceRecord topTempRecord=null;
+	//用于存储一个陀螺相关信息（飞轮名字、飞轮异常参数）
+	Map<String,List<CaseSpecialDto>> topjidongDtoMap =new HashMap<>();
+	Map<String,List<CaseSpecialDto>> topjidongjobDtoMap =new HashMap<>();
+	
 	String series ="";
 	String star ="";
 	String deviceName ="";	
