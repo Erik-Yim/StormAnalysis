@@ -80,16 +80,48 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	}
 	
 	@Override
-	public ExceptionJobConfig getDeviceExceptionJobConfigbyParamCode(String... args) {
+	public ExceptionJobConfig getDeviceExceptionJobConfigByParamCode(String... args) {
+		int i = 0;
 		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
-		return ecfm.getDevice_exceptionJobConfigs().get(args[2]);
+		if(ecfm != null){
+			if(ecfm.getDevice_exceptionJobConfigs() != null){
+				return ecfm.getDevice_exceptionJobConfigs().get(args[2]);				
+			}else
+				i++;
+		}else
+			i++;
+		if(i>0){
+			System.out.println("getDeviceExceptionJobConfigByParamCode...");
+			System.out.println(args[0]+"_"+args[1] + " : " + args[2]);
+			if(i==1)
+				System.out.println("无此设备配置");
+			if(i==2)
+				System.out.println("无此星系配置");				
+		}
+		return null;
 	}
 
 
 	@Override
-	public ExceptionPointConfig getDeviceExceptionPointConfiggbyParamCode(String... args) {
+	public ExceptionPointConfig getParamExceptionPointConfigByParamCode(String... args) {
+		int i = 0;
 		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
-		return ecfm.getParam_exceptionPointConfigs().get(args[2]);
+		if(ecfm != null){
+			if(ecfm.getDevice_exceptionJobConfigs() != null){
+				return ecfm.getParam_exceptionPointConfigs().get(args[2]);
+			}else
+				i++;
+		}else
+			i++;
+		if(i>0){
+			System.out.println("getParamExceptionPointConfigByParamCode...");
+			System.out.println(args[0]+"_"+args[1] + " : " + args[2]);
+			if(i==1)
+				System.out.println("无此设备配置");
+			if(i==2)
+				System.out.println("无此星系配置");				
+		}
+		return null;
 	}
 	
 	protected static void testInit(){
@@ -116,13 +148,24 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			//配置Xa的特殊工况
 			Map<String, ExceptionJobConfig> device_exceptionJobConfigs = new HashMap<String, ExceptionJobConfig>();
 			ExceptionJobConfig jobConfig1 = new ExceptionJobConfig();
-			jobConfig1.setCount(3);
-			jobConfig1.setDelayTime(5);
+			jobConfig1.setCount(5);
+			jobConfig1.setDelayTime(5000);
 			jobConfig1.setDeviceName("Xa");
 			jobConfig1.setParamCode("sequence_00814");
-			jobConfig1.setMax(100l);
+			jobConfig1.setMax(90);
 			device_exceptionJobConfigs.put("Xa", jobConfig1);
-			ecm.setExceptionJobConfigs(device_exceptionJobConfigs);
+			ecm.setDevice_exceptionJobConfigs(device_exceptionJobConfigs);
+			
+			Map<String, ExceptionPointConfig> param_exceptionPointConfigs = new HashMap<String, ExceptionPointConfig>();
+			ExceptionPointConfig exceConfig1 = new ExceptionPointConfig();
+			exceConfig1.setParamCode("sequence_00814");
+			exceConfig1.setDeviceType("flywheel");
+			exceConfig1.setDeviceName("Xa");
+			exceConfig1.setDelayTime(5000);
+			exceConfig1.setMax(100);
+			exceConfig1.setMin(40);
+			param_exceptionPointConfigs.put("sequence_00814", exceConfig1);
+			ecm.setParam_exceptionPointConfigs(param_exceptionPointConfigs);
 			
 			series_start_map.put(series+"_"+star, ecm); 
 		} catch (Exception e) {
