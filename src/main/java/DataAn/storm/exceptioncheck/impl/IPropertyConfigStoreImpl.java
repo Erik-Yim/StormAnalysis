@@ -11,11 +11,11 @@ import DataAn.galaxy.option.J9SeriesType;
 import DataAn.galaxy.option.J9Series_Star_ParameterType;
 import DataAn.galaxy.option.SeriesType;
 import DataAn.galaxy.service.J9SeriesParamConfigService;
-import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
 import DataAn.storm.exceptioncheck.IPropertyConfigStore;
 import DataAn.storm.exceptioncheck.model.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
+import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
 
 
 

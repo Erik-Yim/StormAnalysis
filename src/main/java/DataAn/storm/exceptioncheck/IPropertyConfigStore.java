@@ -5,6 +5,7 @@ import java.util.Map;
 import DataAn.storm.exceptioncheck.model.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
+import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
 
 public interface IPropertyConfigStore {
 

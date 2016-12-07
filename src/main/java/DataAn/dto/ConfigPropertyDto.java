@@ -2,7 +2,7 @@ package DataAn.dto;
 
 import java.util.List;
 
-import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
+import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
 
 public class ConfigPropertyDto {
 	

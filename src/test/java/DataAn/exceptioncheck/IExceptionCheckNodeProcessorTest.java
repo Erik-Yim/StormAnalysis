@@ -15,7 +15,7 @@ import DataAn.galaxy.service.J9SeriesService;
 import DataAn.storm.Communication;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor;
-import DataAn.storm.exceptioncheck.impl.FlyWheelProcessor2;
+import DataAn.storm.exceptioncheck.impl.FlyWheelProcessor;
 import DataAn.storm.exceptioncheck.impl.IPropertyConfigStoreImpl;
 import DataAn.storm.kafka.DefaultFetchObj;
 
@@ -42,7 +42,7 @@ public class IExceptionCheckNodeProcessorTest {
 		communication.setStar(star);
 		communication.setName(paramType);
 		
-		processor = new FlyWheelProcessor2(communication);
+		processor = new FlyWheelProcessor(communication);
 	}
 	
 	@Test

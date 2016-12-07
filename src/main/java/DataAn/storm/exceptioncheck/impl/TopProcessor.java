@@ -12,8 +12,8 @@ import DataAn.storm.BatchContext;
 import DataAn.storm.Communication;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.denoise.ParameterDto;
-import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
 import DataAn.storm.exceptioncheck.ExceptionUtils;
+import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
 import DataAn.storm.kafka.SimpleProducer;
 
 public class TopProcessor {
