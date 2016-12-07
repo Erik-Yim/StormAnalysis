@@ -3,8 +3,10 @@ package DataAn.exceptioncheck;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
+
 import DataAn.common.utils.UUIDGeneratorUtil;
 import DataAn.galaxy.option.J9SeriesType;
 import DataAn.galaxy.option.J9Series_Star_ParameterType;
@@ -13,6 +15,7 @@ import DataAn.galaxy.service.J9SeriesService;
 import DataAn.storm.Communication;
 import DataAn.storm.DefaultDeviceRecord;
 import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor;
+import DataAn.storm.exceptioncheck.impl.FlyWheelProcessor;
 import DataAn.storm.exceptioncheck.impl.IPropertyConfigStoreImpl;
 import DataAn.storm.kafka.DefaultFetchObj;
 
@@ -39,7 +42,7 @@ public class IExceptionCheckNodeProcessorTest {
 		communication.setStar(star);
 		communication.setName(paramType);
 		
-		processor = new FlyWheelProcessorTest(communication);
+		processor = new FlyWheelProcessor(communication);
 	}
 	
 	@Test
@@ -59,7 +62,7 @@ public class IExceptionCheckNodeProcessorTest {
 		for (DefaultDeviceRecord defaultDeviceRecord : defaultDeviceRecords) {
 			processor.process(defaultDeviceRecord);
 		}
-		//processor.persist(null, communication);
+		processor.persist(null, communication);
 	}
 	
 	private List<DefaultDeviceRecord> getDefaultDeviceRecordList(Communication communication) throws Exception{

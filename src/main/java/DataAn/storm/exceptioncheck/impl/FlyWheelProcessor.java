@@ -1,350 +1,380 @@
 package DataAn.storm.exceptioncheck.impl;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Set;
 
 import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
-import DataAn.dto.CaseSpecialDto;
-import DataAn.dto.ParamExceptionDto;
 import DataAn.storm.BatchContext;
 import DataAn.storm.Communication;
 import DataAn.storm.IDeviceRecord;
-import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
-import DataAn.storm.exceptioncheck.ExceptionUtils;
+import DataAn.storm.exceptioncheck.IExceptionCheckNodeProcessor;
+import DataAn.storm.exceptioncheck.model.ExceptionJob;
+import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
+import DataAn.storm.exceptioncheck.model.ExceptionPoint;
+import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
+import DataAn.storm.exceptioncheck.model.PointInfo;
 import DataAn.storm.kafka.SimpleProducer;
 import DataAn.storm.persist.MongoPeristModel;
 
-public class FlyWheelProcessor {
-
-private Communication communication;
+@SuppressWarnings("serial")
+public class FlyWheelProcessor implements
+IExceptionCheckNodeProcessor {
 	
-	public FlyWheelProcessor(Communication communication) {
-		this.communication=communication;
-	}
-	
-	
+	private Communication communication;
+	private String series;
+	private String star;
+	private String deviceType;
+	private String versions;
+	private IPropertyConfigStoreImpl propertyConfigStoreImpl;
+	private Map<String,String> paramCode_deviceName_map;
 	private BatchContext batchContext;
 	
-	//
-	Map<String,List<Long>> paramSequence =new HashMap<>();
-	
-	//用于 异常报警    存放所有参数的异常点集合信息（异常点参数名，该参数的异常点信息集合）
-	Map<String,List<ParamExceptionDto>> exceptionDtoMap =new HashMap<>();
-	
-	//用于  特殊工况  存放所有参数的异常点集合信息（异常点参数名，该参数的异常点信息集合，用list是因为有持续时间）
-	Map<String,List<CaseSpecialDto>> casDtoMap =new HashMap<>();
-	
-	//此Map 用于区分一个点的 特殊 工况 还是异常报警的点
-	Map<String,List<CaseSpecialDto>> finalCaseDtoMap =new HashMap<>();
+	//保存一个设备的特殊工况
+	Map<String,List<ExceptionJob>> jobListMap = new HashMap<String,List<ExceptionJob>>();
+	//存放特殊工况时间
+	Map<String,Set<String>> jobTimeSetMap = new HashMap<String,Set<String>>();
+	//保存一个设备的特殊工况
+	Map<String,List<ExceptionPoint>> exceListMap = new HashMap<String,List<ExceptionPoint>>();
 	
 	//用于临时缓存，保存一个所有参数(包括异常点参数和普通参数)
-	Map<String,List<CaseSpecialDto>> joblistCatch =new HashMap<>();
-	Map<String,List<ParamExceptionDto>> exelistCatch =new HashMap<>();
-	
-	String series ="";
-	String star ="";
-	String deviceName ="";	
-	
-	public Object process(IDeviceRecord deviceRecord){
+	Map<String,LinkedList<PointInfo>> jobListMapCache =new HashMap<String,LinkedList<PointInfo>>();
+	Map<String,LinkedList<PointInfo>> exceListMapCache =new HashMap<String,LinkedList<PointInfo>>();
 		
-		 series =deviceRecord.getSeries();
-		 star =deviceRecord.getStar();
-		 deviceName =deviceRecord.getName();	
-		 String[] paramValues = deviceRecord.getPropertyVals();
-		 String[] param = deviceRecord.getProperties();
-			//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
-			for(int i=0;i<paramValues.length;i++){
-				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
-				if(csDtoCatch==null){
-					csDtoCatch = new ArrayList<CaseSpecialDto>();
-					joblistCatch.put(param[i], csDtoCatch);
-				}
-				List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
-				if(paramEs==null){
-					paramEs =  new ArrayList<ParamExceptionDto>();
-					exelistCatch.put(param[i], paramEs);
-				}
-				
-			}
-			
-			
-			//判断一条记录的每一个参数的特殊工况信息。
-			for(int i=0;i<paramValues.length;i++){
-				
-				//飞轮特殊工况条件说明信息
-				ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
-				
-				long sequence =new AtomicLong(0).incrementAndGet();
-				//如果为空说明该参数不在要求监控的参数列表里面，不需要统计该参数
-				if(ecpc!=null){
-					//判断特殊工况最大值
-					//如果参数值 > 设定的最大值 ，将该值1.存进该参数的异常点集合 2.将该异常点集合存进casDtoMap()
-					if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
-						List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
-						CaseSpecialDto cDto = new CaseSpecialDto();
-						cDto.setDateTime(deviceRecord.getTime());
-						cDto.setSeries(deviceRecord.getSeries());
-						cDto.setStar(deviceRecord.getStar());
-						cDto.setParamName(param[i]);
-						cDto.setFrequency(ecpc.getCount());
-	
-						cDto.setLimitValue(ecpc.getJobMax());
-	
-						cDto.setLimitTime(ecpc.getDelayTime());
-						cDto.setSequence(sequence);
-						cDto.setVerisons(deviceRecord.versions());
-						try{
-							//将该异常点放进 该参数的异常点list
-							csDtoCatch.add(cDto);
-						}catch (Exception e) {
-							e.printStackTrace();
-						}
-						//将该参数的异常点List放进  异常点集合（该集合包含在配置界面配置了的参数）
-						casDtoMap.put(param[i], csDtoCatch);
-					}
-					
-					//判断异常报警最大值  最小值
-					if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
-			
-						List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
-						ParamExceptionDto peDto =  new ParamExceptionDto();
-						peDto.setParamName(deviceRecord.getProperties()[i]);
-						peDto.setSeries(deviceRecord.getSeries());
-						peDto.setStar(deviceRecord.getStar());
-						peDto.setValue(paramValues[i]);
-						peDto.setTime(deviceRecord.getTime());	
-						peDto.setSequence(sequence);
-						peDto.setVersions(deviceRecord.versions());
-						paramEs.add(peDto);	
-						exceptionDtoMap.put(param[i], paramEs);
-					}
-																
-				}
-		
-			}
-			return exceptionDtoMap;	
-	
+	public FlyWheelProcessor(Communication communication) {
+		this.communication=communication;
+		series = communication.getSeries();
+		star = communication.getStar();
+		deviceType = communication.getName();
+		versions = communication.getVersions();
+		propertyConfigStoreImpl = new IPropertyConfigStoreImpl();
+		paramCode_deviceName_map = propertyConfigStoreImpl.getParamCode_deviceName_map(new String[]{series,star});
 	}
 	
-	
-	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
+	@Override
+	public Object process(IDeviceRecord deviceRecord) {
 		
-	//判断特殊工况  异常点在满足次数限定时 持续的时间是否满足
-	if(casDtoMap!=null && casDtoMap.size()>0 ){
-		//判断每个参数
-		for(String param_Name:casDtoMap.keySet()){
-			List<CaseSpecialDto> cDtos = casDtoMap.get(param_Name);
-			List<CaseSpecialDto> finalCaseDtos =  new ArrayList<>();
-			List<Long> finalCaseDtosequence =  new ArrayList<>();
-			
-			for(int i=0;i<cDtos.size();){
-				//TODO 限定次数和持续时间感觉可以放在For循环外面，因为同一个参数的 count 和 limitTime都是相同的
-				//出现次数限定
-				int count = cDtos.get(i).getFrequency();
-				//持续时间限定
-				int limitTime = (int) cDtos.get(i).getLimitTime();
-				
-				//TODO判断当前点+限定次数是否小于 总个数，即该批数据内异常点的总个数是否>特殊工况限定的个数
-				if((i+count-1)<cDtos.size()){
-					/*//int endTime = (int)((DateUtil.fromDateStringToLong(cDtos.get(i+count-1).getDateTime()))/60000);
-					int endTime = (int)((cDtos.get(i+count-1).get_time())/60000);
-					//int startTime =(int)((DateUtil.fromDateStringToLong(cDtos.get(i).getDateTime()))/60000);
-					int startTime =(int)((cDtos.get(i+count-1).get_time())/60000);*/
-					//将字符串转换成日期类型计算时间差
-					SimpleDateFormat dfs = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-					java.util.Date begin = null;
-					try {
-						begin = dfs.parse(cDtos.get(i).getDateTime());
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					java.util.Date end = null;
-					try {
-						end = dfs.parse(cDtos.get(i+count).getDateTime());
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					//这里时间间隔单位为秒
-					long between=(end.getTime()-begin.getTime())/1000;//除以1000是为了转换成秒
-					//if((endTime-startTime)>=limitTime){
-					if(between>=limitTime){
-						for(int j =i;j<i+count;j++){
-							finalCaseDtos.add(cDtos.get(j));
-							finalCaseDtosequence.add(cDtos.get(j).getSequence());
+		String[] paramValues = deviceRecord.getPropertyVals();
+		String[] paramCodes = deviceRecord.getProperties();
+		for (int i = 0; i < paramCodes.length; i++) {
+			double value = Double.parseDouble(paramValues[i]);
+			String deviceName = paramCode_deviceName_map.get(paramCodes[i]);
+			//获取设备的特殊工况配置
+			ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
+			if(jobConfig != null){
+				if(paramCodes[i].equals(jobConfig.getParamCode())){
+					//判断特殊工况点: 比最大值大
+					if(jobConfig.getMax() < value){
+						LinkedList<PointInfo> jobListCache = jobListMapCache.get(paramCodes[i]);
+						if(jobListCache == null){
+							jobListCache = new LinkedList<PointInfo>();
 						}
-						Map<String ,Object> jobMap =  new HashMap<>();
-						jobMap.put("_recordtime", DateUtil.format(new Date()));			
-						jobMap.put("datetime", cDtos.get(i).getDateTime());
-						jobMap.put("versions", cDtos.get(i).getVerisons());
-						jobMap.put("series", cDtos.get(i).getSeries());
-						jobMap.put("star", cDtos.get(i).getStar());
-						jobMap.put("deviceName", cDtos.get(i).getDeviceName());
-						jobMap.put("paramName", cDtos.get(i).getParamName());	
-						jobMap.put("value", cDtos.get(i).getValue());					
-						jobMap.put("hadRead", "0");	
-						String context = JJSON.get().formatObject(jobMap);
-						
-						MongoPeristModel mpModel=new MongoPeristModel();
-						mpModel.setCollections(new String[]{deviceName+"_ExceptionJob"});
-						mpModel.setVersions(cDtos.get(i).getVerisons());
-						mpModel.setContent(context);
-						simpleProducer.send(mpModel,communication.getPersistTopicPartition());									
-						//i=i+limitTime;
-						//TODO//这里i的值存在问题，当满足条件是如何去下一个开始点？应该跳过限定时间内所有的点
-						i=i+count;
-					}else{i++;}										
-				}
-				//当前点的id+限定次数 超过异常点的总数时，说明没有足够的点，终止for循环
-				else{break;}				
-			}
-		//	MongodbUtil.getInstance().insertMany(InitMongo.getDataBaseNameBySeriesAndStar(series, star), deviceName+"_SpecialCase", documentList);
-			finalCaseDtoMap.put(param_Name, finalCaseDtos);
-			paramSequence.put(param_Name, finalCaseDtosequence);
-		}
-	}
-	/*//判断异常点是否属在特殊工况的点的范围内，如果在，则不将其列入异常点的范围
-	if(exceptionDtoMap!=null && exceptionDtoMap.size()>0){
-		for(String paramExce:exceptionDtoMap.keySet()){
-			List<ParamExceptionDto> paramEs = exceptionDtoMap.get(paramExce);
-		//	List<Document> documentList = new ArrayList<Document>();
-			if(finalCaseDtoMap.keySet().contains(paramExce)){
-				List<Long> paramSe = paramSequence.get(paramExce);			
-				if(paramSe!=null && paramSe.size()>0){
-					for(ParamExceptionDto ped:paramEs){
-						if(!(paramSe.contains(ped.getSequence()))){							
-							Map<String ,Object> ExceptionMap =  new HashMap<>();
-							ExceptionMap.put("_recordtime", DateUtil.format(new Date()));
-							ExceptionMap.put("datetime", ped.getTime());
-							ExceptionMap.put("versions", ped.getVersions());
-							ExceptionMap.put("series", ped.getSeries());
-							ExceptionMap.put("star", ped.getStar());
-							ExceptionMap.put("deviceName", ped.getDeviceName());	
-							ExceptionMap.put("paramName", ped.getParamName());	
-							ExceptionMap.put("value", ped.getValue());
-							ExceptionMap.put("hadRead", "0");	
-							String exceptinContext = JJSON.get().formatObject(ExceptionMap);							
-							MongoPeristModel mpModel=new MongoPeristModel();
-							mpModel.setCollections(new String[]{deviceName+"_Exception"});
-							mpModel.setContent(exceptinContext);
-							mpModel.setVersions(ped.getVersions());
-							simpleProducer.send(mpModel,communication.getPersistTopicPartition());
-						}
+						PointInfo point = new PointInfo();
+						point.set_time(deviceRecord.get_time());
+						point.setTime(deviceRecord.getTime());
+						point.setParamCode(paramCodes[i]);
+						point.setParamValue(paramValues[i]);
+						jobListCache.add(point);
+						jobListMapCache.put(paramCodes[i], jobListCache);
 					}
 				}
-			}			
-		}
-	}*/
-	//判断异常点的持续时间范围，并和特殊工况做区分
-	if(exceptionDtoMap!=null && exceptionDtoMap.size()>0){
-		for(String paramExce:exceptionDtoMap.keySet()){
-			List<ParamExceptionDto> paramEs = exceptionDtoMap.get(paramExce);
-			
-			//TODO int limitTime = (int) cDtos.get(i).getLimitTime();
-			int limitTime_exception = 20;
-			for(int i=0;i<paramEs.size();)
-			{
-				int number=0;
-				for(int n=i;(paramEs.get(n+1)!=null);n++)
-				{
-					//判断两个点是否连续
-					long btn = ExceptionUtils.Datesubtract(paramEs.get(n).getTime(),paramEs.get(n+1).getTime());
-					number++;
-					if(btn<2)
-					continue;
-					//判断持续时间是否满足要求
-					long duration =ExceptionUtils.Datesubtract(paramEs.get(i).getTime(),paramEs.get(n).getTime());
-					if(duration>=limitTime_exception){
-						/*//TODO 是否需要判断该区间是否与特殊工况的区间冲突？
-						if(finalCaseDtoMap.keySet().contains(paramExce))
-						{
-							
-						}*/
-						//TODO　持久化，将开始点和结束点保存
-						ParamExceptionDto beginpoint= paramEs.get(i); 
-						Map<String ,Object> ExceptionMap =  new HashMap<>();
-						ExceptionMap.put("_recordtime", DateUtil.format(new Date()));
-						ExceptionMap.put("datetime", beginpoint.getTime());
-						ExceptionMap.put("versions", beginpoint.getVersions());
-						ExceptionMap.put("series", beginpoint.getSeries());
-						ExceptionMap.put("star", beginpoint.getStar());
-						ExceptionMap.put("deviceName", beginpoint.getDeviceName());	
-						ExceptionMap.put("paramName", beginpoint.getParamName());	
-						ExceptionMap.put("value", beginpoint.getValue());
-						ExceptionMap.put("hadRead", "0");	
-						String exceptinContext = JJSON.get().formatObject(ExceptionMap);							
-						MongoPeristModel mpModel=new MongoPeristModel();
-						mpModel.setCollections(new String[]{deviceName+"_Exception"});
-						mpModel.setContent(exceptinContext);
-						mpModel.setVersions(beginpoint.getVersions());
-						simpleProducer.send(mpModel,communication.getPersistTopicPartition());
-						
-						ParamExceptionDto endpoint= paramEs.get(n); 
-						//Map<String ,Object> ExceptionMap =  new HashMap<>();
-						ExceptionMap.put("_recordtime", DateUtil.format(new Date()));
-						ExceptionMap.put("datetime", endpoint.getTime());
-						ExceptionMap.put("versions", endpoint.getVersions());
-						ExceptionMap.put("series", endpoint.getSeries());
-						ExceptionMap.put("star", endpoint.getStar());
-						ExceptionMap.put("deviceName", endpoint.getDeviceName());	
-						ExceptionMap.put("paramName", endpoint.getParamName());	
-						ExceptionMap.put("value", endpoint.getValue());
-						ExceptionMap.put("hadRead", "0");
-						String exceptinContext2 = JJSON.get().formatObject(ExceptionMap);							
-						MongoPeristModel mpModel2=new MongoPeristModel();
-						mpModel2.setCollections(new String[]{deviceName+"_Exception"});
-						mpModel2.setContent(exceptinContext2);
-						mpModel2.setVersions(endpoint.getVersions());
-						simpleProducer.send(mpModel2,communication.getPersistTopicPartition());
-					}
-					else{//异常点的持续时间不满足要求
-						n=n+number;
-						number=0;
-					}
-					i=n;						
-				}
-				i=i++;
 			}
 			
-			if(finalCaseDtoMap.keySet().contains(paramExce)){
-				List<Long> paramSe = paramSequence.get(paramExce);			
-				if(paramSe!=null && paramSe.size()>0){
-					for(ParamExceptionDto ped:paramEs){
-						if(!(paramSe.contains(ped.getSequence()))){							
-							Map<String ,Object> ExceptionMap =  new HashMap<>();
-							ExceptionMap.put("_recordtime", DateUtil.format(new Date()));
-							ExceptionMap.put("datetime", ped.getTime());
-							ExceptionMap.put("versions", ped.getVersions());
-							ExceptionMap.put("series", ped.getSeries());
-							ExceptionMap.put("star", ped.getStar());
-							ExceptionMap.put("deviceName", ped.getDeviceName());	
-							ExceptionMap.put("paramName", ped.getParamName());	
-							ExceptionMap.put("value", ped.getValue());
-							ExceptionMap.put("hadRead", "0");	
-							String exceptinContext = JJSON.get().formatObject(ExceptionMap);							
-							MongoPeristModel mpModel=new MongoPeristModel();
-							mpModel.setCollections(new String[]{deviceName+"_Exception"});
-							mpModel.setContent(exceptinContext);
-							mpModel.setVersions(ped.getVersions());
-							simpleProducer.send(mpModel,communication.getPersistTopicPartition());
-						}
+			//获取异常配置
+			ExceptionPointConfig exceConfig = propertyConfigStoreImpl.getParamExceptionPointConfigByParamCode(new String[]{series,star,paramCodes[i]});
+			if(exceConfig != null){
+				//判断异常点: 比最大值大、比最小值小
+				if(exceConfig.getMin() > value || exceConfig.getMax() < value){
+					LinkedList<PointInfo> exceListCache = exceListMapCache.get(paramCodes[i]);
+					if(exceListCache == null){
+						exceListCache = new LinkedList<PointInfo>();
 					}
+					PointInfo point = new PointInfo();
+					point.set_time(deviceRecord.get_time());
+					point.setTime(deviceRecord.getTime());
+					point.setParamCode(paramCodes[i]);
+					point.setParamValue(paramValues[i]);
+					exceListCache.add(point);
+					exceListMapCache.put(paramCodes[i], exceListCache);
 				}
-			}			
+			}
 		}
+		
+		//判断一个参数的特殊工况
+		for (String paramCode : jobListMapCache.keySet()) {
+			LinkedList<PointInfo> jobListCache = jobListMapCache.get(paramCode);
+			if(jobListCache == null || jobListCache.size() == 0)
+				continue;
+			PointInfo firstPoint = jobListCache.getFirst();
+			PointInfo lastPoint = jobListCache.getLast();
+			String deviceName = paramCode_deviceName_map.get(paramCode);
+			//获取设备的特殊工况配置
+			ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
+			//收尾时间间隔
+			long interval = lastPoint.get_time() - firstPoint.get_time();
+			//连续一段时间内
+			if((jobConfig.getDelayTime() <= interval) && (interval <= (jobConfig.getDelayTime() + 1000))){
+				//次数大于规定次数 记录一次特殊工况
+				if(jobListCache.size() > jobConfig.getCount()){
+					List<ExceptionJob> jobList = jobListMap.get(deviceName);
+					if(jobList == null){
+						jobList = new ArrayList<ExceptionJob>();
+					}
+					Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
+					if(jobTimeSet == null){
+						jobTimeSet = new HashSet<String>();
+					}
+					List<PointInfo> pointList = new ArrayList<PointInfo>();
+					for (PointInfo pointInfo : jobListCache) {
+						jobTimeSet.add(pointInfo.getTime());
+						pointList.add(pointInfo);
+					}
+					ExceptionJob job = new ExceptionJob();
+					job.setVersions(versions);
+					job.setDeviceType(deviceType);
+					job.setDeviceName(deviceName);
+					job.setBeginDate(DateUtil.format(firstPoint.getTime()));
+					job.setBeginTime(firstPoint.get_time());
+					job.setEndDate(DateUtil.format(lastPoint.getTime()));
+					job.setEndTime(lastPoint.get_time());
+					job.setPointList(pointList);
+					jobList.add(job);
+					//根据设备名称添加进集合
+					jobListMap.put(deviceName, jobList);
+					//删除缓存数据集合
+					jobListMapCache.remove(paramCode);
+				}
+			}
+			//计数点往前推
+			if(interval > (jobConfig.getDelayTime() + 1000)){
+				while(interval > (jobConfig.getDelayTime() + 1)){
+					jobListCache.removeFirst();
+					firstPoint = jobListCache.getFirst();
+					interval = lastPoint.get_time() - firstPoint.get_time();
+				}
+				jobListMapCache.put(paramCode, jobListCache);				
+			}
+		}
+		
+		//判断一个参数的异常
+//		for (String paramCode : exceListMapCache.keySet()) {
+//			LinkedList<PointInfo> exceListCache = exceListMapCache.get(paramCode);
+//			if(exceListCache == null || exceListCache.size() == 0)
+//				continue;
+//			PointInfo firstPoint = exceListCache.getFirst();
+//			PointInfo lastPoint = exceListCache.getLast();
+//			//获取异常配置
+//			ExceptionPointConfig exceConfig = propertyConfigStoreImpl.getDeviceExceptionPointConfiggbyParamCode(new String[]{series,star,paramCode});
+//			//收尾时间间隔
+//			long interval = lastPoint.get_time() - firstPoint.get_time();
+//			//连续一段时间内
+//			if((exceConfig.getDelayTime() < interval) && (interval < (exceConfig.getDelayTime() + 1))){
+//				//判断时间间隔连续标志
+//				boolean flag = true;
+//				for (int i = 1; i < exceListCache.size(); i++) {
+//					if(exceListCache.get(i).get_time() - exceListCache.get(i-1).get_time() > 1000){
+//						flag = false;
+//					}
+//				}
+//				//时间连续
+//				if(flag){
+//					String deviceName = paramCode_deviceName_map.get(paramCode);
+//					List<ExceptionJob> jobList = jobListMap.get(deviceName);
+//					if(jobList == null || jobList.size() == 0){
+//						//此参数对应的设备还没有特殊工况的情况下 直接添加
+//						List<ExceptionPoint> exceList = exceListMap.get(paramCode);
+//						if(exceList == null){
+//							exceList = new ArrayList<ExceptionPoint>();
+//						}
+//						ExceptionPoint exce = null;
+//						for (PointInfo pointInfo : exceListCache) {
+//							exce = new ExceptionPoint();
+//							exce.setConfig_versions(versions);
+//							exce.setDeviceType(deviceType);
+//							exce.setBeginDate(DateUtil.format(firstPoint.getTime()));
+//							exce.setBeginTime(firstPoint.get_time());
+//							exce.setEndDate(DateUtil.format(lastPoint.getTime()));
+//							exce.setEndTime(lastPoint.get_time());
+//							exce.setParamCode(pointInfo.getParamCode());
+//							exce.setParamValue(pointInfo.getParamValue());
+//							exce.setTime(pointInfo.getTime());
+//							exce.set_time(pointInfo.get_time());
+//							exceList.add(exce);
+//						}
+//						//根据参数名称添加进集合
+//						exceListMap.put(paramCode, exceList);
+//						//删除缓存数据集合
+//						exceListMapCache.remove(paramCode);
+//					}else{
+//						//此参数对应的设备存在特殊工况的情况下
+//						//获取设备的特殊工况配置
+////						ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigbyParamCode(new String[]{series,star,deviceName});
+////						long delayTime = (jobConfig.getDelayTime() / exceConfig.getDelayTime() + 1) * jobConfig.getDelayTime();
+////						for (int i=jobList.size()-1; i>=0; i--) {
+////							if(jobList.get(i).getEndTime() == lastPoint.get_time()){
+////								
+////							}
+////						}
+//					}
+//				}
+//			}
+//			//计数点往前推
+//			while(interval > (exceConfig.getDelayTime() + 1)){
+//				exceListCache.removeFirst();
+//				firstPoint = exceListCache.getFirst();
+//				interval = lastPoint.get_time() - firstPoint.get_time();
+//			}
+//			exceListMapCache.put(paramCode, exceListCache);
+//		}
+		
+		return null;
 	}
-				
 
+	@Override
+	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
+		//判断一个参数的异常
+		int firstPoint = 0;
+		for (String paramCode : exceListMapCache.keySet()) {
+			LinkedList<PointInfo> exceListCache = exceListMapCache.get(paramCode);
+			if(exceListCache == null || exceListCache.size() == 0)
+				continue;
+			for (int i = 0; i < exceListCache.size(); i++) {
+				int lastPoint = i;
+				//获取异常配置
+				ExceptionPointConfig exceConfig = propertyConfigStoreImpl.getParamExceptionPointConfigByParamCode(new String[]{series,star,paramCode});
+				//收尾时间间隔
+				long interval = exceListCache.get(lastPoint).get_time() - exceListCache.get(firstPoint).get_time();
+				//连续一段时间内
+				if((exceConfig.getDelayTime() <= interval) && (interval <= (exceConfig.getDelayTime() + 1000))){
+					//判断时间间隔连续标志
+					boolean flag = true;
+					for (int j = firstPoint+1; j <= lastPoint; j++) {
+						if(exceListCache.get(j).get_time() - exceListCache.get(j-1).get_time() > 1000){
+							flag = false;
+						}
+					}
+					//时间连续
+					if(flag){
+						String deviceName = paramCode_deviceName_map.get(paramCode);
+						Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
+						List<ExceptionPoint> exceList = exceListMap.get(paramCode);
+						if(exceList == null){
+							exceList = new ArrayList<ExceptionPoint>();
+						}
+						if(jobTimeSet == null || jobTimeSet.size() == 0){
+							//此参数对应的设备还没有特殊工况的情况下 直接添加
+							ExceptionPoint exce = null;
+							for (int j = firstPoint; j <= lastPoint; j++) {
+								exce = new ExceptionPoint();
+								exce.setVersions(versions);
+								exce.setDeviceType(deviceType);
+								exce.setBeginDate(DateUtil.format(exceListCache.get(firstPoint).getTime()));
+								exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+								exce.setEndDate(DateUtil.format(exceListCache.get(lastPoint).getTime()));
+								exce.setEndTime(exceListCache.get(lastPoint).get_time());
+								exce.setParamCode(exceListCache.get(j).getParamCode());
+								exce.setParamValue(exceListCache.get(j).getParamValue());
+								exce.setTime(exceListCache.get(j).getTime());
+								exce.set_time(exceListCache.get(j).get_time());
+								exceList.add(exce);
+							}
+						}else{
+							//此参数对应的设备存在特殊工况的情况下							
+							ExceptionPoint exce = null;
+							for (int j = firstPoint; j <= lastPoint; j++) {
+								if(!jobTimeSet.contains(exceListCache.get(j).getTime())){
+									exce = new ExceptionPoint();
+									exce.setVersions(versions);
+									exce.setDeviceType(deviceType);
+									exce.setBeginDate(DateUtil.format(exceListCache.get(firstPoint).getTime()));
+									exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+									exce.setEndDate(DateUtil.format(exceListCache.get(lastPoint).getTime()));
+									exce.setEndTime(exceListCache.get(lastPoint).get_time());
+									exce.setParamCode(exceListCache.get(j).getParamCode());
+									exce.setParamValue(exceListCache.get(j).getParamValue());
+									exce.setTime(exceListCache.get(j).getTime());
+									exce.set_time(exceListCache.get(j).get_time());
+									exceList.add(exce);
+								}
+							}
+						}
+						//根据参数名称添加进集合
+						exceListMap.put(paramCode, exceList);
+						//
+						firstPoint = lastPoint;
+					}
+				}
+				//计数点往前推
+				if(interval > (exceConfig.getDelayTime() + 1000)){
+					for (int j = firstPoint; j < lastPoint; j++) {
+						interval = exceListCache.get(i).get_time() - exceListCache.get(j).get_time();
+						if(interval < (exceConfig.getDelayTime() + 1000)){
+							firstPoint = j;
+							break;
+						}
+					}
+				}
+			}
+		}
+		//Test 输出
+//		for (String deviceName : jobListMap.keySet()){
+//			List<ExceptionJob> jobList = jobListMap.get(deviceName);
+//			if(jobList == null || jobList.size() == 0)
+//				continue;
+//			System.out.println(deviceName + " 特殊工况size: " + jobList.size());
+//			for (ExceptionJob exceptionJob : jobList) {
+//				System.out.println(exceptionJob);
+//				List<PointInfo> pointList = exceptionJob.getPointList();
+//				for (PointInfo pointInfo : pointList) {
+//					String jonContext = JJSON.get().formatObject(pointInfo);
+//					System.out.println(jonContext);
+//				}
+//			}
+//		}
+//		for (String paramCode : exceListMap.keySet()) {
+//			List<ExceptionPoint> exceList = exceListMap.get(paramCode);
+//			if(exceList == null || exceList.size() == 0)
+//				continue;
+//			System.out.println(paramCode + " 异常size: " + exceList.size());
+//			for (ExceptionPoint exceptionPoint : exceList) {
+//				String exceptinContext = JJSON.get().formatObject(exceptionPoint);
+//				System.out.println(exceptinContext);
+//			}
+//		}
+		//持久化操作 
+		for (String deviceName : jobListMap.keySet()){
+			List<ExceptionJob> jobList = jobListMap.get(deviceName);
+			if(jobList == null || jobList.size() == 0)
+				continue;
+			for (ExceptionJob exceptionJob : jobList) {
+				String jonContext = JJSON.get().formatObject(exceptionJob);
+				MongoPeristModel mpModel=new MongoPeristModel();
+				mpModel.setCollections(new String[]{deviceType+"_job"});
+				mpModel.setContent(jonContext);
+				mpModel.setVersions(versions);
+				simpleProducer.send(mpModel,communication.getPersistTopicPartition());
+				
+			}
+		}
+		for (String paramCode : exceListMap.keySet()) {
+			List<ExceptionPoint> exceList = exceListMap.get(paramCode);
+			if(exceList == null || exceList.size() == 0)
+				continue;
+			for (ExceptionPoint exceptionPoint : exceList) {
+				String exceptinContext = JJSON.get().formatObject(exceptionPoint);
+				MongoPeristModel mpModel=new MongoPeristModel();
+				mpModel.setCollections(new String[]{deviceType+"_exception"});
+				mpModel.setContent(exceptinContext);
+				mpModel.setVersions(versions);
+				simpleProducer.send(mpModel,communication.getPersistTopicPartition());
+			}
+		}
 	}
-	
 	
 	public void setBatchContext(BatchContext batchContext) {
 		this.batchContext=batchContext;
@@ -353,7 +383,4 @@ private Communication communication;
 	public BatchContext getBatchContext() {
 		return batchContext;
 	}
-	
-	
-	
 }

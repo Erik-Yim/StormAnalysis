@@ -8,7 +8,9 @@ import java.util.Date;
  */
 public class ExceptionPoint {
 
-	private String config_versions;// 配置
+	private String config;// 配置
+	
+	private String versions;// 一次csv上传的版本
 	
 	private String deviceType;// 设备类型
 
@@ -28,12 +30,22 @@ public class ExceptionPoint {
 	
 	private long _time; // 参数时间截
 
-	public String getConfig_versions() {
-		return config_versions;
+	
+
+	public String getConfig() {
+		return config;
 	}
 
-	public void setConfig_versions(String config_versions) {
-		this.config_versions = config_versions;
+	public void setConfig(String config) {
+		this.config = config;
+	}
+
+	public String getVersions() {
+		return versions;
+	}
+
+	public void setVersions(String versions) {
+		this.versions = versions;
 	}
 
 	public String getDeviceType() {
@@ -107,6 +119,18 @@ public class ExceptionPoint {
 	public void set_time(long _time) {
 		this._time = _time;
 	}
+
+	@Override
+	public String toString() {
+		return "ExceptionPoint [config=" + config + ", versions=" + versions
+				+ ", deviceType=" + deviceType + ", beginDate=" + beginDate
+				+ ", endDate=" + endDate + ", beginTime=" + beginTime
+				+ ", endTime=" + endTime + ", paramCode=" + paramCode
+				+ ", paramValue=" + paramValue + ", time=" + time + ", _time="
+				+ _time + "]";
+	}
+
+	
 	
 	
 }

@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import DataAn.storm.exceptioncheck.ExceptionCasePointConfig;
+import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
 
 public class ExceptionConfigModel implements Serializable{
 	

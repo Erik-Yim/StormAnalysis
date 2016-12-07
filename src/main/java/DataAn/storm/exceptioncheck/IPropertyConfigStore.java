@@ -5,6 +5,7 @@ import java.util.Map;
 import DataAn.storm.exceptioncheck.model.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
+import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
 
 public interface IPropertyConfigStore {
 
@@ -19,14 +20,14 @@ public interface IPropertyConfigStore {
 	
 	/**
 	 * new String[]{series,star,deviceName} 
-	 * 一个系列 一个星 一个具体的轮子只一个参数
+	 * 一个系列 一个星 一个具体的轮子的特殊工况配置
 	 */
-	ExceptionJobConfig getDeviceExceptionJobConfigbyParamCode(String ...args);
+	ExceptionJobConfig getDeviceExceptionJobConfigByParamCode(String ...args);
 	
 	/**
 	 * new String[]{series,star,paramCode} 
-	 * 一个系列 一个星 一个具体的参数
+	 * 一个系列 一个星 一个具体的参数的异常配置
 	 */
-	ExceptionPointConfig getDeviceExceptionPointConfiggbyParamCode(String ...args);
+	ExceptionPointConfig getParamExceptionPointConfigByParamCode(String ...args);
 	
 }

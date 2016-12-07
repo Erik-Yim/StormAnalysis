@@ -1,4 +1,4 @@
-package DataAn.storm.exceptioncheck;
+package DataAn.storm.exceptioncheck.model0;
 
 import java.io.Serializable;
 

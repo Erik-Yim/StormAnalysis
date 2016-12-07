@@ -1,4 +1,4 @@
-package DataAn.storm.exceptioncheck;
+package DataAn.storm.exceptioncheck.model0;
 
 import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;

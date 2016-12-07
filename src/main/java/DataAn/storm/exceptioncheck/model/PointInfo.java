@@ -41,6 +41,12 @@ public class PointInfo {
 	public void set_time(long _time) {
 		this._time = _time;
 	}
+
+	@Override
+	public String toString() {
+		return "PointInfo [paramCode=" + paramCode + ", paramValue="
+				+ paramValue + ", time=" + time + ", _time=" + _time + "]";
+	}
 	
 	
 }

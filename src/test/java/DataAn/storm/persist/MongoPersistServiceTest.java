@@ -2,18 +2,13 @@ package DataAn.storm.persist;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
-
-import DataAn.common.utils.JJSON;
 import DataAn.common.utils.UUIDGeneratorUtil;
 import DataAn.galaxy.option.J9SeriesType;
 import DataAn.galaxy.option.SeriesType;
 import DataAn.galaxy.service.J9SeriesService;
-import DataAn.storm.kafka.Notify;
 
 public class MongoPersistServiceTest {
 
