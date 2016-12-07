@@ -1,4 +1,4 @@
-package DataAn.galaxyManager.option;
+package DataAn.galaxy.option;
 
 public class J9Series_Star_Flywheel_ParameterConfig {
 	

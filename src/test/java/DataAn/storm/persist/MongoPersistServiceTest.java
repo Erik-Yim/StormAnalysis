@@ -10,9 +10,9 @@ import org.junit.Test;
 
 import DataAn.common.utils.JJSON;
 import DataAn.common.utils.UUIDGeneratorUtil;
-import DataAn.fileSystem.option.J9SeriesType;
-import DataAn.fileSystem.option.SeriesType;
-import DataAn.galaxyManager.J9SeriesService;
+import DataAn.galaxy.option.J9SeriesType;
+import DataAn.galaxy.option.SeriesType;
+import DataAn.galaxy.service.J9SeriesService;
 import DataAn.storm.kafka.Notify;
 
 public class MongoPersistServiceTest {

@@ -1,4 +1,4 @@
-package DataAn.fileSystem.option;
+package DataAn.galaxy.option;
 
 /**
 * Title: J9SeriesType
@@ -12,7 +12,7 @@ public enum J9SeriesType {
 	STRA1 {
 		@Override
 		public String getName() {
-			return "star1";
+			return "01";
 		}
 
 		@Override
@@ -24,7 +24,7 @@ public enum J9SeriesType {
 	STRA2 {
 		@Override
 		public String getName() {
-			return "star2";
+			return "02";
 		}
 
 		@Override
@@ -36,7 +36,7 @@ public enum J9SeriesType {
 	STRA3 {
 		@Override
 		public String getName() {
-			return "star3";
+			return "03";
 		}
 
 		@Override
@@ -48,7 +48,7 @@ public enum J9SeriesType {
 	STRA4 {
 		@Override
 		public String getName() {
-			return "star4";
+			return "04";
 		}
 
 		@Override
@@ -60,7 +60,7 @@ public enum J9SeriesType {
 	STRA5 {
 		@Override
 		public String getName() {
-			return "star5";
+			return "05";
 		}
 
 		@Override

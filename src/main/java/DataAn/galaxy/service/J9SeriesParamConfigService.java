@@ -1,4 +1,4 @@
-package DataAn.galaxyManager.option;
+package DataAn.galaxy.service;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -6,11 +6,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import DataAn.galaxy.option.J9Series_Star_Flywheel_ParameterConfig;
+
 public class J9SeriesParamConfigService {
 
 	public static Map<String,String> getJ9Series_FlywheelParamConfigMap() throws Exception{
 		Map<String,String> map = new HashMap<String,String>();
-		Class<?> pojoClass = Class.forName("DataAn.galaxyManager.option.J9Series_Star_Flywheel_ParameterConfig");
+		Class<?> pojoClass = Class.forName(J9Series_Star_Flywheel_ParameterConfig.class.getName());
 		Object obj = pojoClass.newInstance();
 		Field[] fields = pojoClass.getDeclaredFields();
 		for (Field field : fields) {
@@ -22,7 +24,7 @@ public class J9SeriesParamConfigService {
 	
 	public static List<String> getJ9Series_FlywheelParamConfigList() throws Exception{
 		List<String> list= new ArrayList<String>();
-		Class<?> pojoClass = Class.forName("DataAn.galaxyManager.option.J9Series_Star_Flywheel_ParameterConfig");
+		Class<?> pojoClass = Class.forName(J9Series_Star_Flywheel_ParameterConfig.class.getName());
 		Object obj = pojoClass.newInstance();
 		Field[] fields = pojoClass.getDeclaredFields();
 		for (Field field : fields) {

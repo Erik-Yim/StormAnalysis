@@ -1,4 +1,4 @@
-package DataAn.galaxyManager;
+package DataAn.galaxy;
 
 import java.util.List;
 import java.util.Map;
@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import DataAn.common.utils.JJSON;
 import DataAn.common.utils.UUIDGeneratorUtil;
+import DataAn.galaxy.service.J9SeriesService;
 
 public class J9SeriesServiceTest {
 
