@@ -70,7 +70,12 @@ public class ExceptionPointConfig implements Serializable {
 		this.min = min;
 	}
 
-	
-	
+	@Override
+	public String toString() {
+		return "ExceptionPointConfig [deviceType=" + deviceType
+				+ ", deviceName=" + deviceName + ", paramCode=" + paramCode
+				+ ", delayTime=" + delayTime + ", max=" + max + ", min=" + min
+				+ "]";
+	}
 	
 }
