@@ -2,8 +2,10 @@ package DataAn.storm.exceptioncheck.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import DataAn.dto.CaseSpecialDto;
@@ -13,18 +15,32 @@ import DataAn.storm.Communication;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.denoise.ParameterDto;
 import DataAn.storm.exceptioncheck.ExceptionUtils;
+import DataAn.storm.exceptioncheck.model.TopJiDongJobDto;
+import DataAn.storm.exceptioncheck.model.TopJiDongjobConfig;
 import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
 import DataAn.storm.kafka.SimpleProducer;
 
 public class TopProcessor {
+	
 
-private Communication communication;
+	private Communication communication;
+	private String series;
+	private String star;
+	private String deviceType;
+	private String versions;
+	private IPropertyConfigStoreImpl propertyConfigStoreImpl;
+	private Map<String,String> paramCode_deviceName_map;
+	private BatchContext batchContext;
 	
 	public TopProcessor(Communication communication) {
 		this.communication=communication;
-	}
-	
-	private BatchContext batchContext;
+		series = communication.getSeries();
+		star = communication.getStar();
+		deviceType = communication.getName();
+		versions = communication.getVersions();
+		propertyConfigStoreImpl = new IPropertyConfigStoreImpl();
+		paramCode_deviceName_map = propertyConfigStoreImpl.getParamCode_deviceName_map(new String[]{series,star});
+	}	
 	
 	//??
 	Map<String,List<Long>> paramSequence =new HashMap<>();
@@ -45,119 +61,145 @@ private Communication communication;
 	
 	//临时变量，用于保存陀螺的上一条记录。
 	IDeviceRecord topTempRecord=null;
-	//用于存储一个陀螺相关信息（陀螺名字、陀螺异常参数）
-	Map<String,List<CaseSpecialDto>> topjidongDtoMap =new HashMap<>();
-	Map<String,List<CaseSpecialDto>> topjidongjobDtoMap =new HashMap<>();
+	//用于存储异常点
+	Map<String,List<TopJiDongJobDto>> topjidongDtoMap =new HashMap<>();
 	
-	String series ="";
-	String star ="";
-	String deviceName ="";	
 	
-	public Object process(IDeviceRecord deviceRecord){
+	//用于存储机动次数 <陀螺名  机动详情>
+	Map<String,List<TopJiDongJobDto>> topjidongMap =new HashMap<>();
+	//用于存储陀螺的一个持续周期内机动次数的点的集合，<陀螺名  机动点列表>
+	Map<String,List<TopJiDongJobDto>> topjidongDtosetMapCach =new HashMap<>();
+	
+	
+	
+	
+	
+	//TODO 获陀螺机动次数规则
+	TopJiDongjobConfig jidongconfig= new TopJiDongjobConfig();
+	//陀螺机动规则包含的4个参数
+	List<String> jDparamlist=new ArrayList<String>();
+	
+	
+
+	
+	
+	
+	public Object process(IDeviceRecord deviceRecord){		
 		if( null==topTempRecord )
-	 	{topTempRecord=deviceRecord;}
-	 	else{
-	 		//获取所有的陀螺的x、y、z三个轴的角速度的sequence值,
-			try {
-				List<ParameterDto> paramlist = ExceptionUtils.getTopjidongcountList();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
+	 	{
+			topTempRecord=deviceRecord;
+		}else{	 					
 			String[] paramValues = deviceRecord.getPropertyVals();
-			String[] param = deviceRecord.getProperties();
-			//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
-			for(int i=0;i<paramValues.length;i++){
-				List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) topjidongjobDtoMap.get(param[i]);
-				
-				if(csDtoCatch==null){
-					csDtoCatch = new ArrayList<CaseSpecialDto>();
-					topjidongjobDtoMap.put(param[i], csDtoCatch);
+			String[] paramSequence = deviceRecord.getProperties();
+			for(int i=0;i<paramSequence.length;i++){
+								
+				//初始机动次数变量
+				String deviceName = paramCode_deviceName_map.get(paramSequence[i]);
+				List<TopJiDongJobDto>  OneTopJiDongJobdtolist = (List<TopJiDongJobDto>) topjidongDtosetMapCach.get(deviceName);				
+				if(OneTopJiDongJobdtolist==null){
+					OneTopJiDongJobdtolist = new ArrayList<TopJiDongJobDto>();
+					topjidongDtosetMapCach.put(deviceName, OneTopJiDongJobdtolist);
+				}								
+				List<TopJiDongJobDto>  OneJDlist = (List<TopJiDongJobDto>) topjidongMap.get(deviceName);				
+				if(OneJDlist==null){
+					OneJDlist = new ArrayList<TopJiDongJobDto>();
+					topjidongMap.put(deviceName, OneJDlist);
 				}
-				//计算陀螺角速度的变化绝对值
-			}			 		
+				
+				//初始化异常点变量
+			}
+						
+//***************************************陀螺特殊工况（机动次数）******************************//							
+			for(int numb=0; numb<topjidongDtosetMapCach.size(); numb++)
+			{
+					/*	try {
+							//TODO 获取参数列表
+							List<ParameterDto> jDparamlist = ExceptionUtils.getTopjidongcountList();
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}*/
+						
+						
+						ArrayList<Double> differenceValuelist = new ArrayList<Double>();
+						String topname=null;
+						for(int j=0;j<jDparamlist.size();j++)
+						{
+							String deviceName = paramCode_deviceName_map.get(jDparamlist.get(j));
+							topname = deviceName;
+							for(int i = 0; i < paramSequence.length; i++)
+							{
+								if(paramSequence[i].equals(jDparamlist.get(j)))
+								{
+									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(topTempRecord.getPropertyVals()[i]));					
+									differenceValuelist.add(differenceValue);
+								}
+							}							
+						}			
+						double min=jidongconfig.getLimitMinValue();
+						double max=jidongconfig.getLimitMaxValue();			
+						//满足条件的参数的个数
+						int n=0;
+						for(int i=0;i<jDparamlist.size();i++)
+						{
+							double differenceValue = differenceValuelist.get(i).doubleValue();
+							if((min<differenceValue)&&(differenceValue<max))
+							{
+								n=n+1;
+							}
+						}			
+						//如果任意两个参数满足条件，则将该记录加入
+						if(n>1)
+						{
+							List<TopJiDongJobDto> topJiDongJobDtolist=topjidongDtosetMapCach.get(topname);
+							
+							TopJiDongJobDto TopJiDongJobPoint = new TopJiDongJobDto();
+							TopJiDongJobPoint.setSeries(deviceRecord.getSeries());
+							TopJiDongJobPoint.setStar(deviceRecord.getStar());
+							TopJiDongJobPoint.setDeviceName(deviceRecord.getName());
+							TopJiDongJobPoint.setTopname(topname);
+							TopJiDongJobPoint.setDateTime(deviceRecord.getTime());
+							TopJiDongJobPoint.set_dateTime(deviceRecord.get_time());
+							topJiDongJobDtolist.add(TopJiDongJobPoint);	
+							//将该记录添加进该陀螺的异常点集合
+							
+						}else{//如果不满足则说明和上一个点不连续
+							List<TopJiDongJobDto> jobDtolist=topjidongDtosetMapCach.get(topname);
+							long begin_time=jobDtolist.get(0).get_dateTime();
+							long end_time=jobDtolist.get(jobDtolist.size()-1).get_dateTime();
+							long delay_time=end_time-begin_time;
+							
+							//如果小于持续时间说明不成立，删除缓存点 
+							if(delay_time<jidongconfig.get_delayTime())
+							{
+								jobDtolist =null;
+							}else{//如果>=持续时间则记录这次机动的开始时间和结束时间
+								TopJiDongJobDto onejd = new TopJiDongJobDto();
+								onejd.setJd_begintime(jobDtolist.get(0).getDateTime());
+								onejd.setJd_endtime(jobDtolist.get(jobDtolist.size()-1).getDateTime());
+								onejd.setSeries(deviceRecord.getSeries());
+								onejd.setStar(deviceRecord.getStar());
+								onejd.setDeviceName(deviceRecord.getName());
+								onejd.setTopname(topname);
+								//添加进入机动情况统计
+								topjidongMap.get(topname).add(onejd);
+								jobDtolist =null;
+							}
+							
+						}
+			}
+//***************************************陀螺特殊工况（机动次数）******************************//			
+											 		
 	 	}
-	 	
-	 	
-		String[] paramValues = deviceRecord.getPropertyVals();
-		String[] param = deviceRecord.getProperties();
-		//给一条记录的每个参数创建一个ArrayList<CaseSpecialDto>（异常点参数名、异常点的时间、异常点的值）集合，放在joblistCatch(参数名，集合)里面
-		for(int i=0;i<paramValues.length;i++){
-			List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
-			if(csDtoCatch==null){
-				csDtoCatch = new ArrayList<CaseSpecialDto>();
-				joblistCatch.put(param[i], csDtoCatch);
-			}
-			List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
-			if(paramEs==null){
-				paramEs =  new ArrayList<ParamExceptionDto>();
-				exelistCatch.put(param[i], paramEs);
-			}
-			
-		}
 		
-		
-		//判断一条记录的每一个参数的特殊工况信息。
-		for(int i=0;i<paramValues.length;i++){
-			
-			//飞轮特殊工况条件说明信息
-			ExceptionCasePointConfig ecpc =  new IPropertyConfigStoreImpl().getPropertyConfigbyParam(new String[]{series,star,deviceName,deviceRecord.getProperties()[i]});
-			
-			long sequence =new AtomicLong(0).incrementAndGet();
-			//如果为空说明该参数不在要求监控的参数列表里面，不需要统计该参数
-			if(ecpc!=null){
-				//判断特殊工况最大值
-				//如果参数值 > 设定的最大值 ，将该值1.存进该参数的异常点集合 2.将该异常点集合存进casDtoMap()
-				if(ecpc.getJobMax()<Double.parseDouble(paramValues[i])){
-					List<CaseSpecialDto>  csDtoCatch = (List<CaseSpecialDto>) joblistCatch.get(param[i]);
-					CaseSpecialDto cDto = new CaseSpecialDto();
-					cDto.setDateTime(deviceRecord.getTime());
-					cDto.setSeries(deviceRecord.getSeries());
-					cDto.setStar(deviceRecord.getStar());
-					cDto.setParamName(param[i]);
-					cDto.setFrequency(ecpc.getCount());
-
-					cDto.setLimitValue(ecpc.getJobMax());
-
-					cDto.setLimitTime(ecpc.getDelayTime());
-					cDto.setSequence(sequence);
-					cDto.setVerisons(deviceRecord.versions());
-					try{
-						//将该异常点放进 该参数的异常点list
-						csDtoCatch.add(cDto);
-					}catch (Exception e) {
-						e.printStackTrace();
-					}
-					//将该参数的异常点List放进  异常点集合（该集合包含所有参数）
-					casDtoMap.put(param[i], csDtoCatch);
-				}
-				
-				//判断异常报警最大值  最小值
-				if(ecpc.getExceptionMax()<Double.parseDouble(paramValues[i]) && Double.parseDouble(paramValues[i])<ecpc.getExceptionMin() ){
-		
-					List<ParamExceptionDto> paramEs =  (List<ParamExceptionDto>) exelistCatch.get(param[i]);
-					ParamExceptionDto peDto =  new ParamExceptionDto();
-					peDto.setParamName(deviceRecord.getProperties()[i]);
-					peDto.setSeries(deviceRecord.getSeries());
-					peDto.setStar(deviceRecord.getStar());
-					peDto.setValue(paramValues[i]);
-					peDto.setTime(deviceRecord.getTime());	
-					peDto.setSequence(sequence);
-					peDto.setVersions(deviceRecord.versions());
-					paramEs.add(peDto);	
-					exceptionDtoMap.put(param[i], paramEs);
-				}
-															
-			}
-	
-		}		
-		return exceptionDtoMap;
+		return null;
 	}
 	
 	
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
-		return ;
+		
+		
+		
 	}
 	
 	public void setBatchContext(BatchContext batchContext) {
