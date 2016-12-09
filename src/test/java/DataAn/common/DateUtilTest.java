@@ -66,6 +66,7 @@ public class DateUtilTest {
 	
 	@Test
 	public void test2(){
-		
+		long _time = new Date().getTime();
+		System.out.println(new Date(_time));
 	}
 }
