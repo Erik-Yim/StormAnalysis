@@ -324,9 +324,10 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 				collector.emit(new Values(Maps.newLinkedHashMap(),getBatchContext()),batchId);
 				return;
 			}
-			
-			tuples.put(batchId, maps);
-			collector.emit(new Values(maps,batchContext),batchId);
+			if(!maps.isEmpty()){
+				tuples.put(batchId, maps);
+				collector.emit(new Values(maps,batchContext),batchId);
+			}
 		}catch (Exception e) {
 			setHasError(true);
 			error(e);
