@@ -81,6 +81,12 @@ public class ExceptionJobConfig implements Serializable {
 		this.count = count;
 	}
 
-
+	@Override
+	public String toString() {
+		return "ExceptionJobConfig [deviceType=" + deviceType + ", deviceName="
+				+ deviceName + ", paramCode=" + paramCode + ", delayTime="
+				+ delayTime + ", max=" + max + ", min=" + min + ", count="
+				+ count + "]";
+	}
 
 }

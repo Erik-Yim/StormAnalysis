@@ -4,7 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import DataAn.common.utils.HttpUtil;
+import DataAn.common.utils.JJSON;
 import DataAn.common.utils.JsonStringToObj;
 import DataAn.dto.ConfigPropertyDto;
 import DataAn.galaxy.option.J9SeriesType;
@@ -26,9 +29,49 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	static{
 		testInit();
 	}
+	
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
-		// TODO Auto-generated method stub
+		return initialize1(context);
+	}
+
+	protected Map<String, ExceptionConfigModel> initialize1(Map context) throws Exception {
+		String series =  (String) context.get("series");
+		String star =  (String) context.get("star");
+		String parameterType =  (String) context.get("device");
+		
+		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
+		String entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		if(entity != null && !"".equals(entity)){
+			Map<String,Object> map = JJSON.get().parse(entity);
+			Object exceptionJobConfigObj = map.get("exceptionJobConfig");
+			Map<String, ExceptionJobConfig> device_exceptionJobConfigs = new HashMap<String, ExceptionJobConfig>();
+			if(exceptionJobConfigObj != null){
+				List<ExceptionJobConfig> jobConfigList = JJSON.get().parse(exceptionJobConfigObj.toString(), new TypeReference<List<ExceptionJobConfig>>(){});
+				for (ExceptionJobConfig exceptionJobConfig : jobConfigList) {
+					paramCode_deviceName_map.put(exceptionJobConfig.getParamCode(), exceptionJobConfig.getDeviceName());
+					device_exceptionJobConfigs.put(exceptionJobConfig.getDeviceName(), exceptionJobConfig);
+				}
+			}
+			
+			Object exceptionPointConfigObj = map.get("exceptionPointConfig");
+			Map<String, ExceptionPointConfig> param_exceptionPointConfigs = new HashMap<String, ExceptionPointConfig>();
+			if(exceptionPointConfigObj != null){
+				List<ExceptionPointConfig> exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
+				for (ExceptionPointConfig exceConfig : exceConfigList) {
+					paramCode_deviceName_map.put(exceConfig.getParamCode(), exceConfig.getDeviceName());
+					param_exceptionPointConfigs.put(exceConfig.getParamCode(), exceConfig);
+				}
+			}
+			ExceptionConfigModel ecm =  new ExceptionConfigModel();
+			ecm.setParamCode_deviceName_map(paramCode_deviceName_map);
+			ecm.setDevice_exceptionJobConfigs(device_exceptionJobConfigs);
+			ecm.setParam_exceptionPointConfigs(param_exceptionPointConfigs);
+			series_start_map.put(context.get("series")+"_"+context.get("star"), ecm);                
+		}			
+		return series_start_map;
+	}
+	protected Map<String, ExceptionConfigModel> initialize2(Map context) throws Exception {
 		String series =  (String) context.get("series");
 		String star =  (String) context.get("star");
 		String parameterType =  (String) context.get("device");
@@ -50,7 +93,6 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
          series_start_map.put(context.get("series")+"_"+context.get("star"), ecm);                
          return series_start_map;
 	}
-
 
 	@Override
 	public void refresh(Object event) {

@@ -22,8 +22,10 @@ public class KafkaProcucerTest {
 
 		Producer<String, String> producer = new KafkaProducer<>(props);
 		for (int i = 0; i < 100; i++){
-			producer.send(new ProducerRecord<String, String>("test", Integer.toString(i), Integer.toString(i)));
+			producer.send(new ProducerRecord<String, String>("test11", 0,Integer.toString(i),
+					Integer.toString(i)));
 		}
+		producer.flush();
 		//必须关闭
 		producer.close();
 	}
