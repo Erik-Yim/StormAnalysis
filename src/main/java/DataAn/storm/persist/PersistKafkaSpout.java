@@ -239,14 +239,14 @@ public class PersistKafkaSpout extends BaseRichSpout {
 				return;
 			}
 			
-			if(latestHeartBeatTime!=0){
+//			if(latestHeartBeatTime!=0){
 				long interval=new Date().getTime()-latestHeartBeatTime;
 				if(interval>120000){ //2minutes
 					release("all bolts process completely.");
 					await();
 					return;
 				}
-			}
+//			}
 			
 //			if(workflowDone){
 //				if(latestPollTime>0){
