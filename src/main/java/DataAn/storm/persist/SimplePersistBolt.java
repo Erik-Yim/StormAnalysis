@@ -26,10 +26,13 @@ public class SimplePersistBolt extends BaseSimpleRichBolt {
 		IMongoPersistService mongoPersistService=  IMongoPersistService.MongoPersistServiceGetter.getMongoPersistService(getStormConf());
 		
 		long begin = System.currentTimeMillis();
-		System.out.println("begin insert many... list size： " +  + mongoPeristModels.size());
+		System.out.println("begin insert many... ");
 		
-		mongoPersistService.persist(mongoPeristModels, getStormConf());
-//		Notify notify=mongoPeristModels.get(0).getNotify();
+		if(mongoPeristModels != null && mongoPeristModels.size() > 0){
+			System.out.println("list size： " + mongoPeristModels.size());
+			mongoPersistService.persist(mongoPeristModels, getStormConf());
+//		Notify notify=mongoPeristModels.get(0).getNotify();			
+		}
 		
 		long end = System.currentTimeMillis();
 		System.out.println("end insert many time: " + (end - begin) +  " mm");
