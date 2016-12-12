@@ -3,6 +3,7 @@ package DataAn.storm.exceptioncheck.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,6 +16,10 @@ import DataAn.storm.Communication;
 import DataAn.storm.IDeviceRecord;
 import DataAn.storm.denoise.ParameterDto;
 import DataAn.storm.exceptioncheck.ExceptionUtils;
+import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
+import DataAn.storm.exceptioncheck.model.PointInfo;
+import DataAn.storm.exceptioncheck.model.TopExceptionPointConfig;
+import DataAn.storm.exceptioncheck.model.TopExceptionPointDto;
 import DataAn.storm.exceptioncheck.model.TopJiDongJobDto;
 import DataAn.storm.exceptioncheck.model.TopJiDongjobConfig;
 import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
@@ -61,8 +66,11 @@ public class TopProcessor {
 	
 	//临时变量，用于保存陀螺的上一条记录。
 	IDeviceRecord topTempRecord=null;
-	//用于存储异常点
-	Map<String,List<TopJiDongJobDto>> topjidongDtoMap =new HashMap<>();
+	
+	//用于存储陀螺异常预警点
+	Map<String,List<TopExceptionPointDto>> 	topExcePointDtoMap =new HashMap<>();
+	//用于存储异常点缓存<参数的sequence值  该参数的异常点的列表>
+	Map<String,List<TopExceptionPointDto>> topExcePointDtoMapCach =new HashMap<>();
 	
 	
 	//用于存储机动次数 <陀螺名  机动详情>
@@ -104,9 +112,28 @@ public class TopProcessor {
 				if(OneJDlist==null){
 					OneJDlist = new ArrayList<TopJiDongJobDto>();
 					topjidongMap.put(deviceName, OneJDlist);
+				}				
+//---------------------------------------陀螺异常点统计------------------------------------//
+				//获取异常配置
+				TopExceptionPointConfig exceConfig = null;//propertyConfigStoreImpl.getParamExceptionPointConfigByParamCode(new String[]{series,star,paramCodes[i]});
+				Double value=Math.abs(Double.parseDouble(paramValues[i]));
+				if(exceConfig != null){
+					//判断异常点: 比最大值大、比最小值小
+					if((exceConfig.getMin() > value) && (exceConfig.getMax() < value)){
+						List<TopExceptionPointDto> exceListCache = topExcePointDtoMapCach.get(paramSequence[i]);
+						if(exceListCache == null){
+							exceListCache = new ArrayList<TopExceptionPointDto>();
+						}
+						TopExceptionPointDto point = new TopExceptionPointDto();
+						point.set_time(deviceRecord.get_time());
+						point.setTime(deviceRecord.getTime());
+						point.setParamCode(paramSequence[i]);
+						point.setParamValue(paramValues[i]);
+						exceListCache.add(point);
+						topExcePointDtoMapCach.put(paramSequence[i], exceListCache);
+					}
 				}
-				
-				//初始化异常点变量
+//---------------------------------------陀螺异常点统计------------------------------------//
 			}
 						
 //***************************************陀螺特殊工况（机动次数）******************************//							
@@ -189,8 +216,11 @@ public class TopProcessor {
 						}
 			}
 //***************************************陀螺特殊工况（机动次数）******************************//			
-											 		
+
 	 	}
+		
+
+		
 		
 		return null;
 	}
