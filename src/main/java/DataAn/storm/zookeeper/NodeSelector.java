@@ -792,6 +792,7 @@ public class NodeSelector implements Serializable{
 							for(String worker:workers){
 								if(!strings.contains(worker)){
 									System.out.println("worker : "+worker +" is shutdown");
+									
 								}
 							}
 						} catch (Exception e) {

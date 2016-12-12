@@ -1,6 +1,5 @@
 package DataAn.common;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +25,7 @@ public class HttpUtilTest {
 		String series = SeriesType.J9_SERIES.getName();
 		String star = J9SeriesType.STRA2.getValue();
 		String parameterType = J9Series_Star_ParameterType.FLYWHEEL.getValue();
-		String entity = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		String entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		System.out.println("content...");
 		System.out.println(entity);
 		//Map<String,String> map = new HashMap<String,String>();
