@@ -5,6 +5,8 @@ import java.util.Map;
 import DataAn.storm.exceptioncheck.model.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
+import DataAn.storm.exceptioncheck.model.TopExceptionPointConfig;
+import DataAn.storm.exceptioncheck.model.TopJiDongjobConfig;
 import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
 
 public interface IPropertyConfigStore {
@@ -30,4 +32,16 @@ public interface IPropertyConfigStore {
 	 */
 	ExceptionPointConfig getParamExceptionPointConfigByParamCode(String ...args);
 	
+	
+	/**
+	 * @return
+	 * 返回所有需要被统计机动次数的陀螺名称和规则
+	 */
+	Map<String,TopJiDongjobConfig> getAllTopJiDongconfig(String ...args);
+	
+	/**
+	 * @param args
+	 * @return 一个文件所有被统计的陀螺的参数和规则
+	 */
+	Map<String,TopExceptionPointConfig> getAllTopExceptionPointconfig(String ...args);
 }
