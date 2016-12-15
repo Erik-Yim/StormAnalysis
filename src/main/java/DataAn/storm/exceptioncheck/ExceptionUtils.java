@@ -6,11 +6,14 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import DataAn.common.utils.JJSON;
-import DataAn.storm.denoise.DenoiseUtils;
-import DataAn.storm.denoise.ParameterDto;
+import DataAn.common.utils.JsonStringToObj;
+import DataAn.storm.exceptioncheck.model.TopJsondto;
+import DataAn.storm.exceptioncheck.model.TopJsonparamdto;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -36,12 +39,20 @@ public class ExceptionUtils {
 	}
 	
 	//获取陀螺机动次数统计的参数
-	public static List<ParameterDto> getTopjidongcountList() throws Exception{
+	/*public static List<ParameterDto> getTopjidongcountList() throws Exception{
 		String string=new String(getBytes(
 				DenoiseUtils.class.getResourceAsStream("topjidongcount.json")),"utf-8");
 		List<ParameterDto> jidongModels=JJSON.get().parse(string, 
 				new TypeReference<ArrayList<ParameterDto>>() {});
 		return jidongModels;
+	};*/
+	public static List<TopJsondto> getTopjidongcountList() throws Exception{
+		String jsonString=new String(getBytes(
+				ExceptionUtils.class.getResourceAsStream("topjidongcount.json")),"utf-8");
+		Map<String, Class<TopJsonparamdto>> classMap = new HashMap<String, Class<TopJsonparamdto>>();
+		classMap.put("jdparamlist", TopJsonparamdto.class);		
+		List<TopJsondto> toplist= JsonStringToObj.jsonArrayToListObject(jsonString,TopJsondto.class,classMap);
+		return toplist;
 	};
 	
 	private static byte[] getBytes(InputStream input) {

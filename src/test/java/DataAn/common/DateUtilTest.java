@@ -3,10 +3,16 @@ package DataAn.common;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
 import DataAn.common.utils.DateUtil;
+import DataAn.storm.denoise.ParameterDto;
+import DataAn.storm.exceptioncheck.ExceptionUtils;
+import DataAn.storm.exceptioncheck.model.TopJsondto;
+import DataAn.storm.exceptioncheck.model.TopJsonparamdto;
 public class DateUtilTest {
 
 	@Test
@@ -68,5 +74,24 @@ public class DateUtilTest {
 	public void test2(){
 		long _time = new Date().getTime();
 		System.out.println(new Date(_time));
+	}
+	@Test
+	public void testgetjson(){
+		try {
+			List<TopJsondto> list =ExceptionUtils.getTopjidongcountList();
+			for(TopJsondto temp:list)
+			{
+				System.out.println(temp.getTopname()+"-"+temp.getJdparamlist().size());
+				for(int i=0;i<temp.getJdparamlist().size();i++)
+				{
+					TopJsonparamdto b=(TopJsonparamdto) temp.getJdparamlist().get(i);
+					System.out.println(b.getCode());
+					
+				}
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
