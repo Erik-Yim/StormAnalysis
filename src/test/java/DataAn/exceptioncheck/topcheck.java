@@ -29,7 +29,8 @@ public class topcheck {
 		j9SeriesService = new J9SeriesService();
 		
 		//String fileName = "j9-02--2000-01-01.csv";
-		String fileName = "j9-02--2005-01-01.csv";		
+		//String fileName = "j9-02--2005-01-01.csv";		
+		String fileName = "j9-02-2014-03-01.csv";		
 		String filePath = "C:\\"+fileName;
 		String series = SeriesType.J9_SERIES.getName();
 		String star = J9SeriesType.STRA2.getValue();
@@ -75,12 +76,18 @@ public class topcheck {
 		System.out.println("数据总数: " + DefaultFetchObjs.size());
 		List<DefaultDeviceRecord> defaultDeviceRecords = new ArrayList<DefaultDeviceRecord>();
 		DefaultDeviceRecord defaultDeviceRecord = null;
-		String[] paramSequence ={"sequence_00814","sequence_00816","sequence_00818",
+		/*String[] paramSequence ={"sequence_00814","sequence_00816","sequence_00818",
 				"sequence_00820","sequence_00822","sequence_00824",
 				"sequence_00815","sequence_00817","sequence_00819",
 				"sequence_00821","sequence_00823","sequence_00825",
 				"sequence_00423","sequence_00424","sequence_00425",
-				"sequence_00426","sequence_00427","sequence_00428"};
+				"sequence_00426","sequence_00427","sequence_00428"};*/
+		String[] paramSequence ={"sequence_00131","sequence_00133","sequence_00135","sequence_00199",
+				"sequence_00208","sequence_00217","sequence_00225",
+				"sequence_00231","sequence_00241","sequence_00200",
+				"sequence_00209","sequence_00216","sequence_00224",
+				"sequence_00230","sequence_00925","sequence_00926",
+				"sequence_00927"};
 		for (DefaultFetchObj defaultFetchObj : DefaultFetchObjs) {
 			defaultDeviceRecord=new DefaultDeviceRecord();		
 			defaultDeviceRecord.setId(defaultFetchObj.getId());

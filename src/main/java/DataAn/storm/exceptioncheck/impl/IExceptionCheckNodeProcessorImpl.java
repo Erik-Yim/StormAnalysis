@@ -24,10 +24,7 @@ public class IExceptionCheckNodeProcessorImpl implements
 		flyWheelProcessor=new FlyWheelProcessor(communication);
 		topProcessor=new TopProcessor(communication);
 	}
-	
-	
-	
-	
+		
 	@Override
 	public Object process(IDeviceRecord deviceRecord) {		
 		 String deviceName =deviceRecord.getName();	

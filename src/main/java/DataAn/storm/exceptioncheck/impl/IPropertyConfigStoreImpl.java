@@ -253,11 +253,11 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			for(int i=0;i<temp.getJdparamlist().size();i++)
 			{
 				TopJsonparamdto b=(TopJsonparamdto) temp.getJdparamlist().get(i);
-				paramslist.add(b.getCode());				
+				paramslist.add(b.getCode());
 			}
-			double max = 50;
-			double min = 0.01;
-			double delaytime = 100000;
+			double max = 0.02;
+			double min = 0.00001;
+			double delaytime = 1000;
 			
 			TopJiDongjobConfig topjidongjobconfig =new TopJiDongjobConfig();
 			
@@ -277,13 +277,13 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	public Map<String, TopExceptionPointConfig> getAllTopExceptionPointconfig(String ...args) {
 		Map<String, TopExceptionPointConfig>  toppointconfigmap=new HashMap();
 		List<String> exparamlist = new ArrayList<String>();
-		exparamlist.add("sequence_00814");
-		exparamlist.add("sequence_00815");
+		exparamlist.add("sequence_00131");
+		//exparamlist.add("sequence_00133");
 		for(String paramsequence:exparamlist)
 		{
 			//TODO 从前台或者其他地方获异常点统计规则
-			double max = 100;
-			double min = 50;
+			double max = 0.2;
+			double min = 0.1;
 			String topName = "陀螺1";
 			
 			TopExceptionPointConfig expointconf=new TopExceptionPointConfig();

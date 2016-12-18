@@ -133,6 +133,7 @@ public class TopProcessor {
 						point.setTopNmae(exceConfig.getTopName());
 						exceListCache.add(point);
 						topExcePointDtoMapCach.put(paramSequence[i], exceListCache);
+						topExcePointDtoMap.put(paramSequence[i], exceListCache);
 					}
 				}
 //---------------------------------------陀螺异常点统计------------------------------------//
@@ -269,8 +270,9 @@ public class TopProcessor {
 				
 			}
 		}
-		System.out.println("异常点"+topExcePointDtoMap.get("sequence_00814").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
-		System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
+		int a=9;
+		System.out.println("异常点"+topExcePointDtoMap.get("sequence_00131").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
+		//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
 //---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//		
 /*		//异常点持久化
 		for (String topname : topExcePointDtoMap.keySet()){
