@@ -74,8 +74,18 @@ public class TopProcessor {
 		versions = communication.getVersions();
 		
 		propertyConfigStoreImpl = new IPropertyConfigStoreImpl();
-		topjobconfigmap=propertyConfigStoreImpl.getAllTopJiDongconfig(new String[]{series,star});
-		toppointconfigmap = propertyConfigStoreImpl.getAllTopExceptionPointconfig(new String[]{series,star});
+		try {
+			topjobconfigmap=propertyConfigStoreImpl.getAllTopJiDongconfig(new String[]{series,star,deviceType});
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			toppointconfigmap = propertyConfigStoreImpl.getAllTopExceptionPointconfig(new String[]{series,star,deviceType});
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 //***************************************统计有几个陀螺******************************//		
 		//判断一共有多少个陀螺
 		String topName =null;
@@ -270,7 +280,6 @@ public class TopProcessor {
 				
 			}
 		}
-		int a=9;
 		System.out.println("异常点"+topExcePointDtoMap.get("sequence_00131").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
 		//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
 //---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//		

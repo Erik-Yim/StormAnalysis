@@ -1,5 +1,6 @@
 package DataAn.common;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -8,7 +9,13 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
+
 import DataAn.common.utils.DateUtil;
+import DataAn.common.utils.HttpUtil;
+import DataAn.galaxy.option.J9SeriesType;
+import DataAn.galaxy.option.J9Series_Star_ParameterType;
+import DataAn.galaxy.option.SeriesType;
 import DataAn.storm.denoise.ParameterDto;
 import DataAn.storm.exceptioncheck.ExceptionUtils;
 import DataAn.storm.exceptioncheck.model.TopJsondto;
@@ -93,5 +100,31 @@ public class DateUtilTest {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	@Test
+	public void testgetconfig(){
+		String series = SeriesType.J9_SERIES.getName();
+		String star = J9SeriesType.STRA2.getValue();
+		String parameterType =J9Series_Star_ParameterType.TOP.getValue();
+		//String parameterType = J9Series_Star_ParameterType.FLYWHEEL.getValue();
+			//String entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+			//System.out.println("陀螺"+entity.toString());
+			//String paramlist =HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getgetExceptionPointConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+			//System.out.println("陀螺异常点列表"+paramlist);
+			
+			String topjidong;
+			try {
+				//TODO URL 需要换为web服务器的URL
+				topjidong = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+				System.out.println("陀螺机动统计规则"+topjidong.toString());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IDLTypeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+	
 	}
 }

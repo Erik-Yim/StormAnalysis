@@ -1,11 +1,13 @@
 package DataAn.storm.exceptioncheck.impl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
 
 import DataAn.common.utils.HttpUtil;
 import DataAn.common.utils.JJSON;
@@ -223,38 +225,86 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	}
 
 	@Override
-	public Map<String, TopJiDongjobConfig> getAllTopJiDongconfig(String ...args) {
-		Map<String,TopJiDongjobConfig> topjobconfigmap =new HashMap();
+	public Map<String, TopJiDongjobConfig> getAllTopJiDongconfig(String ...args) throws Exception{		
 		
+		String series = args[0];
+		String star = args[1];
+		String parameterType = args[2];
+		String entity;
+		Object exceptionPointConfigObj=null;
+		List<ExceptionPointConfig> exceConfigList=null;
+		
+		//entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		entity = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		System.out.println("获取机动次数"+entity);
+		if(entity != null && !"".equals(entity)){
+			Map<String,Object> map = JJSON.get().parse(entity);
+			Object exceptionJobConfigObj = map.get("exceptionJobConfig");
+			exceConfigList = JJSON.get().parse(exceptionJobConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
+		}
+							
+		Map<String,TopJiDongjobConfig> topjobconfigmap =new HashMap();
 		List<TopJsondto> list =new ArrayList<TopJsondto>();
-		try {
-			list = ExceptionUtils.getTopjidongcountList();
-			for(TopJsondto temp:list)
+		
+		list = ExceptionUtils.getTopjidongcountList();
+		for(TopJsondto temp:list)
+		{
+			System.out.println(temp.getTopname()+"-"+temp.getJdparamlist().size());
+			for(int i=0;i<temp.getJdparamlist().size();i++)
 			{
-				System.out.println(temp.getTopname()+"-"+temp.getJdparamlist().size());
-				for(int i=0;i<temp.getJdparamlist().size();i++)
-				{
-					TopJsonparamdto b=(TopJsonparamdto) temp.getJdparamlist().get(i);
-					System.out.println(b.getCode());
-					
-				}
+				TopJsonparamdto b=(TopJsonparamdto) temp.getJdparamlist().get(i);
+				System.out.println(b.getCode());
+				
 			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		
-
 		for(TopJsondto temp:list)
 		{
 			//TODO 从前台或者手动配置  该陀螺机动次数统计 所需的参数列表。
 			String topName =temp.getTopname();
-			List<String> paramslist=new ArrayList<>();
+			List<String> paramslist=new ArrayList<>();			
+			//从JSON文件获取该陀螺判定机动的参数列表:eg:X轴角速度，Y轴角速度，Z轴角速度
 			for(int i=0;i<temp.getJdparamlist().size();i++)
 			{
 				TopJsonparamdto b=(TopJsonparamdto) temp.getJdparamlist().get(i);
 				paramslist.add(b.getCode());
 			}
+			
+			
+			
+			double max = 0.02;
+			double min = 0.00001;
+			double delaytime = 1000;
+			//TODO　按照当前设计这里这里应该只有一个值，应为所有陀螺的最大值、最小值、持续时间都是相同的。
+			for (ExceptionPointConfig exceConfig : exceConfigList) {
+				max=exceConfig.getMax();
+				min=exceConfig.getMin();
+				delaytime =exceConfig.getDelayTime();
+			}
+			
+			TopJiDongjobConfig topjidongjobconfig =new TopJiDongjobConfig();			
+			topjidongjobconfig.setParamslist(paramslist);
+			topjidongjobconfig.setLimitMaxValue(max);
+			topjidongjobconfig.setLimitMinValue(min);
+			topjidongjobconfig.setDelayTime(delaytime);
+			
+			topjobconfigmap.put(topName, topjidongjobconfig);
+		}
+
+		
+
+		/*for(TopJsondto temp:list)
+		{
+			//TODO 从前台或者手动配置  该陀螺机动次数统计 所需的参数列表。
+			String topName =temp.getTopname();
+			List<String> paramslist=new ArrayList<>();			
+			//从JSON文件获取该陀螺判定机动的参数列表:eg:X轴角速度，Y轴角速度，Z轴角速度
+			for(int i=0;i<temp.getJdparamlist().size();i++)
+			{
+				TopJsonparamdto b=(TopJsonparamdto) temp.getJdparamlist().get(i);
+				paramslist.add(b.getCode());
+			}
+						
 			double max = 0.02;
 			double min = 0.00001;
 			double delaytime = 1000;
@@ -267,33 +317,64 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			topjidongjobconfig.setDelayTime(delaytime);
 			
 			topjobconfigmap.put(topName, topjidongjobconfig);
-		}
-		
+		}*/
 		
 		return topjobconfigmap;
 	}
 
 	@Override
-	public Map<String, TopExceptionPointConfig> getAllTopExceptionPointconfig(String ...args) {
-		Map<String, TopExceptionPointConfig>  toppointconfigmap=new HashMap();
-		List<String> exparamlist = new ArrayList<String>();
-		exparamlist.add("sequence_00131");
-		//exparamlist.add("sequence_00133");
-		for(String paramsequence:exparamlist)
-		{
-			//TODO 从前台或者其他地方获异常点统计规则
-			double max = 0.2;
-			double min = 0.1;
-			String topName = "陀螺1";
+	public Map<String, TopExceptionPointConfig> getAllTopExceptionPointconfig(String ...args) throws Exception {
+		
+		String series = args[0];
+		String star = args[1];
+		String parameterType = args[2];		
+		String entity;
+		Object exceptionPointConfigObj=null;
+		List<ExceptionPointConfig> exceConfigList=null;
+		
+		entity = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		System.out.println("获取机动异常点规则"+entity);
+		if(entity != null && !"".equals(entity)){		
+			Map<String,Object> map = JJSON.get().parse(entity);
+			exceptionPointConfigObj = map.get("exceptionPointConfig");
+			exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
+		}			
+			//————————————————将从前台获取到的配置信息转换————————————————————————————//
+			List<String> exparamlist = new ArrayList<String>();
+			Map<String, TopExceptionPointConfig>  toppointconfigmap=new HashMap();
+			/*exparamlist.add("sequence_00131");
+			//exparamlist.add("sequence_00133");*/
+			for (ExceptionPointConfig exceConfig : exceConfigList) {
+				exparamlist.add(exceConfig.getParamCode());
+				double max = exceConfig.getMax();
+				double min = exceConfig.getMin();
+				String topName = exceConfig.getDeviceName();
+				
+				TopExceptionPointConfig expointconf=new TopExceptionPointConfig();
+				expointconf.setParamCode(exceConfig.getParamCode());
+				expointconf.setMax(max);
+				expointconf.setMin(min);
+				expointconf.setTopName(topName);
+				
+				toppointconfigmap.put(exceConfig.getParamCode(), expointconf);
+				
+			}
 			
-			TopExceptionPointConfig expointconf=new TopExceptionPointConfig();
-			expointconf.setParamCode(paramsequence);
-			expointconf.setMax(max);
-			expointconf.setMin(min);
-			expointconf.setTopName(topName);
-			
-			toppointconfigmap.put(paramsequence, expointconf);
-		}
+			/*for(String paramsequence:exparamlist)
+			{
+				//TODO 从前台或者其他地方获异常点统计规则
+				double max = 0.2;
+				double min = 0.1;
+				String topName = "陀螺1";
+				
+				TopExceptionPointConfig expointconf=new TopExceptionPointConfig();
+				expointconf.setParamCode(paramsequence);
+				expointconf.setMax(max);
+				expointconf.setMin(min);
+				expointconf.setTopName(topName);
+				
+				toppointconfigmap.put(paramsequence, expointconf);
+			}*/
 		return toppointconfigmap;
 	}
 
