@@ -231,16 +231,16 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		String star = args[1];
 		String parameterType = args[2];
 		String entity;
-		Object exceptionPointConfigObj=null;
-		List<ExceptionPointConfig> exceConfigList=null;
+		Object exceptionJobConfigObj;
+		List<ExceptionJobConfig> exceConfigList=null;
 		
 		//entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		entity = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		System.out.println("获取机动次数"+entity);
 		if(entity != null && !"".equals(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);
-			Object exceptionJobConfigObj = map.get("exceptionJobConfig");
-			exceConfigList = JJSON.get().parse(exceptionJobConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
+			exceptionJobConfigObj = map.get("exceptionJobConfig");
+			exceConfigList = JJSON.get().parse(exceptionJobConfigObj.toString(), new TypeReference<List<ExceptionJobConfig>>(){});
 		}
 							
 		Map<String,TopJiDongjobConfig> topjobconfigmap =new HashMap();
@@ -276,7 +276,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			double min = 0.00001;
 			double delaytime = 1000;
 			//TODO　按照当前设计这里这里应该只有一个值，应为所有陀螺的最大值、最小值、持续时间都是相同的。
-			for (ExceptionPointConfig exceConfig : exceConfigList) {
+			for (ExceptionJobConfig exceConfig : exceConfigList) {
 				max=exceConfig.getMax();
 				min=exceConfig.getMin();
 				delaytime =exceConfig.getDelayTime();

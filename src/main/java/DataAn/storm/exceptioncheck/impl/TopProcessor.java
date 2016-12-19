@@ -249,7 +249,7 @@ public class TopProcessor {
 	
 	
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
-		System.out.println("持久化");
+		System.out.println("陀螺预警持久化");
 //---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//
 		for(String topNamekey:jobTimeSetMap.keySet())
 		{
@@ -280,10 +280,10 @@ public class TopProcessor {
 				
 			}
 		}
-		System.out.println("异常点"+topExcePointDtoMap.get("sequence_00131").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
+		//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00131").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
 		//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
 //---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//		
-/*		//异常点持久化
+		//异常点持久化
 		for (String topname : topExcePointDtoMap.keySet()){
 			List<TopExceptionPointDto> exceptionpointlist = topExcePointDtoMap.get(topname);
 			if(exceptionpointlist == null || exceptionpointlist.size() == 0)
@@ -291,11 +291,12 @@ public class TopProcessor {
 			for (TopExceptionPointDto exceptionpoint : exceptionpointlist) {
 				//TODO 将对象转换成字符串
 				String jonContext = JJSON.get().formatObject(exceptionpoint);
+				System.out.println("异常点"+jonContext);
 				MongoPeristModel mpModel=new MongoPeristModel();
 				mpModel.setCollections(new String[]{deviceType+"_job"});
 				mpModel.setContent(jonContext);
 				mpModel.setVersions(versions);
-				simpleProducer.send(mpModel,communication.getPersistTopicPartition());
+				//simpleProducer.send(mpModel,communication.getPersistTopicPartition());
 				
 			}
 		}
@@ -307,13 +308,14 @@ public class TopProcessor {
 			for (TopJiDongJobDto jidongrecord : jidonglist) {
 				//TODO 将对象转换成字符串
 				String jonContext = JJSON.get().formatObject(jidongrecord);
+				//System.out.println("特殊工况："+jonContext);
 				MongoPeristModel mpModel=new MongoPeristModel();
 				mpModel.setCollections(new String[]{deviceType+"_job"});
 				mpModel.setContent(jonContext);
 				mpModel.setVersions(versions);
-				simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
+				//simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
 			}
-		}*/
+		}
 		
 	}
 	
