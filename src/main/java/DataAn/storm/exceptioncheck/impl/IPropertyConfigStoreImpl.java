@@ -235,7 +235,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		List<ExceptionJobConfig> exceConfigList=null;
 		
 		//entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
-		entity = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		entity = HttpUtil.get("http://192.168.0.158/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		System.out.println("获取机动次数"+entity);
 		if(entity != null && !"".equals(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);
@@ -332,7 +332,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		Object exceptionPointConfigObj=null;
 		List<ExceptionPointConfig> exceConfigList=null;
 		
-		entity = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		entity = HttpUtil.get("http://192.168.0.158/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		System.out.println("获取机动异常点规则"+entity);
 		if(entity != null && !"".equals(entity)){		
 			Map<String,Object> map = JJSON.get().parse(entity);
