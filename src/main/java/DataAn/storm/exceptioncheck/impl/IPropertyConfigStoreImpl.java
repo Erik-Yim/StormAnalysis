@@ -1,6 +1,7 @@
 package DataAn.storm.exceptioncheck.impl;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,8 @@ import DataAn.galaxy.option.J9SeriesType;
 import DataAn.galaxy.option.J9Series_Star_ParameterType;
 import DataAn.galaxy.option.SeriesType;
 import DataAn.galaxy.service.J9SeriesParamConfigService;
+import DataAn.storm.BaseConfig;
+import DataAn.storm.StormUtils;
 import DataAn.storm.exceptioncheck.ExceptionUtils;
 import DataAn.storm.exceptioncheck.IPropertyConfigStore;
 import DataAn.storm.exceptioncheck.model.ExceptionConfigModel;
@@ -28,6 +31,9 @@ import DataAn.storm.exceptioncheck.model.TopJiDongjobConfig;
 import DataAn.storm.exceptioncheck.model.TopJsondto;
 import DataAn.storm.exceptioncheck.model.TopJsonparamdto;
 import DataAn.storm.exceptioncheck.model0.ExceptionCasePointConfig;
+import DataAn.storm.zookeeper.ZooKeeperClient;
+import DataAn.storm.zookeeper.ZooKeeperNameKeys;
+import DataAn.storm.zookeeper.ZooKeeperClient.ZookeeperExecutor;
 
 
 
@@ -35,22 +41,42 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	
 	private static Map<String,ExceptionConfigModel> series_start_map = new HashMap<>();
 	
-	static{
-		testInit();
-	}
+//	static{
+//		testInit();
+//	}
 	
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
-		return initialize1(context);
+		Map conf=new HashMap<>();
+		BaseConfig baseConfig=null;
+		baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
+		ZooKeeperNameKeys.setZooKeeperServer(conf, baseConfig.getZooKeeper());
+		ZooKeeperNameKeys.setNamespace(conf, baseConfig.getNamespace());
+		ZookeeperExecutor executor=new ZooKeeperClient()
+				.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
+				.namespace(ZooKeeperNameKeys.getNamespace(conf))
+				.build();
+		String path = "serverConfig";
+		byte[] bytes = executor.getPath(path);
+		String serverConfig = new String(bytes, Charset.forName("utf-8"));
+		context.put("serverConfig", serverConfig);
+		String parameterType =  (String) context.get("device");
+		if(parameterType.equals("flywheel"))
+			return initializeFlywheel(context);
+		else if(parameterType.equals("top"))
+			return initializeTop(context);
+		
+		return null;
 	}
 
-	protected Map<String, ExceptionConfigModel> initialize1(Map context) throws Exception {
+	protected Map<String, ExceptionConfigModel> initializeFlywheel(Map context) throws Exception {
 		String series =  (String) context.get("series");
 		String star =  (String) context.get("star");
 		String parameterType =  (String) context.get("device");
+		String serverConfig = (String) context.get("serverConfig");
 		
 		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
-		String entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		if(entity != null && !"".equals(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);
 			Object exceptionJobConfigObj = map.get("exceptionJobConfig");
@@ -76,16 +102,17 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			ecm.setParamCode_deviceName_map(paramCode_deviceName_map);
 			ecm.setDevice_exceptionJobConfigs(device_exceptionJobConfigs);
 			ecm.setParam_exceptionPointConfigs(param_exceptionPointConfigs);
-			series_start_map.put(context.get("series")+"_"+context.get("star"), ecm);                
+			series_start_map.put(context.get("series")+"_"+context.get("star"), ecm);
 		}			
 		return series_start_map;
 	}
-	protected Map<String, ExceptionConfigModel> initialize2(Map context) throws Exception {
+	protected Map<String, ExceptionConfigModel> initializeTop(Map context) throws Exception {
 		String series =  (String) context.get("series");
 		String star =  (String) context.get("star");
 		String parameterType =  (String) context.get("device");
-
-		 String entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		String serverConfig = (String) context.get("serverConfig");
+		
+		 String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		 
 		 Map<String, Class<ExceptionCasePointConfig>> classMap = new HashMap<String, Class<ExceptionCasePointConfig>>();
 		 classMap.put("parameterInfos", ExceptionCasePointConfig.class);
