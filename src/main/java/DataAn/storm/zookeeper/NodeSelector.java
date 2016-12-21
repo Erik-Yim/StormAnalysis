@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.curator.framework.api.GetChildrenBuilder;
 import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -25,6 +26,7 @@ import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.storm.shade.com.google.common.collect.Maps;
 
 import DataAn.common.utils.DateUtil;
+import DataAn.common.utils.HttpUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.storm.Communication;
 import DataAn.storm.ErrorMsg;
@@ -729,8 +731,10 @@ public class NodeSelector implements Serializable{
 		attachWorfkowTriggerWatcher();
 		attachWorfkowReportWorkersWatcher();
 		registerLeaderInZookeeper();
-	}
-	
+		//检查流程是否超时
+		checkWorkingIsOvertime();
+	}	
+
 	private Instance createInstance(Communication communication){
 		Long sequence=getSequence();
 		Instance instance=new Instance();
@@ -750,6 +754,7 @@ public class NodeSelector implements Serializable{
 		if(!executor.exists(path)){
 			executor.createPath(path);
 		}
+
 		return instance;
 	}
 	
@@ -792,6 +797,8 @@ public class NodeSelector implements Serializable{
 							for(String worker:workers){
 								if(!strings.contains(worker)){
 									System.out.println("worker : "+worker +" is shutdown");
+									//TODO 通过zookeeper 配置服务器IP
+									HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/updateServerStatus?workerId="+worker);
 									
 								}
 							}
@@ -808,6 +815,50 @@ public class NodeSelector implements Serializable{
 				}
 			}),PathChildrenCacheEvent.Type.CHILD_REMOVED);
 		master.reportWorkerCache=cache;
+	}
+	
+	private void checkWorkingIsOvertime() {
+		final String path = pluginWorkersPath();
+		
+		delayService.scheduleAtFixedRate(
+				new Runnable(){
+					public void run() {
+						try {
+							List<String> workerNums = executor.backend().getChildren().forPath(path);
+							boolean flag = false;
+							for (String workerNum : workerNums) {
+								List<String> children = executor.backend().getChildren().forPath(workerNum);
+								if(children != null && children.size() > 0){
+									//正在处理任务
+									flag = true;
+									break;
+								}
+							}
+							//标志当前无任务处理
+							if(!flag){
+								//TODO 获取目录
+								List<String> taskPaths = executor.backend().getChildren().forPath("/sit-test/flow-tasks");
+								for (String taskPath : taskPaths) {
+									Communication dest =JJSON.get().parse(new String(executor.getPath(taskPath), Charset.forName("utf-8"))
+																	,Communication.class);
+									if(dest.getStatus().equals("PROCESSING")){
+										executor.deletePath(taskPath);
+										FlowUtils.setError(executor, dest, "数据处理超时...");
+										break;
+									}
+									
+								}
+							}
+						} catch (Exception e) {
+							
+							e.printStackTrace();
+						}
+					}
+					
+				},
+				10,
+				20,
+				TimeUnit.MINUTES);
 	}
 	
 	private void attachWorfkowTriggerWatcher(){
