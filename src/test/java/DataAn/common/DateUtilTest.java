@@ -127,4 +127,14 @@ public class DateUtilTest {
 			
 	
 	}
+	
+	@Test
+	public void test5(){
+		Date date = DateUtil.format("2014年01月31日22时54分54.796秒", "yyyy年MM月dd日HH时mm分ss.SSS秒");
+		System.out.println(date);
+		System.out.println(DateUtil.format(date));
+		System.out.println("2014年01月31日22时54分54秒".length());
+		System.out.println(DateUtil.formatString("2014年01月31日22时54分54.796秒", "yyyy年MM月dd日HH时mm分ss.SSS秒", "yyyy年MM月dd日HH时mm分ss秒"));
+		
+	}
 }

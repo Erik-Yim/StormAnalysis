@@ -57,7 +57,9 @@ public class J9SeriesService {
 				//CSV格式文件为逗号分隔符文件，这里根据逗号切分
 				String[] items = line.split(",");
 				date = items[0].trim();
-				date =date.substring(0,19)+"秒";
+				if(date.length() > 20){
+					date =DateUtil.formatString(date, "yyyy年MM月dd日HH时mm分ss.SSS秒", "yyyy年MM月dd日HH时mm分ss秒");		
+				}
 				dateTime = DateUtil.format(date, "yyyy年MM月dd日HH时mm分ss秒");
 				
 				String[] propertyVals = new String[array.length - 1];
