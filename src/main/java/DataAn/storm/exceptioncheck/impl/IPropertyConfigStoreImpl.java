@@ -57,7 +57,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 				.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 				.namespace(ZooKeeperNameKeys.getNamespace(conf))
 				.build();
-		String path = "serverConfig";
+		String path = "/cfg/serverConfig";
 		byte[] bytes = executor.getPath(path);
 		String serverConfig = new String(bytes, Charset.forName("utf-8"));
 		context.put("serverConfig", serverConfig);
