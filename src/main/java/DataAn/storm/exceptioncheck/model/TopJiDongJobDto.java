@@ -1,6 +1,7 @@
 package DataAn.storm.exceptioncheck.model;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,13 +42,14 @@ public class TopJiDongJobDto {
 		
 				
 		private String series;
-		
 		private String star;
 		
-		private String deviceName;
 		
-		private String verisons;
-		
+		private String versions;// 一次csv上传的版本
+		private String deviceName;// 设备名称 Xa
+		private Date beginDate;// 开始时间		
+		private Date endDate;// 结束时间
+		private String deviceType;// 设备类型
 		
 		
 
@@ -99,13 +101,6 @@ public class TopJiDongJobDto {
 			this.deviceName = deviceName;
 		}
 
-		public String getVerisons() {
-			return verisons;
-		}
-
-		public void setVerisons(String verisons) {
-			this.verisons = verisons;
-		}
 
 		public String getTopname() {
 			return topname;
@@ -153,6 +148,38 @@ public class TopJiDongJobDto {
 
 		public void setJd_endtime(String jd_endtime) {
 			this.jd_endtime = jd_endtime;
+		}
+
+		public String getVersions() {
+			return versions;
+		}
+
+		public void setVersions(String versions) {
+			this.versions = versions;
+		}
+
+		public Date getBeginDate() {
+			return beginDate;
+		}
+
+		public void setBeginDate(Date beginDate) {
+			this.beginDate = beginDate;
+		}
+
+		public Date getEndDate() {
+			return endDate;
+		}
+
+		public void setEndDate(Date endDate) {
+			this.endDate = endDate;
+		}
+
+		public String getDeviceType() {
+			return deviceType;
+		}
+
+		public void setDeviceType(String deviceType) {
+			this.deviceType = deviceType;
 		}
 
 
