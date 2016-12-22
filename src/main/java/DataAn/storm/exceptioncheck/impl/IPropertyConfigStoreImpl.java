@@ -41,12 +41,13 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	
 	private static Map<String,ExceptionConfigModel> series_start_map = new HashMap<>();
 	
-//	static{
-//		testInit();
-//	}
+	static{
+		testInit();
+	}
 	
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
+		series_start_map.clear();
 		Map conf=new HashMap<>();
 		BaseConfig baseConfig=null;
 		baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
@@ -62,9 +63,11 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		context.put("serverConfig", serverConfig);
 		String parameterType =  (String) context.get("device");
 		if(parameterType.equals("flywheel"))
-			return initializeFlywheel(context);
-		else if(parameterType.equals("top"))
-			return initializeTop(context);
+			initializeFlywheel(context);
+		else if(parameterType.equals("top")){
+			initializeTop(context);
+			
+		}
 		
 		return null;
 	}
