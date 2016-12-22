@@ -41,12 +41,13 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	
 	private static Map<String,ExceptionConfigModel> series_start_map = new HashMap<>();
 	
-//	static{
-//		testInit();
-//	}
+	static{
+		testInit();
+	}
 	
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
+		series_start_map.clear();
 		Map conf=new HashMap<>();
 		BaseConfig baseConfig=null;
 		baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
@@ -62,9 +63,11 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		context.put("serverConfig", serverConfig);
 		String parameterType =  (String) context.get("device");
 		if(parameterType.equals("flywheel"))
-			return initializeFlywheel(context);
-		else if(parameterType.equals("top"))
-			return initializeTop(context);
+			initializeFlywheel(context);
+		else if(parameterType.equals("top")){
+			initializeTop(context);
+			
+		}
 		
 		return null;
 	}
@@ -112,21 +115,81 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		String parameterType =  (String) context.get("device");
 		String serverConfig = (String) context.get("serverConfig");
 		
-		 String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
-		 
-		 Map<String, Class<ExceptionCasePointConfig>> classMap = new HashMap<String, Class<ExceptionCasePointConfig>>();
-		 classMap.put("parameterInfos", ExceptionCasePointConfig.class);
-         ConfigPropertyDto cdto =JsonStringToObj.jsonToObject(entity,ConfigPropertyDto.class,classMap);
-       //  List<ConfigPropertyDto> cDtos =JJSON(entity,ConfigPropertyDto.class,classMap);
-         ExceptionConfigModel ecm =  new ExceptionConfigModel();
-         
-         Map<String,List<ExceptionCasePointConfig>> deviceParams = new HashMap<>();
-//         for(ConfigPropertyDto cdto:cDtos){
-        	 deviceParams.put(cdto.getDevice(), cdto.getParameterInfos());        	 
-//         }
-         
-         ecm.setExceptionCasePointConfigs(deviceParams);
-         series_start_map.put(context.get("series")+"_"+context.get("star"), ecm);                
+		 //String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
+		String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+""); 
+		if(entity != null && !"".equals(entity)){
+			Map<String,Object> map = JJSON.get().parse(entity);						
+			//机动规则
+			Object exceptionJobConfigObj = map.get("exceptionJobConfig");			
+			Map<String, ExceptionJobConfig> device_exceptionJobConfigs = new HashMap<String, ExceptionJobConfig>();
+			Map<String,TopJiDongjobConfig> topjobconfigmap =new HashMap();
+			if(exceptionJobConfigObj != null){
+				List<ExceptionJobConfig> exceConfigList = JJSON.get().parse(exceptionJobConfigObj.toString(), new TypeReference<List<ExceptionJobConfig>>(){});
+				//规则转化							
+				List<TopJsondto> toplist =new ArrayList<TopJsondto>();			
+				toplist = ExceptionUtils.getTopjidongcountList();		
+				for(TopJsondto temp:toplist)
+				{
+					//TODO 从前台或者手动配置  该陀螺机动次数统计 所需的参数列表。
+					String topName =temp.getTopname();
+					List<String> paramslist=new ArrayList<>();
+					//从JSON文件获取该陀螺判定机动的参数列表:eg:X轴角速度，Y轴角速度，Z轴角速度
+					for(int i=0;i<temp.getJdparamlist().size();i++)
+					{
+						TopJsonparamdto b=(TopJsonparamdto) temp.getJdparamlist().get(i);
+						paramslist.add(b.getCode());
+					}					
+					double max = 0.06;
+					double min = 0.05;
+					double delaytime = 5000;
+					//TODO　按照当前设计这里这里应该只有一个值，应为所有陀螺的最大值、最小值、持续时间都是相同的。
+					for (ExceptionJobConfig exceConfig : exceConfigList) {
+						max=exceConfig.getMax();
+						min=exceConfig.getMin();
+						delaytime =exceConfig.getDelayTime();
+					}					
+					TopJiDongjobConfig topjidongjobconfig =new TopJiDongjobConfig();			
+					topjidongjobconfig.setParamslist(paramslist);
+					topjidongjobconfig.setLimitMaxValue(max);
+					topjidongjobconfig.setLimitMinValue(min);
+					topjidongjobconfig.setDelayTime(delaytime);					
+					topjobconfigmap.put(topName, topjidongjobconfig);					
+					//paramCode_deviceName_map.put(topName, topName);
+					//device_exceptionJobConfigs.put(topName, topjobconfigmap);
+				}							
+			}
+					
+			//异常规则
+			Object exceptionPointConfigObj = map.get("exceptionPointConfig");			
+			//Map<String, ExceptionPointConfig> param_exceptionPointConfigs = new HashMap<String, ExceptionPointConfig>();			
+			Map<String,TopExceptionPointConfig> toppointconfigmap = new HashMap<>();			
+			List<String> exparamlist = new ArrayList<String>();
+			List<ExceptionPointConfig> exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
+			for (ExceptionPointConfig exceConfig : exceConfigList) {
+				exparamlist.add(exceConfig.getParamCode());
+				double max = exceConfig.getMax();
+				double min = exceConfig.getMin();
+				String topName = exceConfig.getDeviceName();
+				
+				TopExceptionPointConfig expointconf=new TopExceptionPointConfig();
+				expointconf.setParamCode(exceConfig.getParamCode());
+				expointconf.setMax(max);
+				expointconf.setMin(min);
+				expointconf.setTopName(topName);
+				
+				toppointconfigmap.put(exceConfig.getParamCode(), expointconf);
+				
+			}			
+			//将获取到的规则保存进ECM
+			ExceptionConfigModel ecm =  new ExceptionConfigModel();
+			//ecm.setParamCode_deviceName_map(paramCode_deviceName_map);
+			//ecm.setDevice_exceptionJobConfigs(device_exceptionJobConfigs);
+			//ecm.setParam_exceptionPointConfigs(param_exceptionPointConfigs);
+			ecm.setTopjobconfigmap(topjobconfigmap);
+			ecm.setToppointconfigmap(toppointconfigmap);
+			series_start_map.put(context.get("series")+"_"+context.get("star"), ecm);		
+		}						              
          return series_start_map;
 	}
 
@@ -202,6 +265,33 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		return null;
 	}
 	
+	@Override
+	public  Map<String,TopJiDongjobConfig> gettopjidongrules(String... args){
+		//Map<String,TopJiDongjobConfig> topjobconfigmap = new HashMap<>();
+		//ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
+		//return topjobconfigmap;
+		
+		int i = 0;
+		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
+		if(ecfm != null){
+			if(ecfm.getTopjobconfigmap() != null){
+				return ecfm.getTopjobconfigmap();				
+			}
+		}
+		return null;
+	}
+	
+	@Override
+	public  Map<String,TopExceptionPointConfig> gettoppointrules(String... args){
+		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
+		if(ecfm != null){
+			if(ecfm.getToppointconfigmap() != null){
+				return ecfm.getToppointconfigmap();				
+			}
+		}
+		return null;
+	}
+	
 	protected static void testInit(){
 		String series = SeriesType.J9_SERIES.getName();
 		String star = J9SeriesType.STRA2.getValue();
@@ -262,7 +352,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		List<ExceptionJobConfig> exceConfigList=null;
 		
 		//entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
-		entity = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		entity = HttpUtil.get("http://192.168.0.158/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		System.out.println("获取机动次数"+entity);
 		if(entity != null && !"".equals(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);
@@ -359,7 +449,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		Object exceptionPointConfigObj=null;
 		List<ExceptionPointConfig> exceConfigList=null;
 		
-		entity = HttpUtil.get("http://localhost:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
+		entity = HttpUtil.get("http://192.168.0.158/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		System.out.println("获取机动异常点规则"+entity);
 		if(entity != null && !"".equals(entity)){		
 			Map<String,Object> map = JJSON.get().parse(entity);
