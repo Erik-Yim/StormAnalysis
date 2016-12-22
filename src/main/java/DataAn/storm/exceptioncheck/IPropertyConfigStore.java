@@ -44,4 +44,10 @@ public interface IPropertyConfigStore {
 	 * @return 一个文件所有被统计的陀螺的参数和规则
 	 */
 	Map<String,TopExceptionPointConfig> getAllTopExceptionPointconfig(String ...args) throws Exception;
+
+
+	Map<String, TopJiDongjobConfig> gettopjidongrules(String[] args);
+
+
+	Map<String, TopExceptionPointConfig> gettoppointrules(String[] args);
 }

@@ -1,6 +1,15 @@
 package DataAn.storm.exceptioncheck.model;
 
+import java.util.Date;
+
 public class TopExceptionPointDto {
+	
+	private String config;// 配置
+	
+	private String versions;// 一次csv上传的版本 
+	private Date beginDate;// 开始时间
+	private Date endDate;// 结束时间
+	private String deviceType;// 设备类型
 	
 	private String topNmae;  //当前参数属于哪个陀螺
 	private String paramCode;// 参数Code
@@ -49,6 +58,46 @@ public class TopExceptionPointDto {
 
 	public void setTopNmae(String topNmae) {
 		this.topNmae = topNmae;
+	}
+
+	public String getConfig() {
+		return config;
+	}
+
+	public void setConfig(String config) {
+		this.config = config;
+	}
+
+	public String getVersions() {
+		return versions;
+	}
+
+	public void setVersions(String versions) {
+		this.versions = versions;
+	}
+
+	public Date getBeginDate() {
+		return beginDate;
+	}
+
+	public void setBeginDate(Date beginDate) {
+		this.beginDate = beginDate;
+	}
+
+	public Date getEndDate() {
+		return endDate;
+	}
+
+	public void setEndDate(Date endDate) {
+		this.endDate = endDate;
+	}
+
+	public String getDeviceType() {
+		return deviceType;
+	}
+
+	public void setDeviceType(String deviceType) {
+		this.deviceType = deviceType;
 	}
 
 }

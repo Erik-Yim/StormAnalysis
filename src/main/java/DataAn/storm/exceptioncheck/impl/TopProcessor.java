@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
 import DataAn.dto.ParamExceptionDto;
@@ -20,6 +21,7 @@ import DataAn.storm.IDeviceRecord;
 import DataAn.storm.denoise.ParameterDto;
 import DataAn.storm.exceptioncheck.ExceptionUtils;
 import DataAn.storm.exceptioncheck.model.ExceptionJob;
+import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
 import DataAn.storm.exceptioncheck.model.PointInfo;
 import DataAn.storm.exceptioncheck.model.TopExceptionPointConfig;
@@ -74,18 +76,20 @@ public class TopProcessor {
 		versions = communication.getVersions();
 		
 		propertyConfigStoreImpl = new IPropertyConfigStoreImpl();
-		try {
+		/*try {
 			topjobconfigmap=propertyConfigStoreImpl.getAllTopJiDongconfig(new String[]{series,star,deviceType});
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		try {
 			toppointconfigmap = propertyConfigStoreImpl.getAllTopExceptionPointconfig(new String[]{series,star,deviceType});
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
+		
+		topjobconfigmap =propertyConfigStoreImpl.gettopjidongrules(new String[]{series,star});
+		toppointconfigmap=propertyConfigStoreImpl.gettoppointrules(new String[]{series,star});
+
 //***************************************统计有几个陀螺******************************//		
 		//判断一共有多少个陀螺
 		String topName =null;
@@ -116,6 +120,12 @@ public class TopProcessor {
 	}
 	
 	public Object process(IDeviceRecord deviceRecord){		
+		if(deviceRecord==null || topjobconfigmap==null ||toppointconfigmap==null)
+		{
+			System.out.println("陀螺记录为空或者判断规则为空");
+			return null;
+		}
+		
 		if( null==topTempRecord )
 	 	{
 			topTempRecord=deviceRecord;
@@ -141,6 +151,11 @@ public class TopProcessor {
 						point.setParamCode(paramSequence[i]);
 						point.setParamValue(paramValues[i]);
 						point.setTopNmae(exceConfig.getTopName());
+						
+						point.setVersions(versions);
+						point.setBeginDate(DateUtil.format(deviceRecord.getTime()));
+						point.setEndDate(DateUtil.format(deviceRecord.getTime()));
+						point.setDeviceType(deviceType);
 						exceListCache.add(point);
 						topExcePointDtoMapCach.put(paramSequence[i], exceListCache);
 						topExcePointDtoMap.put(paramSequence[i], exceListCache);
@@ -195,7 +210,8 @@ public class TopProcessor {
 							TopJiDongJobPoint.setTopname(topname);
 							TopJiDongJobPoint.setDateTime(deviceRecord.getTime());
 							TopJiDongJobPoint.set_dateTime(deviceRecord.get_time());
-							topJiDongJobDtolist.add(TopJiDongJobPoint);	
+							topJiDongJobDtolist.add(TopJiDongJobPoint);
+							
 							topjidongDtosetMapCach.put(topname, topJiDongJobDtolist);
 							//将该记录添加进该陀螺的异常点集合
 						}else{//如果不满足则说明和上一个点不连续,持续时间到此结束
@@ -219,8 +235,14 @@ public class TopProcessor {
 									onejd.setJd_endtime(jobDtolist.get(jobDtolist.size()-1).getDateTime());
 									onejd.setSeries(deviceRecord.getSeries());
 									onejd.setStar(deviceRecord.getStar());
-									onejd.setDeviceName(deviceRecord.getName());
+									//onejd.setDeviceName(deviceRecord.getName());
 									onejd.setTopname(topname);
+									
+									onejd.setVersions(versions);
+									onejd.setDeviceName(topname);
+									onejd.setBeginDate(DateUtil.format(jobDtolist.get(0).getDateTime()));
+									onejd.setEndDate(DateUtil.format(jobDtolist.get(jobDtolist.size()-1).getDateTime()));
+									onejd.setDeviceType(deviceType);
 									//添加进入机动情况统计
 									topjidongMap.get(topname).add(onejd);
 																	
@@ -296,7 +318,7 @@ public class TopProcessor {
 				mpModel.setCollections(new String[]{deviceType+"_job"});
 				mpModel.setContent(jonContext);
 				mpModel.setVersions(versions);
-				//simpleProducer.send(mpModel,communication.getPersistTopicPartition());
+				simpleProducer.send(mpModel,communication.getPersistTopicPartition());
 				
 			}
 		}
@@ -313,7 +335,7 @@ public class TopProcessor {
 				mpModel.setCollections(new String[]{deviceType+"_job"});
 				mpModel.setContent(jonContext);
 				mpModel.setVersions(versions);
-				//simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
+				simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
 			}
 		}
 		
