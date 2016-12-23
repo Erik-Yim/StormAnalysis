@@ -227,12 +227,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 	@Override
 	public void nextTuple() {
 		
-		
 		try{
-			
-			if(latestHeartBeatTime==0){
-				latestHeartBeatTime=new Date().getTime();
-			}
 			
 			if(!triggered) {
 				await();
