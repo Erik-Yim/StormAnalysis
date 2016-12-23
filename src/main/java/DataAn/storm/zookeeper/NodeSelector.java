@@ -827,7 +827,7 @@ public class NodeSelector implements Serializable{
 							List<String> workerNums = executor.backend().getChildren().forPath(path);
 							boolean flag = false;
 							for (String workerNum : workerNums) {
-								List<String> children = executor.backend().getChildren().forPath(workerNum);
+								List<String> children = executor.backend().getChildren().forPath(path+"/"+workerNum);
 								if(children != null && children.size() > 0){
 									//正在处理任务
 									flag = true;
@@ -837,12 +837,12 @@ public class NodeSelector implements Serializable{
 							//标志当前无任务处理
 							if(!flag){
 								//TODO 获取目录
-								List<String> taskPaths = executor.backend().getChildren().forPath("/sit-test/flow-tasks");
+								List<String> taskPaths = executor.backend().getChildren().forPath("/flow-tasks");
 								for (String taskPath : taskPaths) {
 									Communication dest =JJSON.get().parse(new String(executor.getPath(taskPath), Charset.forName("utf-8"))
 																	,Communication.class);
 									if(dest.getStatus().equals("PROCESSING")){
-										executor.deletePath(taskPath);
+										executor.deletePath("/flow-tasks/"+taskPath);
 										FlowUtils.setError(executor, dest, "数据处理超时...");
 										break;
 									}
