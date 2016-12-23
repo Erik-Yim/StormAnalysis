@@ -165,6 +165,7 @@ public class PersistKafkaSpout extends BaseRichSpout {
 				return new Thread(r, path);
 			}
 		}));
+		latestHeartBeatTime=new Date().getTime();
 	}
 	
 	private void release(String msg){
@@ -238,15 +239,13 @@ public class PersistKafkaSpout extends BaseRichSpout {
 				await();
 				return;
 			}
-			
-//			if(latestHeartBeatTime!=0){
-				long interval=new Date().getTime()-latestHeartBeatTime;
-				if(interval>120000){ //2minutes
-					release("all bolts process completely.");
-					await();
-					return;
-				}
-//			}
+
+			long interval = new Date().getTime() - latestHeartBeatTime;
+			if (interval > 120000) { // 2minutes
+				release("all bolts process completely.");
+				await();
+				return;
+			}
 			
 //			if(workflowDone){
 //				if(latestPollTime>0){

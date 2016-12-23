@@ -1,20 +1,10 @@
 [
 {
-	"topname":"陀螺1",
+	"topname":"top1",
 	"jdparamlist":[
-	    			{"code":"sequence_00824","fullName":"F10W118:陀螺1X(00001)"},
-					{"code":"sequence_00815","fullName":"F10W118:陀螺1Y(00002)"},
-					{"code":"sequence_00825","fullName":"F10W118:陀螺1Z(00003)"},
-					{"code":"sequence_00816","fullName":"F10W118:陀螺1S(00003)"}
-					]
-},
-{
-	"topname":"陀螺2",
-	"jdparamlist":[
-	    			{"code":"sequence_00814","fullName":"F10W118:陀螺2X(00001)"},
-					{"code":"sequence_00820","fullName":"F10W118:陀螺2Y(00002)"},
-					{"code":"sequence_00821","fullName":"F10W118:陀螺2Z(00003)"},
-					{"code":"sequence_00822","fullName":"F10W118:陀螺2S(00003)"}
+	    			{"code":"sequence_00131","fullName":"F10W118:陀螺1X(00001)"},
+					{"code":"sequence_00133","fullName":"F10W118:陀螺1Y(00002)"},
+					{"code":"sequence_00135","fullName":"F10W118:陀螺1Z(00003)"}
 					]
 }
 ]

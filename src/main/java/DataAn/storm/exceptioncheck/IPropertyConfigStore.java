@@ -37,11 +37,17 @@ public interface IPropertyConfigStore {
 	 * @return
 	 * 返回所有需要被统计机动次数的陀螺名称和规则
 	 */
-	Map<String,TopJiDongjobConfig> getAllTopJiDongconfig(String ...args);
+	Map<String,TopJiDongjobConfig> getAllTopJiDongconfig(String ...args) throws Exception;
 	
 	/**
 	 * @param args
 	 * @return 一个文件所有被统计的陀螺的参数和规则
 	 */
-	Map<String,TopExceptionPointConfig> getAllTopExceptionPointconfig(String ...args);
+	Map<String,TopExceptionPointConfig> getAllTopExceptionPointconfig(String ...args) throws Exception;
+
+
+	Map<String, TopJiDongjobConfig> gettopjidongrules(String[] args);
+
+
+	Map<String, TopExceptionPointConfig> gettoppointrules(String[] args);
 }

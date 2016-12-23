@@ -3,8 +3,6 @@ package DataAn.storm;
 import java.io.Serializable;
 
 public class Communication implements Serializable {
-
-	private String serverConfig;
 	
 	private String versions;
 	
@@ -36,15 +34,6 @@ public class Communication implements Serializable {
 	
 	private String time;
 	
-
-	public String getServerConfig() {
-		return serverConfig;
-	}
-
-	public void setServerConfig(String serverConfig) {
-		this.serverConfig = serverConfig;
-	}
-
 	public String getFileName() {
 		return fileName;
 	}

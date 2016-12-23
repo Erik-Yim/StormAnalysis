@@ -22,6 +22,11 @@ public class ExceptionConfigModel implements Serializable{
 	private Map<String, ExceptionPointConfig> exceptionPointConfigs;
 	
 	private Map<String, List<ExceptionCasePointConfig>> exceptionCasePointConfigs;
+	
+	//陀螺机动判断规则
+	private Map<String,TopJiDongjobConfig> topjobconfigmap;
+	//陀螺异常点判断规则
+	private Map<String,TopExceptionPointConfig> toppointconfigmap;
 
 	public Map<String, String> getParamCode_deviceName_map() {
 		return paramCode_deviceName_map;
@@ -74,6 +79,23 @@ public class ExceptionConfigModel implements Serializable{
 
 	public void setExceptionPointConfigs(Map<String, ExceptionPointConfig> exceptionPointConfigs) {
 		this.exceptionPointConfigs = exceptionPointConfigs;
+	}
+
+	public Map<String, TopJiDongjobConfig> getTopjobconfigmap() {
+		return topjobconfigmap;
+	}
+
+	public void setTopjobconfigmap(Map<String, TopJiDongjobConfig> topjobconfigmap) {
+		this.topjobconfigmap = topjobconfigmap;
+	}
+
+	public Map<String, TopExceptionPointConfig> getToppointconfigmap() {
+		return toppointconfigmap;
+	}
+
+	public void setToppointconfigmap(
+			Map<String, TopExceptionPointConfig> toppointconfigmap) {
+		this.toppointconfigmap = toppointconfigmap;
 	}
 	
 }

@@ -27,8 +27,8 @@ public class HttpUtilTest {
 		String parameterType = J9Series_Star_ParameterType.FLYWHEEL.getValue();
 		String entity = HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		System.out.println("content...");
-		System.out.println(entity);
-		//Map<String,String> map = new HashMap<String,String>();
+		System.out.println(entity.toString());
+		/*//Map<String,String> map = new HashMap<String,String>();
 		Map<String,Object> map = JJSON.get().parse(entity);
 		Object exceptionJobConfigObj = map.get("exceptionJobConfig");
 		if(exceptionJobConfigObj != null){
@@ -49,6 +49,6 @@ public class HttpUtilTest {
 		}
 		
 		long end = System.currentTimeMillis();
-		System.out.println("time: " + (end-begin));
+		System.out.println("time: " + (end-begin));*/
 	}
 }

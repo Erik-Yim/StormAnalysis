@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.dto.CaseSpecialDto;
 import DataAn.dto.ParamExceptionDto;
@@ -20,6 +21,7 @@ import DataAn.storm.IDeviceRecord;
 import DataAn.storm.denoise.ParameterDto;
 import DataAn.storm.exceptioncheck.ExceptionUtils;
 import DataAn.storm.exceptioncheck.model.ExceptionJob;
+import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
 import DataAn.storm.exceptioncheck.model.PointInfo;
 import DataAn.storm.exceptioncheck.model.TopExceptionPointConfig;
@@ -74,8 +76,20 @@ public class TopProcessor {
 		versions = communication.getVersions();
 		
 		propertyConfigStoreImpl = new IPropertyConfigStoreImpl();
-		topjobconfigmap=propertyConfigStoreImpl.getAllTopJiDongconfig(new String[]{series,star});
-		toppointconfigmap = propertyConfigStoreImpl.getAllTopExceptionPointconfig(new String[]{series,star});
+		/*try {
+			topjobconfigmap=propertyConfigStoreImpl.getAllTopJiDongconfig(new String[]{series,star,deviceType});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			toppointconfigmap = propertyConfigStoreImpl.getAllTopExceptionPointconfig(new String[]{series,star,deviceType});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}*/
+		
+		topjobconfigmap =propertyConfigStoreImpl.gettopjidongrules(new String[]{series,star});
+		toppointconfigmap=propertyConfigStoreImpl.gettoppointrules(new String[]{series,star});
+
 //***************************************统计有几个陀螺******************************//		
 		//判断一共有多少个陀螺
 		String topName =null;
@@ -106,6 +120,12 @@ public class TopProcessor {
 	}
 	
 	public Object process(IDeviceRecord deviceRecord){		
+		if(deviceRecord==null || topjobconfigmap==null ||toppointconfigmap==null)
+		{
+			System.out.println("陀螺记录为空或者判断规则为空");
+			return null;
+		}
+		
 		if( null==topTempRecord )
 	 	{
 			topTempRecord=deviceRecord;
@@ -131,8 +151,14 @@ public class TopProcessor {
 						point.setParamCode(paramSequence[i]);
 						point.setParamValue(paramValues[i]);
 						point.setTopNmae(exceConfig.getTopName());
+						
+						point.setVersions(versions);
+						point.setBeginDate(DateUtil.format(deviceRecord.getTime()));
+						point.setEndDate(DateUtil.format(deviceRecord.getTime()));
+						point.setDeviceType(deviceType);
 						exceListCache.add(point);
 						topExcePointDtoMapCach.put(paramSequence[i], exceListCache);
+						topExcePointDtoMap.put(paramSequence[i], exceListCache);
 					}
 				}
 //---------------------------------------陀螺异常点统计------------------------------------//
@@ -184,7 +210,8 @@ public class TopProcessor {
 							TopJiDongJobPoint.setTopname(topname);
 							TopJiDongJobPoint.setDateTime(deviceRecord.getTime());
 							TopJiDongJobPoint.set_dateTime(deviceRecord.get_time());
-							topJiDongJobDtolist.add(TopJiDongJobPoint);	
+							topJiDongJobDtolist.add(TopJiDongJobPoint);
+							
 							topjidongDtosetMapCach.put(topname, topJiDongJobDtolist);
 							//将该记录添加进该陀螺的异常点集合
 						}else{//如果不满足则说明和上一个点不连续,持续时间到此结束
@@ -208,8 +235,14 @@ public class TopProcessor {
 									onejd.setJd_endtime(jobDtolist.get(jobDtolist.size()-1).getDateTime());
 									onejd.setSeries(deviceRecord.getSeries());
 									onejd.setStar(deviceRecord.getStar());
-									onejd.setDeviceName(deviceRecord.getName());
+									//onejd.setDeviceName(deviceRecord.getName());
 									onejd.setTopname(topname);
+									
+									onejd.setVersions(versions);
+									onejd.setDeviceName(topname);
+									onejd.setBeginDate(DateUtil.format(jobDtolist.get(0).getDateTime()));
+									onejd.setEndDate(DateUtil.format(jobDtolist.get(jobDtolist.size()-1).getDateTime()));
+									onejd.setDeviceType(deviceType);
 									//添加进入机动情况统计
 									topjidongMap.get(topname).add(onejd);
 																	
@@ -238,7 +271,7 @@ public class TopProcessor {
 	
 	
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
-		System.out.println("持久化");
+		System.out.println("陀螺预警持久化");
 //---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//
 		for(String topNamekey:jobTimeSetMap.keySet())
 		{
@@ -269,10 +302,10 @@ public class TopProcessor {
 				
 			}
 		}
-		System.out.println("异常点"+topExcePointDtoMap.get("sequence_00814").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
-		System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
+		//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00131").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
+		//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
 //---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//		
-/*		//异常点持久化
+		//异常点持久化
 		for (String topname : topExcePointDtoMap.keySet()){
 			List<TopExceptionPointDto> exceptionpointlist = topExcePointDtoMap.get(topname);
 			if(exceptionpointlist == null || exceptionpointlist.size() == 0)
@@ -280,6 +313,7 @@ public class TopProcessor {
 			for (TopExceptionPointDto exceptionpoint : exceptionpointlist) {
 				//TODO 将对象转换成字符串
 				String jonContext = JJSON.get().formatObject(exceptionpoint);
+				System.out.println("异常点"+jonContext);
 				MongoPeristModel mpModel=new MongoPeristModel();
 				mpModel.setCollections(new String[]{deviceType+"_job"});
 				mpModel.setContent(jonContext);
@@ -296,13 +330,14 @@ public class TopProcessor {
 			for (TopJiDongJobDto jidongrecord : jidonglist) {
 				//TODO 将对象转换成字符串
 				String jonContext = JJSON.get().formatObject(jidongrecord);
+				//System.out.println("特殊工况："+jonContext);
 				MongoPeristModel mpModel=new MongoPeristModel();
 				mpModel.setCollections(new String[]{deviceType+"_job"});
 				mpModel.setContent(jonContext);
 				mpModel.setVersions(versions);
 				simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
 			}
-		}*/
+		}
 		
 	}
 	
