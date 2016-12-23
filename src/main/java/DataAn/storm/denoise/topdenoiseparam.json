@@ -1,32 +1,20 @@
 [
 {
-	"code":"sequence_00001",
-	"fullName":"F10W118:陀螺1X(00001)",
-	"simplyName":"陀螺1X(00001)",
+	"code":"sequence_00131",
+	"fullName":"F0W53_54:滚动陀螺角速度(00131)",
+	"simplyName":"F0W53_54:滚动陀螺角速度(00131)",
 	"parameterType":"top"
 },
 {
-	"code":"sequence_00002",
-	"fullName":"F10W118:陀螺1Y(00002)",
-	"simplyName":"陀螺1Y(00821)",
+	"code":"sequence_00133",
+	"fullName":"俯仰陀螺角速度(00133)",
+	"simplyName":"俯仰陀螺角速度(00133)",
 	"parameterType":"top"
 },
 {
-	"code":"sequence_00003",
-	"fullName":"F10W118:陀螺1Z(00003)",
-	"simplyName":"陀螺1Z(00821)",
-	"parameterType":"top"
-},
-{
-	"code":"sequence_00005",
-	"fullName":"F10W118:陀螺1Z(00003)",
-	"simplyName":"陀螺1Z(00821)",
-	"parameterType":"top"
-},
-{
-	"code":"sequence_00008",
-	"fullName":"F10W118:陀螺1Z(00003)",
-	"simplyName":"陀螺1Z(00821)",
+	"code":"sequence_00135",
+	"fullName":"F0W57_58:偏航陀螺角速度(00135)",
+	"simplyName":"F0W57_58:偏航陀螺角速度(00135)",
 	"parameterType":"top"
 }
 ]
