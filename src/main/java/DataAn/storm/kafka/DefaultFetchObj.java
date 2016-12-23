@@ -1,5 +1,7 @@
 package DataAn.storm.kafka;
 
+import java.util.Arrays;
+
 public class DefaultFetchObj extends BaseFetchObj {
 
 	private String id;
@@ -81,4 +83,13 @@ public class DefaultFetchObj extends BaseFetchObj {
 	public void setPropertyVals(String[] propertyVals) {
 		this.propertyVals = propertyVals;
 	}
+
+	@Override
+	public String toString() {
+		return "DefaultFetchObj [id=" + id + ", name=" + name + ", series=" + series + ", star=" + star + ", time="
+				+ time + ", _time=" + _time + ", properties=" + Arrays.toString(properties) + ", propertyVals="
+				+ Arrays.toString(propertyVals) + "]";
+	}
+	
+	
 }
