@@ -30,7 +30,7 @@ public class topcheck {
 		
 		//String fileName = "j9-02--2000-01-01.csv";
 		//String fileName = "j9-02--2005-01-01.csv";		
-		String fileName = "j9-02-2014-03-01.csv";		
+		String fileName = "j9-02--2014-01-03.csv";		
 		String filePath = "C:\\"+fileName;
 		String series = SeriesType.J9_SERIES.getName();
 		String star = J9SeriesType.STRA2.getValue();
@@ -44,6 +44,12 @@ public class topcheck {
 		communication.setStar(star);
 		communication.setName(paramType);
 		
+		try {
+			new IPropertyConfigStoreImpl().initialize(null);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		processor = new TopProcessor(communication);
 	}
 	

@@ -30,6 +30,7 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 				for(IDeviceRecord idr:deviceRecords){
 					if(!idr.isContent()) continue;
 					devicename =idr.getName();
+					//System.out.println(devicename + " beigin 去噪.. size: " + deviceRecords.size());
 					//如果是飞轮
 					if(devicename.equals("flywheel"))
 					{
@@ -38,6 +39,7 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 						for(int i=0;i<vals.length;i++){							
 							if(vals[i].contains("#")){
 								invalid.add(param[i]);
+								System.out.println("飞轮包含#参数名:"+param[i]+"---------"+vals[i]);
 							}
 						}
 					}else if(devicename.equals("top")) //如果是陀螺
@@ -49,6 +51,7 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 						for(int i=0;i<vals.length;i++){							
 							if(vals[i].contains("#")){
 								invalid.add(param[i]);
+								System.out.println("包含#："+param[i]+vals[i]);
 							}
 							else
 							{
@@ -58,6 +61,7 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 									{
 										if((Double.parseDouble(vals[i])<-2.2)|(2.2<Double.parseDouble(vals[i])))
 										{
+											System.out.println("大小限制："+param[i]+":"+vals[i]);
 											invalid.add(param[i]);
 										}
 									}
