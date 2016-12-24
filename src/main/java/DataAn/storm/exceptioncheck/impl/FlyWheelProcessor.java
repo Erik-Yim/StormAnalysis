@@ -115,7 +115,7 @@ IExceptionCheckNodeProcessor {
 			String deviceName = paramCode_deviceName_map.get(paramCode);
 			//获取设备的特殊工况配置
 			ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
-			//收尾时间间隔
+			//收尾时间间隔(通过毫秒计算 )
 			long interval = lastPoint.get_time() - firstPoint.get_time();
 			//连续一段时间内
 			if((jobConfig.getDelayTime() <= interval) && (interval <= (jobConfig.getDelayTime() + 1000))){
