@@ -52,7 +52,7 @@ public class TopProcessor {
 	
 	//每个参数的异常特点统计规则
 	Map<String,TopExceptionPointConfig> toppointconfigmap = new HashMap<>();
-	//用于存储陀螺异常预警点
+	//用于存储陀螺异常预警点格式(参数sequence ,该参数的异常点列表)
 	Map<String,List<TopExceptionPointDto>> 	topExcePointDtoMap =new HashMap<>();
 	//用于存储异常点缓存<参数的sequence值  该参数的异常点的列表>
 	Map<String,List<TopExceptionPointDto>> topExcePointDtoMapCach =new HashMap<>();

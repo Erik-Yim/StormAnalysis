@@ -54,7 +54,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			context.put("series", "j9");
 			context.put("star", "02");
 			context.put("device", "top");
-			context.put("serverConfig", "192.168.0.158:8080");
+			context.put("serverConfig", "192.168.0.9:8080");
 		}
 		series_start_map.clear();
 		Map conf=new HashMap<>();
@@ -140,6 +140,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 				toplist = ExceptionUtils.getTopjidongcountList();		
 				for(TopJsondto temp:toplist)
 				{
+					System.out.println("陀螺名字"+temp.getTopname());
 					//TODO 从前台或者手动配置  该陀螺机动次数统计 所需的参数列表。
 					String topName =temp.getTopname();
 					List<String> paramslist=new ArrayList<>();
@@ -185,8 +186,9 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 				expointconf.setParamCode(exceConfig.getParamCode());
 				expointconf.setMax(max);
 				expointconf.setMin(min);
+				//TODO 设置陀螺名字
 				expointconf.setTopName(topName);
-				
+				//expointconf.setTopName("AA");
 				toppointconfigmap.put(exceConfig.getParamCode(), expointconf);
 				
 			}			
