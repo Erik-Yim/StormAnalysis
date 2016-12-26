@@ -25,6 +25,8 @@ public class ExceptionJob {
 	
 	private long endTime;
 	
+	private String datetime;
+	
 	private List<PointInfo> pointList; // 特殊工况数据点
 
 	
@@ -100,13 +102,22 @@ public class ExceptionJob {
 		this.pointList = pointList;
 	}
 
+	public String getDatetime() {
+		return datetime;
+	}
+
+	public void setDatetime(String datetime) {
+		this.datetime = datetime;
+	}
+
 	@Override
 	public String toString() {
-		return "ExceptionJob [config=" + config + ", versions=" + versions
-				+ ", deviceType=" + deviceType + ", deviceName=" + deviceName
-				+ ", beginDate=" + beginDate + ", endDate=" + endDate
-				+ ", beginTime=" + beginTime + ", endTime=" + endTime + "]";
+		return "ExceptionJob [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
+				+ ", deviceName=" + deviceName + ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime="
+				+ beginTime + ", endTime=" + endTime + ", datetime=" + datetime + ", pointList=" + pointList + "]";
 	}
+
+	
 
 	
 

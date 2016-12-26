@@ -1,6 +1,7 @@
 package DataAn.storm.persist;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +73,8 @@ public interface IMongoPersistService {
 							else
 								doc.put(entry.getKey(),entry.getValue());						
 						}
+						if(doc.get("datetime") == null)
+							doc.put("datetime", new Date());
 						list.add(doc);
 						map.put(collectionStr, list);
 					}

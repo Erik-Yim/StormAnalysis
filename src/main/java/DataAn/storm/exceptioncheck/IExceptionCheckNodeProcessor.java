@@ -30,6 +30,7 @@ public interface IExceptionCheckNodeProcessor extends Serializable {
 	
 	class IExceptionCheckNodeProcessorGetter{
 		public static IExceptionCheckNodeProcessor getNew(Communication communication){
+			System.out.println("begin exception CheckNodeProcessor....\n"+communication);
 			return new IExceptionCheckNodeProcessorImpl(communication);
 			
 //			return new IExceptionCheckNodeProcessor() {

@@ -20,21 +20,30 @@ public class IExceptionCheckNodeProcessorImpl implements
 	
 	private TopProcessor topProcessor;
 	
+	private String deviceType;
+	
 	public IExceptionCheckNodeProcessorImpl(Communication communication) {
-		flyWheelProcessor=new FlyWheelProcessor(communication);
-		topProcessor=new TopProcessor(communication);
+		deviceType = communication.getName();
+		if("flywheel".equals(deviceType))
+			flyWheelProcessor=new FlyWheelProcessor(communication);
+		if("top".equals(deviceType))
+			topProcessor=new TopProcessor(communication);
 	}
 		
 	@Override
 	public Object process(IDeviceRecord deviceRecord) {		
-		 String deviceName =deviceRecord.getName();	
-		//判断飞轮预警
-		 if(deviceName.equals("flywheel"))
-		 {
+		if("flywheel".equals(deviceType))
 			 flyWheelProcessor.process(deviceRecord);
-		 }else if(deviceName.equals("top"))//如果是陀螺
-		 {
-			 topProcessor.process(deviceRecord);
+		if("top".equals(deviceType))
+			topProcessor.process(deviceRecord);
+//		String deviceName =deviceRecord.getName();	
+//		//判断飞轮预警
+//		 if(deviceName.equals("flywheel"))
+//		 {
+//			 flyWheelProcessor.process(deviceRecord);
+//		 }else if(deviceName.equals("top"))//如果是陀螺
+//		 {
+//			 topProcessor.process(deviceRecord);
 			 
 			 	/*if(null==topTempRecord)
 			 	{topTempRecord=deviceRecord;}
@@ -127,19 +136,23 @@ public class IExceptionCheckNodeProcessorImpl implements
 				}		
 				return exceptionDtoMap;	*/
 			 
-		 }
+//		 }
 		return null;
 	}
 
 	@Override
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
-		flyWheelProcessor.persist(simpleProducer, communication);
-		topProcessor.persist(simpleProducer, communication);
+		if("flywheel".equals(deviceType))
+			flyWheelProcessor.persist(simpleProducer, communication);
+		if("top".equals(deviceType))
+			topProcessor.persist(simpleProducer, communication);
 	}
 
 	public void setBatchContext(BatchContext batchContext) {
-		flyWheelProcessor.setBatchContext(batchContext);
-		topProcessor.setBatchContext(batchContext);
+		if("flywheel".equals(deviceType))
+			flyWheelProcessor.setBatchContext(batchContext);
+		if("top".equals(deviceType))
+			topProcessor.setBatchContext(batchContext);
 	}
 
 	@Override

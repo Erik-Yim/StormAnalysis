@@ -30,7 +30,7 @@ public class ExceptionPoint {
 	
 	private long _time; // 参数时间截
 
-	
+	private String datetime;
 
 	public String getConfig() {
 		return config;
@@ -122,15 +122,11 @@ public class ExceptionPoint {
 
 	@Override
 	public String toString() {
-		return "ExceptionPoint [config=" + config + ", versions=" + versions
-				+ ", deviceType=" + deviceType + ", beginDate=" + beginDate
-				+ ", endDate=" + endDate + ", beginTime=" + beginTime
-				+ ", endTime=" + endTime + ", paramCode=" + paramCode
-				+ ", paramValue=" + paramValue + ", time=" + time + ", _time="
-				+ _time + "]";
+		return "ExceptionPoint [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
+				+ ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime=" + beginTime + ", endTime="
+				+ endTime + ", paramCode=" + paramCode + ", paramValue=" + paramValue + ", time=" + time + ", _time="
+				+ _time + ", datetime=" + datetime + "]";
 	}
-
-	
 	
 	
 }

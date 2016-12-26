@@ -841,10 +841,11 @@ public class NodeSelector implements Serializable{
 								//TODO 获取目录
 								List<String> taskPaths = executor.backend().getChildren().forPath("/flow-tasks");
 								for (String taskPath : taskPaths) {
+									taskPath = "/flow-tasks/"+taskPath;
 									Communication dest =JJSON.get().parse(new String(executor.getPath(taskPath), Charset.forName("utf-8"))
 																	,Communication.class);
 									if(dest.getStatus().equals(NodeStatus.PROCESSING)){
-										executor.deletePath("/flow-tasks/"+taskPath);
+										executor.deletePath(taskPath);
 										FlowUtils.setError(executor, dest, "数据处理超时...");
 										break;
 									}

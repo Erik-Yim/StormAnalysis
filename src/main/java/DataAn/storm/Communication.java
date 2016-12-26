@@ -153,4 +153,15 @@ public class Communication implements Serializable {
 	public void setTime(String time) {
 		this.time = time;
 	}
+
+	@Override
+	public String toString() {
+		return "Communication [versions=" + versions + ", filePath=" + filePath + ", fileName=" + fileName + ", series="
+				+ series + ", star=" + star + ", name=" + name + ", sequence=" + sequence + ", topicPartition="
+				+ topicPartition + ", persistTopicPartition=" + persistTopicPartition + ", temporaryTopicPartition="
+				+ temporaryTopicPartition + ", workerId=" + workerId + ", offset=" + offset + ", zkPath=" + zkPath
+				+ ", status=" + status + ", time=" + time + "]";
+	}
+	
+	
 }

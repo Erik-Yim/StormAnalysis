@@ -354,6 +354,8 @@ IExceptionCheckNodeProcessor {
 			for (ExceptionJob exceptionJob : jobList) {
 				String jonContext = JJSON.get().formatObject(exceptionJob);
 				MongoPeristModel mpModel=new MongoPeristModel();
+				mpModel.setSeries(series);
+				mpModel.setStar(star);
 				mpModel.setCollections(new String[]{deviceType+"_job"});
 				mpModel.setContent(jonContext);
 				mpModel.setVersions(versions);
@@ -368,6 +370,8 @@ IExceptionCheckNodeProcessor {
 			for (ExceptionPoint exceptionPoint : exceList) {
 				String exceptinContext = JJSON.get().formatObject(exceptionPoint);
 				MongoPeristModel mpModel=new MongoPeristModel();
+				mpModel.setSeries(series);
+				mpModel.setStar(star);
 				mpModel.setCollections(new String[]{deviceType+"_exception"});
 				mpModel.setContent(exceptinContext);
 				mpModel.setVersions(versions);
