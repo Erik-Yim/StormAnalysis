@@ -30,7 +30,7 @@ public class ExceptionPoint {
 	
 	private long _time; // 参数时间截
 
-	private String datetime;
+//	private String datetime;
 
 	private String _recordtime;
 	
@@ -122,14 +122,6 @@ public class ExceptionPoint {
 		this._time = _time;
 	}
 
-	public String getDatetime() {
-		return datetime;
-	}
-
-	public void setDatetime(String datetime) {
-		this.datetime = datetime;
-	}
-
 	public String get_recordtime() {
 		return _recordtime;
 	}
@@ -143,7 +135,7 @@ public class ExceptionPoint {
 		return "ExceptionPoint [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
 				+ ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime=" + beginTime + ", endTime="
 				+ endTime + ", paramCode=" + paramCode + ", paramValue=" + paramValue + ", time=" + time + ", _time="
-				+ _time + ", datetime=" + datetime + ", _recordtime=" + _recordtime + "]";
+				+ _time + ", _recordtime=" + _recordtime + "]";
 	}
 
 	

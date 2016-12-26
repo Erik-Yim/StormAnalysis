@@ -23,6 +23,7 @@ import DataAn.storm.denoise.ParameterDto;
 import DataAn.storm.exceptioncheck.ExceptionUtils;
 import DataAn.storm.exceptioncheck.model.ExceptionJob;
 import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
+import DataAn.storm.exceptioncheck.model.ExceptionPoint;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
 import DataAn.storm.exceptioncheck.model.PointInfo;
 import DataAn.storm.exceptioncheck.model.TopExceptionPointConfig;
@@ -243,7 +244,7 @@ public class TopProcessor {
 									onejd.setStar(deviceRecord.getStar());
 									//onejd.setDeviceName(deviceRecord.getName());
 									onejd.setTopname(topname);
-									
+									//onejd.setConfig(config);
 									onejd.setVersions(versions);
 									onejd.setDeviceName(topname);
 									onejd.setBeginDate(DateUtil.format(jobDtolist.get(0).getDateTime()));
@@ -320,9 +321,20 @@ public class TopProcessor {
 				if(jidonglist == null || jidonglist.size() == 0)
 					continue;
 				for (TopJiDongJobDto jidongrecord : jidonglist) {
-					//TODO 将对象转换成字符串
-					String jonContext = JJSON.get().formatObject(jidongrecord);
-					System.out.println("特殊工况："+jonContext);
+					//
+					ExceptionJob jidongjob=new ExceptionJob();
+					//jidongjob.setConfig(jidongrecord.getConfig());
+					jidongjob.setVersions(jidongrecord.getVersions());
+					jidongjob.setDeviceType(jidongrecord.getDeviceName());
+					jidongjob.setDeviceName(jidongrecord.getTopname());
+					jidongjob.setBeginDate(jidongrecord.getBeginDate());
+					jidongjob.setBeginTime(jidongrecord.getBeginDate().getTime());
+					jidongjob.setEndDate(jidongrecord.getEndDate());
+					jidongjob.setEndTime(jidongrecord.getEndDate().getTime());
+					jidongjob.set_recordtime(DateUtil.format(new Date()));
+					
+					String jonContext = JJSON.get().formatObject(jidongjob);
+					System.out.println("特殊工况："+jidongjob);
 					MongoPeristModel mpModel=new MongoPeristModel();
 					mpModel.setSeries(series);
 					mpModel.setStar(star);
@@ -336,14 +348,27 @@ public class TopProcessor {
 		if(topExcePointDtoMap!=null)
 		{
 			//异常点持久化
-			for (String topname : topExcePointDtoMap.keySet()){
-				List<TopExceptionPointDto> exceptionpointlist = topExcePointDtoMap.get(topname);
+			for (String sequence : topExcePointDtoMap.keySet()){
+				List<TopExceptionPointDto> exceptionpointlist = topExcePointDtoMap.get(sequence);
 				if(exceptionpointlist == null || exceptionpointlist.size() == 0)
 					continue;
 				for (TopExceptionPointDto exceptionpoint : exceptionpointlist) {
-					//TODO 将对象转换成字符串
-					String jonContext = JJSON.get().formatObject(exceptionpoint);
-					System.out.println("异常点"+jonContext);
+					
+					ExceptionPoint excePoint =new ExceptionPoint();
+					//excePoint.setConfig(config);
+					excePoint.setVersions(exceptionpoint.getVersions());
+					excePoint.setBeginDate(exceptionpoint.getBeginDate());
+					excePoint.setEndDate(exceptionpoint.getEndDate());
+					excePoint.setBeginTime(exceptionpoint.getBeginDate().getTime());
+					excePoint.setEndTime(exceptionpoint.getEndDate().getTime());
+					excePoint.setParamCode(exceptionpoint.getParamCode());
+					excePoint.setParamValue(exceptionpoint.getParamValue());
+					//excePoint.setTime(exceptionpoint);
+					excePoint.setTime(exceptionpoint.getTime());
+					excePoint.set_time(exceptionpoint.get_time());
+					excePoint.set_recordtime(DateUtil.format(new Date()));
+					String jonContext = JJSON.get().formatObject(excePoint);
+					System.out.println("异常点"+excePoint);
 					MongoPeristModel mpModel=new MongoPeristModel();
 					mpModel.setSeries(series);
 					mpModel.setStar(star);
