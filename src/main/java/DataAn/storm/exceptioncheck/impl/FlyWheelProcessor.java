@@ -115,7 +115,7 @@ IExceptionCheckNodeProcessor {
 			String deviceName = paramCode_deviceName_map.get(paramCode);
 			//获取设备的特殊工况配置
 			ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
-			//收尾时间间隔
+			//收尾时间间隔(通过毫秒计算 )
 			long interval = lastPoint.get_time() - firstPoint.get_time();
 			//连续一段时间内
 			if((jobConfig.getDelayTime() <= interval) && (interval <= (jobConfig.getDelayTime() + 1000))){
@@ -322,30 +322,30 @@ IExceptionCheckNodeProcessor {
 			}
 		}
 		//Test 输出
-//		for (String deviceName : jobListMap.keySet()){
-//			List<ExceptionJob> jobList = jobListMap.get(deviceName);
-//			if(jobList == null || jobList.size() == 0)
-//				continue;
-//			System.out.println(deviceName + " 特殊工况size: " + jobList.size());
-//			for (ExceptionJob exceptionJob : jobList) {
-//				System.out.println(exceptionJob);
-//				List<PointInfo> pointList = exceptionJob.getPointList();
-//				for (PointInfo pointInfo : pointList) {
-//					String jonContext = JJSON.get().formatObject(pointInfo);
-//					System.out.println(jonContext);
-//				}
-//			}
-//		}
-//		for (String paramCode : exceListMap.keySet()) {
-//			List<ExceptionPoint> exceList = exceListMap.get(paramCode);
-//			if(exceList == null || exceList.size() == 0)
-//				continue;
-//			System.out.println(paramCode + " 异常size: " + exceList.size());
-//			for (ExceptionPoint exceptionPoint : exceList) {
-//				String exceptinContext = JJSON.get().formatObject(exceptionPoint);
-//				System.out.println(exceptinContext);
-//			}
-//		}
+		for (String deviceName : jobListMap.keySet()){
+			List<ExceptionJob> jobList = jobListMap.get(deviceName);
+			if(jobList == null || jobList.size() == 0)
+				continue;
+			System.out.println(deviceName + " 特殊工况size: " + jobList.size());
+			for (ExceptionJob exceptionJob : jobList) {
+				System.out.println(exceptionJob);
+				List<PointInfo> pointList = exceptionJob.getPointList();
+				for (PointInfo pointInfo : pointList) {
+					String jonContext = JJSON.get().formatObject(pointInfo);
+					System.out.println(jonContext);
+				}
+			}
+		}
+		for (String paramCode : exceListMap.keySet()) {
+			List<ExceptionPoint> exceList = exceListMap.get(paramCode);
+			if(exceList == null || exceList.size() == 0)
+				continue;
+			System.out.println(paramCode + " 异常size: " + exceList.size());
+			for (ExceptionPoint exceptionPoint : exceList) {
+				String exceptinContext = JJSON.get().formatObject(exceptionPoint);
+				System.out.println(exceptinContext);
+			}
+		}
 		//持久化操作 
 		for (String deviceName : jobListMap.keySet()){
 			List<ExceptionJob> jobList = jobListMap.get(deviceName);
