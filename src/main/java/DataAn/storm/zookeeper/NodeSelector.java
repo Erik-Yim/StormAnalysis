@@ -75,7 +75,6 @@ public class NodeSelector implements Serializable{
 		String COMPLETE="COMPLETE";
 	}
 	
-	
 	private static Map<String, NodeSelector> map=Maps.newConcurrentMap();
 	
 	public synchronized static NodeSelector get(String name,ZookeeperExecutor executor){
@@ -797,8 +796,11 @@ public class NodeSelector implements Serializable{
 							for(String worker:workers){
 								if(!strings.contains(worker)){
 									System.out.println("worker : "+worker +" is shutdown");
-									//TODO 通过zookeeper 配置服务器IP
-									HttpUtil.get("http://192.168.0.158:8080/DataRemote/Communicate/updateServerStatus?workerId="+worker);
+									//从zk上获取后台管理系统URL配置
+									String serverConfigPath = "/cfg/serverConfig";
+									byte[] serverConfigBytes = executor.getPath(serverConfigPath);
+									String serverConfigURL = new String(serverConfigBytes, Charset.forName("utf-8"));
+									HttpUtil.get(serverConfigURL + "/DataRemote/Communicate/updateServerStatus?workerId="+worker);
 									
 								}
 							}
@@ -827,7 +829,7 @@ public class NodeSelector implements Serializable{
 							List<String> workerNums = executor.backend().getChildren().forPath(path);
 							boolean flag = false;
 							for (String workerNum : workerNums) {
-								List<String> children = executor.backend().getChildren().forPath(workerNum);
+								List<String> children = executor.backend().getChildren().forPath(path+"/"+workerNum);
 								if(children != null && children.size() > 0){
 									//正在处理任务
 									flag = true;
@@ -837,12 +839,12 @@ public class NodeSelector implements Serializable{
 							//标志当前无任务处理
 							if(!flag){
 								//TODO 获取目录
-								List<String> taskPaths = executor.backend().getChildren().forPath("/sit-test/flow-tasks");
+								List<String> taskPaths = executor.backend().getChildren().forPath("/flow-tasks");
 								for (String taskPath : taskPaths) {
 									Communication dest =JJSON.get().parse(new String(executor.getPath(taskPath), Charset.forName("utf-8"))
 																	,Communication.class);
-									if(dest.getStatus().equals("PROCESSING")){
-										executor.deletePath(taskPath);
+									if(dest.getStatus().equals(NodeStatus.PROCESSING)){
+										executor.deletePath("/flow-tasks/"+taskPath);
 										FlowUtils.setError(executor, dest, "数据处理超时...");
 										break;
 									}

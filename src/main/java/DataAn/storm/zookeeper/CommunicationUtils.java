@@ -149,11 +149,15 @@ public class CommunicationUtils implements Serializable{
 			executor.setPath(workflowDonePath, new Date().getTime()+"");
 		}
 		ErrorMsg errorMsg=FlowUtils.getError(executor, communication.getSequence());
+		//从zk上获取后台管理系统URL配置
+		String serverConfigPath = "/cfg/serverConfig";
+		byte[] serverConfigBytes = executor.getPath(serverConfigPath);
+		String serverConfigURL = new String(serverConfigBytes, Charset.forName("utf-8"));
 		if(errorMsg!=null){
-			ISendStatusGetter.get().dealError(communication.getVersions(), errorMsg.getMsg());
+			ISendStatusGetter.get().dealError(serverConfigURL, communication.getVersions(), errorMsg.getMsg());
 		}
 		else{
-			ISendStatusGetter.get().dealSuccess(communication.getVersions());
+			ISendStatusGetter.get().dealSuccess(serverConfigURL, communication.getVersions());
 			
 		}
 		

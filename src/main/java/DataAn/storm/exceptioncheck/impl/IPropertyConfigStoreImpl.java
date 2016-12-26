@@ -47,6 +47,15 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
+		
+		if(context==null)
+		{
+			context = new HashMap<>();
+			context.put("series", "j9");
+			context.put("star", "02");
+			context.put("device", "top");
+			context.put("serverConfig", "192.168.0.158:8080");
+		}
 		series_start_map.clear();
 		Map conf=new HashMap<>();
 		BaseConfig baseConfig=null;

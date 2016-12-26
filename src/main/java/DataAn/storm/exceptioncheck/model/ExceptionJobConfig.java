@@ -17,7 +17,7 @@ public class ExceptionJobConfig implements Serializable {
 
 	private String paramCode;// 特殊工况所针对的参数
 
-	private long delayTime;// 持续时间 mm
+	private long delayTime;// 持续时间 单位毫秒（mm）
 
 	private double max;// 特殊工况的最大值
 
