@@ -196,9 +196,11 @@ public class TopProcessor {
 								}
 							}							
 						}
+						System.out.println("jDparamlist.size(): " + jDparamlist.size());
+						System.out.println("differenceValuelist.size(): " + differenceValuelist.size());
 						//满足条件的参数的个数
 						int counttemp=0;
-						for(int i=0;i<jDparamlist.size();i++)
+						for(int i=0;i<differenceValuelist.size();i++)
 						{
 							double differenceValue = differenceValuelist.get(i).doubleValue();
 							if((min<differenceValue)&&(differenceValue<max))
@@ -325,7 +327,7 @@ public class TopProcessor {
 					ExceptionJob jidongjob=new ExceptionJob();
 					//jidongjob.setConfig(jidongrecord.getConfig());
 					jidongjob.setVersions(jidongrecord.getVersions());
-					jidongjob.setDeviceType(jidongrecord.getDeviceName());
+					jidongjob.setDeviceType(deviceType);
 					jidongjob.setDeviceName(jidongrecord.getTopname());
 					jidongjob.setBeginDate(jidongrecord.getBeginDate());
 					jidongjob.setBeginTime(jidongrecord.getBeginDate().getTime());
@@ -363,9 +365,9 @@ public class TopProcessor {
 					excePoint.setEndTime(exceptionpoint.getEndDate().getTime());
 					excePoint.setParamCode(exceptionpoint.getParamCode());
 					excePoint.setParamValue(exceptionpoint.getParamValue());
-					//excePoint.setTime(exceptionpoint);
 					excePoint.setTime(exceptionpoint.getTime());
 					excePoint.set_time(exceptionpoint.get_time());
+					excePoint.setDeviceType(deviceType);
 					excePoint.set_recordtime(DateUtil.format(new Date()));
 					String jonContext = JJSON.get().formatObject(excePoint);
 					System.out.println("异常点"+excePoint);
