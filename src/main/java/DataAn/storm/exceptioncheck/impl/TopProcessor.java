@@ -323,6 +323,8 @@ public class TopProcessor {
 					String jonContext = JJSON.get().formatObject(jidongrecord);
 					System.out.println("特殊工况："+jonContext);
 					MongoPeristModel mpModel=new MongoPeristModel();
+					mpModel.setSeries(series);
+					mpModel.setStar(star);
 					mpModel.setCollections(new String[]{deviceType+"_job"});
 					mpModel.setContent(jonContext);
 					mpModel.setVersions(versions);
@@ -342,6 +344,8 @@ public class TopProcessor {
 					String jonContext = JJSON.get().formatObject(exceptionpoint);
 					System.out.println("异常点"+jonContext);
 					MongoPeristModel mpModel=new MongoPeristModel();
+					mpModel.setSeries(series);
+					mpModel.setStar(star);
 					mpModel.setCollections(new String[]{deviceType+"_job"});
 					mpModel.setContent(jonContext);
 					mpModel.setVersions(versions);
