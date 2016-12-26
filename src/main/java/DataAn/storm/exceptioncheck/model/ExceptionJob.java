@@ -27,9 +27,19 @@ public class ExceptionJob {
 	
 	private String datetime;
 	
+	private String _recordtime;
+	
 	private List<PointInfo> pointList; // 特殊工况数据点
 
 	
+	public String get_recordtime() {
+		return _recordtime;
+	}
+
+	public void set_recordtime(String _recordtime) {
+		this._recordtime = _recordtime;
+	}
+
 	public String getConfig() {
 		return config;
 	}

@@ -32,6 +32,8 @@ public class ExceptionPoint {
 
 	private String datetime;
 
+	private String _recordtime;
+	
 	public String getConfig() {
 		return config;
 	}
@@ -120,13 +122,31 @@ public class ExceptionPoint {
 		this._time = _time;
 	}
 
+	public String getDatetime() {
+		return datetime;
+	}
+
+	public void setDatetime(String datetime) {
+		this.datetime = datetime;
+	}
+
+	public String get_recordtime() {
+		return _recordtime;
+	}
+
+	public void set_recordtime(String _recordtime) {
+		this._recordtime = _recordtime;
+	}
+
 	@Override
 	public String toString() {
 		return "ExceptionPoint [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
 				+ ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime=" + beginTime + ", endTime="
 				+ endTime + ", paramCode=" + paramCode + ", paramValue=" + paramValue + ", time=" + time + ", _time="
-				+ _time + ", datetime=" + datetime + "]";
+				+ _time + ", datetime=" + datetime + ", _recordtime=" + _recordtime + "]";
 	}
+
+	
 	
 	
 }
