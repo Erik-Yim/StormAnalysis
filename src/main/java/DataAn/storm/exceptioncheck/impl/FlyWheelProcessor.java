@@ -1,6 +1,7 @@
 package DataAn.storm.exceptioncheck.impl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -352,6 +353,7 @@ IExceptionCheckNodeProcessor {
 			if(jobList == null || jobList.size() == 0)
 				continue;
 			for (ExceptionJob exceptionJob : jobList) {
+				exceptionJob.set_recordtime(DateUtil.format(new Date()));
 				String jonContext = JJSON.get().formatObject(exceptionJob);
 				MongoPeristModel mpModel=new MongoPeristModel();
 				mpModel.setSeries(series);
@@ -368,6 +370,7 @@ IExceptionCheckNodeProcessor {
 			if(exceList == null || exceList.size() == 0)
 				continue;
 			for (ExceptionPoint exceptionPoint : exceList) {
+				exceptionPoint.set_recordtime(DateUtil.format(new Date()));
 				String exceptinContext = JJSON.get().formatObject(exceptionPoint);
 				MongoPeristModel mpModel=new MongoPeristModel();
 				mpModel.setSeries(series);
