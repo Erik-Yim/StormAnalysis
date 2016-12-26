@@ -25,7 +25,7 @@ public class ExceptionJob {
 	
 	private long endTime;
 	
-	private String datetime;
+//	private String datetime;
 	
 	private String _recordtime;
 	
@@ -112,19 +112,12 @@ public class ExceptionJob {
 		this.pointList = pointList;
 	}
 
-	public String getDatetime() {
-		return datetime;
-	}
-
-	public void setDatetime(String datetime) {
-		this.datetime = datetime;
-	}
 
 	@Override
 	public String toString() {
 		return "ExceptionJob [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
 				+ ", deviceName=" + deviceName + ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime="
-				+ beginTime + ", endTime=" + endTime + ", datetime=" + datetime + ", pointList=" + pointList + "]";
+				+ beginTime + ", endTime=" + endTime + ", pointList=" + pointList + "]";
 	}
 
 	

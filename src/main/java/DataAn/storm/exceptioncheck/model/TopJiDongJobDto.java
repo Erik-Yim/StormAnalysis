@@ -44,7 +44,7 @@ public class TopJiDongJobDto {
 		private String series;
 		private String star;
 		
-		
+		private String config;// 配置
 		private String versions;// 一次csv上传的版本
 		private String deviceName;// 设备名称 Xa
 		private Date beginDate;// 开始时间		
@@ -180,6 +180,14 @@ public class TopJiDongJobDto {
 
 		public void setDeviceType(String deviceType) {
 			this.deviceType = deviceType;
+		}
+
+		public String getConfig() {
+			return config;
+		}
+
+		public void setConfig(String config) {
+			this.config = config;
 		}
 
 
