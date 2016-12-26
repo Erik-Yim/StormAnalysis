@@ -30,7 +30,7 @@ public class topcheck {
 		
 		//String fileName = "j9-02--2000-01-01.csv";
 		//String fileName = "j9-02--2005-01-01.csv";		
-		String fileName = "j9-02--2014-01-03.csv";		
+		String fileName = "j9-04--2000-03-01.csv";		
 		String filePath = "C:\\"+fileName;
 		String series = SeriesType.J9_SERIES.getName();
 		String star = J9SeriesType.STRA2.getValue();
@@ -53,7 +53,7 @@ public class topcheck {
 		processor = new TopProcessor(communication);
 	}
 	
-	@Test
+	/*@Test
 	public void test(){
 		String series = SeriesType.J9_SERIES.getName();
 		String star = J9SeriesType.STRA2.getValue();
@@ -61,7 +61,7 @@ public class topcheck {
 		for (String key : paramCode_deviceName_map.keySet()) {
 			System.out.println(key + " : " + paramCode_deviceName_map.get(key));
 		}
-	}
+	}*/
 	@Test
 	public void testProcess() throws Exception{
 		List<DefaultDeviceRecord> defaultDeviceRecords = this.getDefaultDeviceRecordList(communication);
@@ -69,7 +69,9 @@ public class topcheck {
 		for (DefaultDeviceRecord defaultDeviceRecord : defaultDeviceRecords) {
 			if(defaultDeviceRecord != null)
 			{
+				System.out.println("开始处理一条记录");
 				processor.process(defaultDeviceRecord);
+				System.out.println("结束一条记录");
 			}
 			
 		}

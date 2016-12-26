@@ -93,25 +93,29 @@ public class TopProcessor {
 //***************************************统计有几个陀螺******************************//		
 		//判断一共有多少个陀螺
 		String topName =null;
-		for(Map.Entry<String, TopJiDongjobConfig> entry:topjobconfigmap.entrySet())
-		{	
-			topName = entry.getKey();
-			List<TopJiDongJobDto>  OneTopJiDongJobdtolist = (List<TopJiDongJobDto>) topjidongDtosetMapCach.get(topName);				
-			if(OneTopJiDongJobdtolist==null){
-				OneTopJiDongJobdtolist = new ArrayList<TopJiDongJobDto>();
-				topjidongDtosetMapCach.put(topName, OneTopJiDongJobdtolist);
-			}								
-			List<TopJiDongJobDto>  OneJDlist = (List<TopJiDongJobDto>) topjidongMap.get(topName);				
-			if(OneJDlist==null){
-				OneJDlist = new ArrayList<TopJiDongJobDto>();
-				topjidongMap.put(topName, OneJDlist);
-			}
-			Set<TopTimeSpaceDto> onetimespaceset = jobTimeSetMap.get(topName);
-			if(null==onetimespaceset){
-				onetimespaceset = new HashSet<TopTimeSpaceDto>();
-				jobTimeSetMap.put(topName, onetimespaceset);
-			}
-			System.out.println(topName);
+		//TODO 判断为空
+		if(topjobconfigmap!=null)
+		{
+			for(Map.Entry<String, TopJiDongjobConfig> entry:topjobconfigmap.entrySet())
+			{	
+				topName = entry.getKey();
+				List<TopJiDongJobDto>  OneTopJiDongJobdtolist = (List<TopJiDongJobDto>) topjidongDtosetMapCach.get(topName);				
+				if(OneTopJiDongJobdtolist==null){
+					OneTopJiDongJobdtolist = new ArrayList<TopJiDongJobDto>();
+					topjidongDtosetMapCach.put(topName, OneTopJiDongJobdtolist);
+				}								
+				List<TopJiDongJobDto>  OneJDlist = (List<TopJiDongJobDto>) topjidongMap.get(topName);				
+				if(OneJDlist==null){
+					OneJDlist = new ArrayList<TopJiDongJobDto>();
+					topjidongMap.put(topName, OneJDlist);
+				}
+				Set<TopTimeSpaceDto> onetimespaceset = jobTimeSetMap.get(topName);
+				if(null==onetimespaceset){
+					onetimespaceset = new HashSet<TopTimeSpaceDto>();
+					jobTimeSetMap.put(topName, onetimespaceset);
+				}
+				System.out.println(topName);
+			}		
 		}		
 //***************************************统计有几个陀螺）******************************//
 //---------------------------------------陀螺异常点统计规则初始化------------------------------------//
@@ -185,6 +189,7 @@ public class TopProcessor {
 									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(topTempRecord.getPropertyVals()[i]));					
 									differenceValuelist.add(differenceValue);
 									//System.out.println("________________"+top+"___________________");
+									//System.out.println(paramValues[i]+"****"+topTempRecord.getPropertyVals()[i]);
 									//System.out.println(paramSequence[i]+"差值："+differenceValue);
 								}
 							}							
@@ -228,7 +233,7 @@ public class TopProcessor {
 								//如果小于持续时间说明不成立，删除缓存点 
 								if(delay_time<jidongconfig.getDelayTime())
 								{
-									//jobDtolist.clear();
+									jobDtolist.clear();
 								}else{//如果>=持续时间  说明以满足机动次数的条件。
 									TopJiDongJobDto onejd = new TopJiDongJobDto();
 									onejd.setJd_begintime(jobDtolist.get(0).getDateTime());
@@ -265,7 +270,8 @@ public class TopProcessor {
 			}
 //***************************************陀螺特殊工况（机动次数）******************************//			
 
-	 	}		
+	 	}
+		topTempRecord=deviceRecord;
 		return null;
 	}
 	
@@ -273,71 +279,79 @@ public class TopProcessor {
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
 		System.out.println("陀螺预警持久化");
 //---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//
-		for(String topNamekey:jobTimeSetMap.keySet())
+		if(jobTimeSetMap.keySet()!=null)
 		{
-			String topName=topNamekey;
-			Set<TopTimeSpaceDto> jobTimeSet = jobTimeSetMap.get(topName);
-			for(TopTimeSpaceDto timespacedto: jobTimeSet)
+			for(String topNamekey:jobTimeSetMap.keySet())
 			{
+				String topName=topNamekey;
+				Set<TopTimeSpaceDto> jobTimeSet = jobTimeSetMap.get(topName);
+				for(TopTimeSpaceDto timespacedto: jobTimeSet)
+				{
 
-				for(String sequence:topExcePointDtoMapCach.keySet())
-				{	//System.out.println(sequence+"缓存中的异常点个数"+topExcePointDtoMapCach.get(sequence).size());
-					List<TopExceptionPointDto> ecxeptionpointlist =topExcePointDtoMapCach.get(sequence);
-					if (null != ecxeptionpointlist && ecxeptionpointlist.size() > 0) {
-					    Iterator it = ecxeptionpointlist.iterator();  
-					    while(it.hasNext()){
-					    	TopExceptionPointDto pointdto = (TopExceptionPointDto) it.next(); 
-					        if (pointdto.getTopNmae().equals(topName)) {
-					        	if((pointdto.get_time()>timespacedto.getBegintime())&&(pointdto.get_time()<timespacedto.getEndtime()))
-								{
-					        		it.remove(); //移除该对象
-								}
-					        	
-					        }
-					    }
+					for(String sequence:topExcePointDtoMapCach.keySet())
+					{	//System.out.println(sequence+"缓存中的异常点个数"+topExcePointDtoMapCach.get(sequence).size());
+						List<TopExceptionPointDto> ecxeptionpointlist =topExcePointDtoMapCach.get(sequence);
+						if (null != ecxeptionpointlist && ecxeptionpointlist.size() > 0) {
+						    Iterator it = ecxeptionpointlist.iterator();  
+						    while(it.hasNext()){
+						    	TopExceptionPointDto pointdto = (TopExceptionPointDto) it.next(); 
+						        if (pointdto.getTopNmae().equals(topName)) {
+						        	if((pointdto.get_time()>timespacedto.getBegintime())&&(pointdto.get_time()<timespacedto.getEndtime()))
+									{
+						        		it.remove(); //移除该对象
+									}
+						        	
+						        }
+						    }
+						}
+						topExcePointDtoMap.put(sequence, ecxeptionpointlist);
 					}
-					topExcePointDtoMap.put(sequence, ecxeptionpointlist);
+					
+					
 				}
-				
-				
+			}
+			//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00131").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
+			//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
+	//---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//					
+			//特殊工况(机动次数)持久化
+			for (String topname : topjidongMap.keySet()){
+				List<TopJiDongJobDto> jidonglist = topjidongMap.get(topname);
+				if(jidonglist == null || jidonglist.size() == 0)
+					continue;
+				for (TopJiDongJobDto jidongrecord : jidonglist) {
+					//TODO 将对象转换成字符串
+					String jonContext = JJSON.get().formatObject(jidongrecord);
+					System.out.println("特殊工况："+jonContext);
+					MongoPeristModel mpModel=new MongoPeristModel();
+					mpModel.setCollections(new String[]{deviceType+"_job"});
+					mpModel.setContent(jonContext);
+					mpModel.setVersions(versions);
+					//simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
+				}
 			}
 		}
-		//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00131").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
-		//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
-//---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//		
-		//异常点持久化
-		for (String topname : topExcePointDtoMap.keySet()){
-			List<TopExceptionPointDto> exceptionpointlist = topExcePointDtoMap.get(topname);
-			if(exceptionpointlist == null || exceptionpointlist.size() == 0)
-				continue;
-			for (TopExceptionPointDto exceptionpoint : exceptionpointlist) {
-				//TODO 将对象转换成字符串
-				String jonContext = JJSON.get().formatObject(exceptionpoint);
-				System.out.println("异常点"+jonContext);
-				MongoPeristModel mpModel=new MongoPeristModel();
-				mpModel.setCollections(new String[]{deviceType+"_job"});
-				mpModel.setContent(jonContext);
-				mpModel.setVersions(versions);
-				//simpleProducer.send(mpModel,communication.getPersistTopicPartition());
-				
-			}
+		if(topExcePointDtoMap!=null)
+		{
+			//异常点持久化
+			for (String topname : topExcePointDtoMap.keySet()){
+				List<TopExceptionPointDto> exceptionpointlist = topExcePointDtoMap.get(topname);
+				if(exceptionpointlist == null || exceptionpointlist.size() == 0)
+					continue;
+				for (TopExceptionPointDto exceptionpoint : exceptionpointlist) {
+					//TODO 将对象转换成字符串
+					String jonContext = JJSON.get().formatObject(exceptionpoint);
+					System.out.println("异常点"+jonContext);
+					MongoPeristModel mpModel=new MongoPeristModel();
+					mpModel.setCollections(new String[]{deviceType+"_job"});
+					mpModel.setContent(jonContext);
+					mpModel.setVersions(versions);
+					//simpleProducer.send(mpModel,communication.getPersistTopicPartition());
+					
+				}
 		}
-		//特殊工况(机动次数)持久化
-		for (String topname : topjidongMap.keySet()){
-			List<TopJiDongJobDto> jidonglist = topjidongMap.get(topname);
-			if(jidonglist == null || jidonglist.size() == 0)
-				continue;
-			for (TopJiDongJobDto jidongrecord : jidonglist) {
-				//TODO 将对象转换成字符串
-				String jonContext = JJSON.get().formatObject(jidongrecord);
-				//System.out.println("特殊工况："+jonContext);
-				MongoPeristModel mpModel=new MongoPeristModel();
-				mpModel.setCollections(new String[]{deviceType+"_job"});
-				mpModel.setContent(jonContext);
-				mpModel.setVersions(versions);
-				//simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
-			}
+		
 		}
+
 		
 	}
 	
