@@ -701,7 +701,7 @@ public class NodeSelector implements Serializable{
 	}
 	
 	private void attachWorkersPathWatcher(final Workflow workflow){
-		String _path=workflow.pluginWorkersPath;
+		String _path=reportWorkersPath();
 		final PathChildrenCache cache= executor.watchChildrenPath(_path, 
 				new ZooKeeperClient.NodeChildrenCallback() {
 			@Override
