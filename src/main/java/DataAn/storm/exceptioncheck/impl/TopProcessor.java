@@ -326,7 +326,7 @@ public class TopProcessor {
 					mpModel.setCollections(new String[]{deviceType+"_job"});
 					mpModel.setContent(jonContext);
 					mpModel.setVersions(versions);
-					//simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
+					simpleProducer.send(mpModel,communication.getPersistTopicPartition());				
 				}
 			}
 		}
@@ -345,7 +345,7 @@ public class TopProcessor {
 					mpModel.setCollections(new String[]{deviceType+"_job"});
 					mpModel.setContent(jonContext);
 					mpModel.setVersions(versions);
-					//simpleProducer.send(mpModel,communication.getPersistTopicPartition());
+					simpleProducer.send(mpModel,communication.getPersistTopicPartition());
 					
 				}
 		}
