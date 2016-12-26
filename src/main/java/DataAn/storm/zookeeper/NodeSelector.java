@@ -795,7 +795,7 @@ public class NodeSelector implements Serializable{
 							List<String> workers=(List<String>) workflow.nodeData.getWorkers();
 							for(String worker:workers){
 								if(!strings.contains(worker)){
-									System.out.println("worker : "+worker +" is shutdown");
+									System.out.println(DateUtil.format(new Date()) + " worker : "+worker +" is shutdown");
 									//从zk上获取后台管理系统URL配置
 									String serverConfigPath = "/cfg/serverConfig";
 									byte[] serverConfigBytes = executor.getPath(serverConfigPath);
@@ -808,7 +808,7 @@ public class NodeSelector implements Serializable{
 							e.printStackTrace();
 						}
 					}
-				}, 10, TimeUnit.SECONDS);
+				}, 30, TimeUnit.SECONDS);
 			}
 		}, Executors.newFixedThreadPool(1, new ThreadFactory() {
 				@Override
