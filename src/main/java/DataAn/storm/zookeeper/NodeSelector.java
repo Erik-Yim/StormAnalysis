@@ -859,8 +859,8 @@ public class NodeSelector implements Serializable{
 					}
 					
 				},
-				10,
-				20,
+				3,
+				3,
 				TimeUnit.MINUTES);
 	}
 	
