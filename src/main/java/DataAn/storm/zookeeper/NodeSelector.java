@@ -845,8 +845,11 @@ public class NodeSelector implements Serializable{
 									Communication dest =JJSON.get().parse(new String(executor.getPath(taskPath), Charset.forName("utf-8"))
 																	,Communication.class);
 									if(dest.getStatus().equals(NodeStatus.PROCESSING)){
-										executor.deletePath(taskPath);
-										FlowUtils.setError(executor, dest, "数据处理超时...");
+										ErrorMsg errorMsg=new ErrorMsg();
+										errorMsg.setMsg("数据处理超时...");
+										errorMsg.setSequence(dest.getSequence());
+										FlowUtils.setError(executor, errorMsg);
+										CommunicationUtils.get(executor).remove(dest);
 										break;
 									}
 									
@@ -859,8 +862,8 @@ public class NodeSelector implements Serializable{
 					}
 					
 				},
-				10,
-				20,
+				3,
+				3,
 				TimeUnit.MINUTES);
 	}
 	
