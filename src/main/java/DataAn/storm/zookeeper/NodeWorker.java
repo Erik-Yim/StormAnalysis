@@ -143,11 +143,21 @@ public class NodeWorker implements Serializable {
 						final String stringData=node.getStringData();
 						final WorkerPathVal workerPathVal=
 								JJSON.get().parse(stringData,WorkerPathVal.class);
-						final String tempPath=executor.createEphSequencePath(path+"/temp-");
+						final String tempPath=executor.createPath(path+"/temp-", 
+								stringData.getBytes(Charset.forName("utf-8")),
+								CreateMode.EPHEMERAL_SEQUENTIAL);
 						WorkerTemporary workerTemporary=new WorkerTemporary();
 						workerTemporary.setTempPath(tempPath);
 						workerTemporary.setWorkerPathVal(workerPathVal);
 						setWorkerTemporary(workerTemporary);
+						//delete other path exclude itself
+						List<String> paths= executor.backend().getChildren().forPath(path);
+						for (String string : paths) {
+							String _path=path+"/"+string;
+							if(!tempPath.equals(_path)){
+								executor.deletePath(_path);
+							}
+						}
 						executorService.execute(new Runnable() {
 							@Override
 							public void run() {
