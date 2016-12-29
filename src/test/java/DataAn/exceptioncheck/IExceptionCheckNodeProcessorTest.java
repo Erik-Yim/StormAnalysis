@@ -1,6 +1,7 @@
 package DataAn.exceptioncheck;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,10 +29,14 @@ public class IExceptionCheckNodeProcessorTest {
 	public void init(){
 		j9SeriesService = new J9SeriesService();
 		
-		String fileName = "j9-02--2000-01-01.csv";
-		String filePath = "E:\\data\\flywheel\\2000\\01\\"+fileName;
+//		String fileName = "j9-05--2014-02-05.csv";
+//		String filePath = "E:\\data\\flywheel\\"+fileName;
+		
+		String fileName = "j9-04--2005-04-09.csv";
+		String filePath = "E:\\data\\flywheel\\2005\\01\\"+fileName;
+
 		String series = SeriesType.J9_SERIES.getName();
-		String star = J9SeriesType.STRA2.getValue();
+		String star = J9SeriesType.STRA4.getValue();
 		String paramType = J9Series_Star_ParameterType.FLYWHEEL.getValue();
 		String versions = UUIDGeneratorUtil.getUUID();
 		communication = new Communication();
@@ -41,7 +46,17 @@ public class IExceptionCheckNodeProcessorTest {
 		communication.setSeries(series);
 		communication.setStar(star);
 		communication.setName(paramType);
-		
+		try {
+			Map context = new HashMap<>();
+			context.put("series", series);
+			context.put("star", star);
+			context.put("device", paramType);
+			context.put("serverConfig", "192.168.0.158:8080");
+			new IPropertyConfigStoreImpl().initialize(context);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		processor = new FlyWheelProcessor(communication);
 	}
 	

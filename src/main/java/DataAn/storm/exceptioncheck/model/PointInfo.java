@@ -6,9 +6,9 @@ public class PointInfo {
 	
 	private String paramValue;
 	
-	private String time;
+	private String time; // yyyy-MM-dd HH:mm:ss
 	
-	private long _time;
+	private long _time; // 时间截
 
 	public String getParamCode() {
 		return paramCode;

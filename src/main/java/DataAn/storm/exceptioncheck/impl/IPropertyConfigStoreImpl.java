@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
 
@@ -48,34 +50,28 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
 		
-		if(context==null)
-		{
-			context = new HashMap<>();
-			context.put("series", "j9");
-			context.put("star", "02");
-			context.put("device", "top");
-			context.put("serverConfig", "192.168.0.9:8080");
-		}
-		series_start_map.clear();
-		Map conf=new HashMap<>();
-		BaseConfig baseConfig=null;
-		baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
-		ZooKeeperNameKeys.setZooKeeperServer(conf, baseConfig.getZooKeeper());
-		ZooKeeperNameKeys.setNamespace(conf, baseConfig.getNamespace());
-		ZookeeperExecutor executor=new ZooKeeperClient()
-				.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
-				.namespace(ZooKeeperNameKeys.getNamespace(conf))
-				.build();
-		String path = "/cfg/serverConfig";
-		byte[] bytes = executor.getPath(path);
-		String serverConfig = new String(bytes, Charset.forName("utf-8"));
-		context.put("serverConfig", serverConfig);
-		String parameterType =  (String) context.get("device");
-		if(parameterType.equals("flywheel"))
-			initializeFlywheel(context);
-		else if(parameterType.equals("top")){
-			initializeTop(context);
-			
+		if(context != null){
+			series_start_map.clear();
+			Map conf=new HashMap<>();
+			BaseConfig baseConfig=null;
+			baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
+			ZooKeeperNameKeys.setZooKeeperServer(conf, baseConfig.getZooKeeper());
+			ZooKeeperNameKeys.setNamespace(conf, baseConfig.getNamespace());
+			ZookeeperExecutor executor=new ZooKeeperClient()
+					.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
+					.namespace(ZooKeeperNameKeys.getNamespace(conf))
+					.build();
+			String path = "/cfg/serverConfig";
+			byte[] bytes = executor.getPath(path);
+			String serverConfig = new String(bytes, Charset.forName("utf-8"));
+			context.put("serverConfig", serverConfig);
+			String parameterType =  (String) context.get("device");
+			if(parameterType.equals("flywheel"))
+				initializeFlywheel(context);
+			else if(parameterType.equals("top")){
+				initializeTop(context);
+				
+			}
 		}
 		
 		return null;
@@ -89,7 +85,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		
 		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
 		String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
-		if(entity != null && !"".equals(entity)){
+		if(StringUtils.isNotBlank(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);
 			Object exceptionJobConfigObj = map.get("exceptionJobConfig");
 			Map<String, ExceptionJobConfig> device_exceptionJobConfigs = new HashMap<String, ExceptionJobConfig>();
@@ -127,7 +123,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		 //String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
 		String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+""); 
-		if(entity != null && !"".equals(entity)){
+		if(StringUtils.isNotBlank(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);						
 			//机动规则
 			Object exceptionJobConfigObj = map.get("exceptionJobConfig");			
@@ -167,7 +163,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 					topjobconfigmap.put(topName, topjidongjobconfig);					
 					//paramCode_deviceName_map.put(topName, topName);
 					//device_exceptionJobConfigs.put(topName, topjobconfigmap);
-				}							
+				}	
 			}
 					
 			//异常规则
@@ -230,8 +226,24 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	
 	@Override
 	public Map<String,String> getParamCode_deviceName_map(String ...args){
+		int i = 0;
 		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
-		return ecfm.getParamCode_deviceName_map();
+		if(ecfm != null){
+			if(ecfm.getParamCode_deviceName_map() != null){
+				return ecfm.getParamCode_deviceName_map();
+			}else
+				i++;
+		}else
+			i++;
+		if(i>0){
+			System.out.println("getParamCode_deviceName_map...");
+			System.out.println(args[0]+"_"+args[1]);
+			if(i==1)
+				System.out.println("无此设备配置");
+			if(i==2)
+				System.out.println("无此星系配置");				
+		}
+		return new HashMap<String,String>();
 	}
 	
 	@Override
@@ -292,18 +304,18 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 				return ecfm.getTopjobconfigmap();				
 			}
 		}
-		return null;
+		return new HashMap<String,TopJiDongjobConfig>();
 	}
 	
 	@Override
-	public  Map<String,TopExceptionPointConfig> gettoppointrules(String... args){
+	public Map<String,TopExceptionPointConfig> gettoppointrules(String... args){
 		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
 		if(ecfm != null){
 			if(ecfm.getToppointconfigmap() != null){
 				return ecfm.getToppointconfigmap();				
 			}
 		}
-		return null;
+		return new HashMap<String,TopExceptionPointConfig>();
 	}
 	
 	protected static void testInit(){
