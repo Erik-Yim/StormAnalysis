@@ -173,25 +173,28 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			//异常规则
 			Object exceptionPointConfigObj = map.get("exceptionPointConfig");			
 			//Map<String, ExceptionPointConfig> param_exceptionPointConfigs = new HashMap<String, ExceptionPointConfig>();			
-			Map<String,TopExceptionPointConfig> toppointconfigmap = new HashMap<>();			
-			List<String> exparamlist = new ArrayList<String>();
-			List<ExceptionPointConfig> exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
-			for (ExceptionPointConfig exceConfig : exceConfigList) {
-				exparamlist.add(exceConfig.getParamCode());
-				double max = exceConfig.getMax();
-				double min = exceConfig.getMin();
-				String topName = exceConfig.getDeviceName();
-				
-				TopExceptionPointConfig expointconf=new TopExceptionPointConfig();
-				expointconf.setParamCode(exceConfig.getParamCode());
-				expointconf.setMax(max);
-				expointconf.setMin(min);
-				//TODO 设置陀螺名字
-				expointconf.setTopName(topName);
-				//expointconf.setTopName("AA");
-				toppointconfigmap.put(exceConfig.getParamCode(), expointconf);
-				
-			}			
+			Map<String,TopExceptionPointConfig> toppointconfigmap = new HashMap<>();
+			if(exceptionPointConfigObj !=null){
+				List<String> exparamlist = new ArrayList<String>();
+				List<ExceptionPointConfig> exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
+				for (ExceptionPointConfig exceConfig : exceConfigList) {
+					exparamlist.add(exceConfig.getParamCode());
+					double max = exceConfig.getMax();
+					double min = exceConfig.getMin();
+					String topName = exceConfig.getDeviceName();
+					
+					TopExceptionPointConfig expointconf=new TopExceptionPointConfig();
+					expointconf.setParamCode(exceConfig.getParamCode());
+					expointconf.setMax(max);
+					expointconf.setMin(min);
+					//TODO 设置陀螺名字
+					expointconf.setTopName(topName);
+					//expointconf.setTopName("AA");
+					toppointconfigmap.put(exceConfig.getParamCode(), expointconf);
+					
+				}
+			}
+						
 			//将获取到的规则保存进ECM
 			ExceptionConfigModel ecm =  new ExceptionConfigModel();
 			//ecm.setParamCode_deviceName_map(paramCode_deviceName_map);
