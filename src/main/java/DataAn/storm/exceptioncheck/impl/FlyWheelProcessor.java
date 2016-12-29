@@ -515,6 +515,11 @@ IExceptionCheckNodeProcessor {
 				simpleProducer.send(mpModel,communication.getPersistTopicPartition());
 			}
 		}
+		jobListMap.clear();
+		jobTimeSetMap.clear();
+		jobListMapCache.clear();
+		exceListMap.clear();
+		exceListMapCache.clear();
 	}
 	
 	public void setBatchContext(BatchContext batchContext) {

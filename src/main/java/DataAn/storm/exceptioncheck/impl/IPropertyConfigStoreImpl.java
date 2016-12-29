@@ -163,7 +163,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 					topjobconfigmap.put(topName, topjidongjobconfig);					
 					//paramCode_deviceName_map.put(topName, topName);
 					//device_exceptionJobConfigs.put(topName, topjobconfigmap);
-				}							
+				}	
 			}
 					
 			//异常规则
