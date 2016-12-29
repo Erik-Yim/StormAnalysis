@@ -31,7 +31,7 @@ public interface IDeviceRecord extends Serializable{
 	String getStar();
 	
 	/**
-	 * 参数记录时间
+	 * 参数记录时间--> yyyy-MM-dd HH:mm:ss
 	 * @return
 	 */
 	String getTime();

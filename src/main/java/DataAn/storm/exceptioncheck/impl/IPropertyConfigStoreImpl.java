@@ -227,8 +227,24 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	
 	@Override
 	public Map<String,String> getParamCode_deviceName_map(String ...args){
+		int i = 0;
 		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
-		return ecfm.getParamCode_deviceName_map();
+		if(ecfm != null){
+			if(ecfm.getParamCode_deviceName_map() != null){
+				return ecfm.getParamCode_deviceName_map();
+			}else
+				i++;
+		}else
+			i++;
+		if(i>0){
+			System.out.println("getParamCode_deviceName_map...");
+			System.out.println(args[0]+"_"+args[1]);
+			if(i==1)
+				System.out.println("无此设备配置");
+			if(i==2)
+				System.out.println("无此星系配置");				
+		}
+		return new HashMap<String,String>();
 	}
 	
 	@Override
@@ -289,18 +305,18 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 				return ecfm.getTopjobconfigmap();				
 			}
 		}
-		return null;
+		return new HashMap<String,TopJiDongjobConfig>();
 	}
 	
 	@Override
-	public  Map<String,TopExceptionPointConfig> gettoppointrules(String... args){
+	public Map<String,TopExceptionPointConfig> gettoppointrules(String... args){
 		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
 		if(ecfm != null){
 			if(ecfm.getToppointconfigmap() != null){
 				return ecfm.getToppointconfigmap();				
 			}
 		}
-		return null;
+		return new HashMap<String,TopExceptionPointConfig>();
 	}
 	
 	protected static void testInit(){

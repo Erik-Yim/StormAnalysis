@@ -329,9 +329,9 @@ public class TopProcessor {
 					jidongjob.setVersions(jidongrecord.getVersions());
 					jidongjob.setDeviceType(deviceType);
 					jidongjob.setDeviceName(jidongrecord.getTopname());
-					jidongjob.setBeginDate(jidongrecord.getBeginDate());
+					jidongjob.setBeginDate(DateUtil.format(jidongrecord.getBeginDate()));
 					jidongjob.setBeginTime(jidongrecord.getBeginDate().getTime());
-					jidongjob.setEndDate(jidongrecord.getEndDate());
+					jidongjob.setEndDate(DateUtil.format(jidongrecord.getEndDate()));
 					jidongjob.setEndTime(jidongrecord.getEndDate().getTime());
 					jidongjob.set_recordtime(DateUtil.format(new Date()));
 					
@@ -359,8 +359,9 @@ public class TopProcessor {
 					ExceptionPoint excePoint =new ExceptionPoint();
 					//excePoint.setConfig(config);
 					excePoint.setVersions(exceptionpoint.getVersions());
-					excePoint.setBeginDate(exceptionpoint.getBeginDate());
-					excePoint.setEndDate(exceptionpoint.getEndDate());
+					excePoint.setDatetime(DateUtil.format(exceptionpoint.getBeginDate()));
+					excePoint.setBeginDate(DateUtil.format(exceptionpoint.getBeginDate()));
+					excePoint.setEndDate(DateUtil.format(exceptionpoint.getEndDate()));
 					excePoint.setBeginTime(exceptionpoint.getBeginDate().getTime());
 					excePoint.setEndTime(exceptionpoint.getEndDate().getTime());
 					excePoint.setParamCode(exceptionpoint.getParamCode());

@@ -1,6 +1,5 @@
 package DataAn.storm.exceptioncheck.model;
 
-import java.util.Date;
 
 /**
  * 异常数据
@@ -14,13 +13,13 @@ public class ExceptionPoint {
 	
 	private String deviceType;// 设备类型
 
-	private Date beginDate;// 开始时间
+	private String beginDate;// 开始时间--> yyyy-MM-dd HH:mm:ss
 	
-	private Date endDate;// 结束时间
+	private String endDate;// 结束时间 --> yyyy-MM-dd HH:mm:ss
 	
-	private long beginTime;
+	private long beginTime;// 开始时间截
 	
-	private long endTime;
+	private long endTime;// 结束时间截
 	
 	private String paramCode;// 参数Code
 	
@@ -30,7 +29,7 @@ public class ExceptionPoint {
 	
 	private long _time; // 参数时间截
 
-//	private String datetime;
+	private String datetime;
 
 	private String _recordtime;
 	
@@ -58,19 +57,19 @@ public class ExceptionPoint {
 		this.deviceType = deviceType;
 	}
 
-	public Date getBeginDate() {
+	public String getBeginDate() {
 		return beginDate;
 	}
 
-	public void setBeginDate(Date beginDate) {
+	public void setBeginDate(String beginDate) {
 		this.beginDate = beginDate;
 	}
 
-	public Date getEndDate() {
+	public String getEndDate() {
 		return endDate;
 	}
 
-	public void setEndDate(Date endDate) {
+	public void setEndDate(String endDate) {
 		this.endDate = endDate;
 	}
 
@@ -120,6 +119,14 @@ public class ExceptionPoint {
 
 	public void set_time(long _time) {
 		this._time = _time;
+	}
+
+	public String getDatetime() {
+		return datetime;
+	}
+
+	public void setDatetime(String datetime) {
+		this.datetime = datetime;
 	}
 
 	public String get_recordtime() {

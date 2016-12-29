@@ -17,21 +17,29 @@ public class ExceptionJob {
 
 	private String deviceName;// 设备名称 Xa
 	
-	private Date beginDate;// 开始时间
+	private String beginDate;// 开始时间 --> yyyy-MM-dd HH:mm:ss
 	
-	private Date endDate;// 结束时间
+	private String endDate;// 结束时间 --> yyyy-MM-dd HH:mm:ss
 	
-	private long beginTime;
+	private long beginTime;// 开始时间截
 	
-	private long endTime;
+	private long endTime;// 结束时间截
 	
-//	private String datetime;
+	private String datetime;
 	
 	private String _recordtime;
 	
 	private List<PointInfo> pointList; // 特殊工况数据点
 
 	
+	public String getDatetime() {
+		return datetime;
+	}
+
+	public void setDatetime(String datetime) {
+		this.datetime = datetime;
+	}
+
 	public String get_recordtime() {
 		return _recordtime;
 	}
@@ -72,19 +80,19 @@ public class ExceptionJob {
 		this.deviceName = deviceName;
 	}
 
-	public Date getBeginDate() {
+	public String getBeginDate() {
 		return beginDate;
 	}
 
-	public void setBeginDate(Date beginDate) {
+	public void setBeginDate(String beginDate) {
 		this.beginDate = beginDate;
 	}
 
-	public Date getEndDate() {
+	public String getEndDate() {
 		return endDate;
 	}
 
-	public void setEndDate(Date endDate) {
+	public void setEndDate(String endDate) {
 		this.endDate = endDate;
 	}
 
