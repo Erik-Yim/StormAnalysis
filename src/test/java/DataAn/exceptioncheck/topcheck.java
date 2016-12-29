@@ -1,6 +1,7 @@
 package DataAn.exceptioncheck;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,11 @@ public class topcheck {
 		communication.setName(paramType);
 		
 		try {
+			Map context = new HashMap<>();
+			context.put("series", "j9");
+			context.put("star", "02");
+			context.put("device", "top");
+			context.put("serverConfig", "192.168.0.9:8080");
 			new IPropertyConfigStoreImpl().initialize(null);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
