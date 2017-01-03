@@ -75,6 +75,8 @@ public interface IMongoPersistService {
 						}
 						if(doc.get("datetime") == null)
 							doc.put("datetime", new Date());
+						//标志数据当前状态为活跃状态1
+						doc.put("status", 1);
 						list.add(doc);
 						map.put(collectionStr, list);
 					}

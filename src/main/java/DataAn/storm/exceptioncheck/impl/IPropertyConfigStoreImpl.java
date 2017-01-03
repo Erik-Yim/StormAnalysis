@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
 
@@ -48,34 +50,28 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
 		
-		if(context==null)
-		{
-			context = new HashMap<>();
-			context.put("series", "j9");
-			context.put("star", "02");
-			context.put("device", "top");
-			context.put("serverConfig", "192.168.0.9:8080");
-		}
-		series_start_map.clear();
-		Map conf=new HashMap<>();
-		BaseConfig baseConfig=null;
-		baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
-		ZooKeeperNameKeys.setZooKeeperServer(conf, baseConfig.getZooKeeper());
-		ZooKeeperNameKeys.setNamespace(conf, baseConfig.getNamespace());
-		ZookeeperExecutor executor=new ZooKeeperClient()
-				.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
-				.namespace(ZooKeeperNameKeys.getNamespace(conf))
-				.build();
-		String path = "/cfg/serverConfig";
-		byte[] bytes = executor.getPath(path);
-		String serverConfig = new String(bytes, Charset.forName("utf-8"));
-		context.put("serverConfig", serverConfig);
-		String parameterType =  (String) context.get("device");
-		if(parameterType.equals("flywheel"))
-			initializeFlywheel(context);
-		else if(parameterType.equals("top")){
-			initializeTop(context);
-			
+		if(context != null){
+			series_start_map.clear();
+			Map conf=new HashMap<>();
+			BaseConfig baseConfig=null;
+			baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
+			ZooKeeperNameKeys.setZooKeeperServer(conf, baseConfig.getZooKeeper());
+			ZooKeeperNameKeys.setNamespace(conf, baseConfig.getNamespace());
+			ZookeeperExecutor executor=new ZooKeeperClient()
+					.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
+					.namespace(ZooKeeperNameKeys.getNamespace(conf))
+					.build();
+			String path = "/cfg/serverConfig";
+			byte[] bytes = executor.getPath(path);
+			String serverConfig = new String(bytes, Charset.forName("utf-8"));
+			context.put("serverConfig", serverConfig);
+			String parameterType =  (String) context.get("device");
+			if(parameterType.equals("flywheel"))
+				initializeFlywheel(context);
+			else if(parameterType.equals("top")){
+				initializeTop(context);
+				
+			}
 		}
 		
 		return null;
@@ -89,7 +85,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		
 		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
 		String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+"");
-		if(entity != null && !"".equals(entity)){
+		if(StringUtils.isNotBlank(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);
 			Object exceptionJobConfigObj = map.get("exceptionJobConfig");
 			Map<String, ExceptionJobConfig> device_exceptionJobConfigs = new HashMap<String, ExceptionJobConfig>();
@@ -127,7 +123,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		 //String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
 		String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+""); 
-		if(entity != null && !"".equals(entity)){
+		if(StringUtils.isNotBlank(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);						
 			//机动规则
 			Object exceptionJobConfigObj = map.get("exceptionJobConfig");			
@@ -167,31 +163,34 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 					topjobconfigmap.put(topName, topjidongjobconfig);					
 					//paramCode_deviceName_map.put(topName, topName);
 					//device_exceptionJobConfigs.put(topName, topjobconfigmap);
-				}							
+				}	
 			}
 					
 			//异常规则
 			Object exceptionPointConfigObj = map.get("exceptionPointConfig");			
 			//Map<String, ExceptionPointConfig> param_exceptionPointConfigs = new HashMap<String, ExceptionPointConfig>();			
-			Map<String,TopExceptionPointConfig> toppointconfigmap = new HashMap<>();			
-			List<String> exparamlist = new ArrayList<String>();
-			List<ExceptionPointConfig> exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
-			for (ExceptionPointConfig exceConfig : exceConfigList) {
-				exparamlist.add(exceConfig.getParamCode());
-				double max = exceConfig.getMax();
-				double min = exceConfig.getMin();
-				String topName = exceConfig.getDeviceName();
-				
-				TopExceptionPointConfig expointconf=new TopExceptionPointConfig();
-				expointconf.setParamCode(exceConfig.getParamCode());
-				expointconf.setMax(max);
-				expointconf.setMin(min);
-				//TODO 设置陀螺名字
-				expointconf.setTopName(topName);
-				//expointconf.setTopName("AA");
-				toppointconfigmap.put(exceConfig.getParamCode(), expointconf);
-				
-			}			
+			Map<String,TopExceptionPointConfig> toppointconfigmap = new HashMap<>();
+			if(exceptionPointConfigObj !=null){
+				List<String> exparamlist = new ArrayList<String>();
+				List<ExceptionPointConfig> exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
+				for (ExceptionPointConfig exceConfig : exceConfigList) {
+					exparamlist.add(exceConfig.getParamCode());
+					double max = exceConfig.getMax();
+					double min = exceConfig.getMin();
+					String topName = exceConfig.getDeviceName();
+					
+					TopExceptionPointConfig expointconf=new TopExceptionPointConfig();
+					expointconf.setParamCode(exceConfig.getParamCode());
+					expointconf.setMax(max);
+					expointconf.setMin(min);
+					//TODO 设置陀螺名字
+					expointconf.setTopName(topName);
+					//expointconf.setTopName("AA");
+					toppointconfigmap.put(exceConfig.getParamCode(), expointconf);
+					
+				}
+			}
+						
 			//将获取到的规则保存进ECM
 			ExceptionConfigModel ecm =  new ExceptionConfigModel();
 			//ecm.setParamCode_deviceName_map(paramCode_deviceName_map);

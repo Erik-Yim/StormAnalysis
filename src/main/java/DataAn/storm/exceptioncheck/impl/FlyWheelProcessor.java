@@ -65,6 +65,9 @@ IExceptionCheckNodeProcessor {
 		String[] paramValues = deviceRecord.getPropertyVals();
 		String[] paramCodes = deviceRecord.getProperties();
 		for (int i = 0; i < paramCodes.length; i++) {
+			if(!this.isNumber(paramValues[i]))
+				continue;
+			
 			double value = Double.parseDouble(paramValues[i]);
 			
 			//获取参数设备名称
@@ -73,7 +76,8 @@ IExceptionCheckNodeProcessor {
 			if(StringUtils.isNotBlank(deviceName)){
 				//获取设备的特殊工况配置
 				ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
-				if(jobConfig != null)
+				if(jobConfig != null){
+					//判断当前参数是特殊工况的判断参数
 					if(paramCodes[i].equals(jobConfig.getParamCode())){
 						//判断特殊工况点: 比最大值大
 						if(jobConfig.getMax() < value){
@@ -90,12 +94,13 @@ IExceptionCheckNodeProcessor {
 							jobListMapCache.put(paramCodes[i], jobListCache);
 						}
 					}
+				}
 			}
 			
 			//获取异常配置
 			ExceptionPointConfig exceConfig = propertyConfigStoreImpl.getParamExceptionPointConfigByParamCode(new String[]{series,star,paramCodes[i]});
 			//当参数异常不为空时往下执行
-			if(exceConfig != null)
+			if(exceConfig != null){
 				//判断异常点: 比最大值大、比最小值小
 				if(exceConfig.getMin() > value || exceConfig.getMax() < value){
 					LinkedList<PointInfo> exceListCache = exceListMapCache.get(paramCodes[i]);
@@ -110,6 +115,7 @@ IExceptionCheckNodeProcessor {
 					exceListCache.add(point);
 					exceListMapCache.put(paramCodes[i], exceListCache);
 				}
+			}
 		}
 		
 		//判断一个参数的特殊工况
@@ -135,7 +141,7 @@ IExceptionCheckNodeProcessor {
 			//连续一段时间内
 			if((jobConfig.getDelayTime() <= interval) && (interval <= (jobConfig.getDelayTime() + 1000))){
 				//次数大于规定次数 记录一次特殊工况
-				if(jobListCache.size() > jobConfig.getCount()){
+				if(jobListCache.size() >= jobConfig.getCount()){
 					List<ExceptionJob> jobList = jobListMap.get(deviceName);
 					if(jobList == null){
 						jobList = new ArrayList<ExceptionJob>();
@@ -153,11 +159,11 @@ IExceptionCheckNodeProcessor {
 					job.setVersions(versions);
 					job.setDeviceType(deviceType);
 					job.setDeviceName(deviceName);
-					job.setDatetime(firstPoint.getTime());
-					job.setBeginDate(firstPoint.getTime());
-					job.setBeginTime(firstPoint.get_time());
-					job.setEndDate(lastPoint.getTime());
-					job.setEndTime(lastPoint.get_time());
+					job.setDatetime(pointList.get(0).getTime());
+					job.setBeginDate(pointList.get(0).getTime());
+					job.setBeginTime(pointList.get(0).get_time());
+					job.setEndDate(pointList.get(pointList.size() - 1).getTime());
+					job.setEndTime(pointList.get(pointList.size() - 1).get_time());
 					job.setPointList(pointList);
 					jobList.add(job);
 					//根据设备名称添加进集合
@@ -168,7 +174,54 @@ IExceptionCheckNodeProcessor {
 			}
 			//计数点往前推
 			if(interval > (jobConfig.getDelayTime() + 1000)){
-				while(interval > (jobConfig.getDelayTime() + 1)){
+				
+				for (int i = jobListCache.size(); i > 0; i--) {
+					interval = jobListCache.get(i-1).get_time() - firstPoint.get_time();
+					//连续一段时间内
+					if((interval <= (jobConfig.getDelayTime() + 1000))){
+						//次数大于规定次数 记录一次特殊工况
+						if(i >= jobConfig.getCount()){
+							List<ExceptionJob> jobList = jobListMap.get(deviceName);
+							if(jobList == null){
+								jobList = new ArrayList<ExceptionJob>();
+							}
+							Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
+							if(jobTimeSet == null){
+								jobTimeSet = new HashSet<String>();
+							}
+							List<PointInfo> pointList = new ArrayList<PointInfo>();
+							for (int j = 0; j <= i; j++) {
+								PointInfo pointInfo = jobListCache.removeFirst();
+								jobTimeSet.add(pointInfo.getTime());
+								pointList.add(pointInfo);
+							}	
+							
+							ExceptionJob job = new ExceptionJob();
+							job.setVersions(versions);
+							job.setDeviceType(deviceType);
+							job.setDeviceName(deviceName);
+							job.setDatetime(pointList.get(0).getTime());
+							job.setBeginDate(pointList.get(0).getTime());
+							job.setBeginTime(pointList.get(0).get_time());
+							job.setEndDate(pointList.get(pointList.size() - 1).getTime());
+							job.setEndTime(pointList.get(pointList.size() - 1).get_time());
+							job.setPointList(pointList);
+							jobList.add(job);
+							//根据设备名称添加进集合
+							jobListMap.put(deviceName, jobList);
+							//更新缓存数据集合
+							jobListMapCache.put(paramCode, jobListCache);
+						}
+					}
+				}
+				
+				firstPoint = jobListCache.getFirst();
+				lastPoint = jobListCache.getLast();
+				//收尾时间间隔(通过毫秒计算 )
+				interval = lastPoint.get_time() - firstPoint.get_time();
+				
+				
+				while(interval > (jobConfig.getDelayTime() + 1000)){
 					jobListCache.removeFirst();
 					firstPoint = jobListCache.getFirst();
 					interval = lastPoint.get_time() - firstPoint.get_time();
@@ -253,6 +306,63 @@ IExceptionCheckNodeProcessor {
 
 	@Override
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
+		//还有一些点没有处理
+		//判断一个参数的特殊工况
+		for (String paramCode : jobListMapCache.keySet()) {
+			LinkedList<PointInfo> jobListCache = jobListMapCache.get(paramCode);
+			//参数无特殊工况时，不执行
+			if(jobListCache == null || jobListCache.size() == 0)
+				continue;
+			//获取参数设备名称
+			String deviceName = paramCode_deviceName_map.get(paramCode);
+			//判断是否有此参数设备，有就执行设备特殊工况，无就不执行
+			if(StringUtils.isBlank(deviceName))
+				continue;
+			//获取设备的特殊工况配置
+			ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
+			//当参数异常不为空时往下执行
+			if(jobConfig == null)
+				continue;
+			PointInfo firstPoint = jobListCache.getFirst();
+			PointInfo lastPoint = jobListCache.getLast();
+			//收尾时间间隔(通过毫秒计算 )
+			long interval = lastPoint.get_time() - firstPoint.get_time();
+			//连续一段时间内
+			if(interval <= (jobConfig.getDelayTime() + 1000)){
+				//次数大于规定次数 记录一次特殊工况
+				if(jobListCache.size() > jobConfig.getCount()){
+					List<ExceptionJob> jobList = jobListMap.get(deviceName);
+					if(jobList == null){
+						jobList = new ArrayList<ExceptionJob>();
+					}
+					Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
+					if(jobTimeSet == null){
+						jobTimeSet = new HashSet<String>();
+					}
+					List<PointInfo> pointList = new ArrayList<PointInfo>();
+					for (PointInfo pointInfo : jobListCache) {
+						jobTimeSet.add(pointInfo.getTime());
+						pointList.add(pointInfo);
+					}
+					ExceptionJob job = new ExceptionJob();
+					job.setVersions(versions);
+					job.setDeviceType(deviceType);
+					job.setDeviceName(deviceName);
+					job.setDatetime(firstPoint.getTime());
+					job.setBeginDate(firstPoint.getTime());
+					job.setBeginTime(firstPoint.get_time());
+					job.setEndDate(lastPoint.getTime());
+					job.setEndTime(lastPoint.get_time());
+					job.setPointList(pointList);
+					jobList.add(job);
+					//根据设备名称添加进集合
+					jobListMap.put(deviceName, jobList);
+					//删除缓存数据集合
+					jobListMapCache.remove(paramCode);
+				}
+			}
+		}
+		
 		//判断一个参数的异常
 		int firstPoint = 0;
 		for (String paramCode : exceListMapCache.keySet()) {
@@ -405,6 +515,11 @@ IExceptionCheckNodeProcessor {
 				simpleProducer.send(mpModel,communication.getPersistTopicPartition());
 			}
 		}
+		jobListMap.clear();
+		jobTimeSetMap.clear();
+		jobListMapCache.clear();
+		exceListMap.clear();
+		exceListMapCache.clear();
 	}
 	
 	public void setBatchContext(BatchContext batchContext) {
@@ -413,5 +528,17 @@ IExceptionCheckNodeProcessor {
 
 	public BatchContext getBatchContext() {
 		return batchContext;
+	}
+	
+	/**
+	 * 是不是一个数字
+	 * 
+	 * @param str
+	 * @return
+	 */
+	protected boolean isNumber(String str) {
+		return str != null ? str
+				.matches("^[-+]?(([0-9]+)((([.]{0})([0-9]*))|(([.]{1})([0-9]+))))$")
+				: false;
 	}
 }
