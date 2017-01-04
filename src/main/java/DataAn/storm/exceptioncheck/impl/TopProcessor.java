@@ -375,7 +375,7 @@ public class TopProcessor {
 					MongoPeristModel mpModel=new MongoPeristModel();
 					mpModel.setSeries(series);
 					mpModel.setStar(star);
-					mpModel.setCollections(new String[]{deviceType+"_job"});
+					mpModel.setCollections(new String[]{deviceType+"_exception"});
 					mpModel.setContent(jonContext);
 					mpModel.setVersions(versions);
 					simpleProducer.send(mpModel,communication.getPersistTopicPartition());
