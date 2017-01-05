@@ -487,6 +487,10 @@ IExceptionCheckNodeProcessor {
 			System.out.println(deviceName + " 特殊工况size: " + jobList.size());
 			for (ExceptionJob exceptionJob : jobList) {
 				exceptionJob.set_recordtime(DateUtil.format(new Date()));
+				exceptionJob.setSeries(series);
+				exceptionJob.setStar(star);
+				exceptionJob.setHadRead("0");
+				
 				String jonContext = JJSON.get().formatObject(exceptionJob);
 				MongoPeristModel mpModel=new MongoPeristModel();
 				mpModel.setSeries(series);
@@ -505,6 +509,9 @@ IExceptionCheckNodeProcessor {
 			System.out.println(paramCode + " 异常size: " + exceList.size());
 			for (ExceptionPoint exceptionPoint : exceList) {
 				exceptionPoint.set_recordtime(DateUtil.format(new Date()));
+				exceptionPoint.setSeries(series);
+				exceptionPoint.setStar(star);
+				exceptionPoint.setHadRead("0");
 				String exceptinContext = JJSON.get().formatObject(exceptionPoint);
 				MongoPeristModel mpModel=new MongoPeristModel();
 				mpModel.setSeries(series);
