@@ -334,6 +334,9 @@ public class TopProcessor {
 					jidongjob.setEndDate(DateUtil.format(jidongrecord.getEndDate()));
 					jidongjob.setEndTime(jidongrecord.getEndDate().getTime());
 					jidongjob.set_recordtime(DateUtil.format(new Date()));
+					jidongjob.setSeries(series);
+					jidongjob.setStar(star);
+					jidongjob.setHadRead("0");
 					
 					String jonContext = JJSON.get().formatObject(jidongjob);
 					System.out.println("特殊工况："+jidongjob);
@@ -370,12 +373,15 @@ public class TopProcessor {
 					excePoint.set_time(exceptionpoint.get_time());
 					excePoint.setDeviceType(deviceType);
 					excePoint.set_recordtime(DateUtil.format(new Date()));
+					excePoint.setSeries(series);
+					excePoint.setStar(star);
+					excePoint.setHadRead("0");
 					String jonContext = JJSON.get().formatObject(excePoint);
 					System.out.println("异常点"+excePoint);
 					MongoPeristModel mpModel=new MongoPeristModel();
 					mpModel.setSeries(series);
 					mpModel.setStar(star);
-					mpModel.setCollections(new String[]{deviceType+"_job"});
+					mpModel.setCollections(new String[]{deviceType+"_exception"});
 					mpModel.setContent(jonContext);
 					mpModel.setVersions(versions);
 					simpleProducer.send(mpModel,communication.getPersistTopicPartition());
