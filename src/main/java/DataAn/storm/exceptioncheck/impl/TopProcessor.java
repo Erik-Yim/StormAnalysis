@@ -45,10 +45,7 @@ public class TopProcessor {
 	private String versions;
 	private IPropertyConfigStoreImpl propertyConfigStoreImpl;
 	
-	private BatchContext batchContext;
-	
-	
-		
+	private BatchContext batchContext;	
 	//临时变量，用于保存陀螺的上一条记录。
 	IDeviceRecord topTempRecord=null;
 	
@@ -116,7 +113,6 @@ public class TopProcessor {
 					onetimespaceset = new HashSet<TopTimeSpaceDto>();
 					jobTimeSetMap.put(topName, onetimespaceset);
 				}
-				System.out.println(topName);
 			}		
 		}		
 //***************************************统计有几个陀螺）******************************//
@@ -128,14 +124,12 @@ public class TopProcessor {
 	public Object process(IDeviceRecord deviceRecord){		
 		if(deviceRecord==null || topjobconfigmap==null ||toppointconfigmap==null)
 		{
-			System.out.println("陀螺记录为空或者判断规则为空");
 			return null;
 		}
 		
 		if( null==topTempRecord )
 	 	{
 			topTempRecord=deviceRecord;
-			System.out.println("设置第一条缓存记录");
 		}else{
 			String[] paramValues = deviceRecord.getPropertyVals();
 			String[] paramSequence = deviceRecord.getProperties();
@@ -190,14 +184,9 @@ public class TopProcessor {
 								{
 									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(topTempRecord.getPropertyVals()[i]));					
 									differenceValuelist.add(differenceValue);
-									//System.out.println("________________"+top+"___________________");
-									//System.out.println(paramValues[i]+"****"+topTempRecord.getPropertyVals()[i]);
-									//System.out.println(paramSequence[i]+"差值："+differenceValue);
 								}
 							}							
 						}
-						System.out.println("jDparamlist.size(): " + jDparamlist.size());
-						System.out.println("differenceValuelist.size(): " + differenceValuelist.size());
 						//满足条件的参数的个数
 						int counttemp=0;
 						for(int i=0;i<differenceValuelist.size();i++)
@@ -233,7 +222,6 @@ public class TopProcessor {
 								long begin_time=jobDtolist.get(0).get_dateTime();
 								long end_time=jobDtolist.get(jobDtolist.size()-1).get_dateTime();
 								long delay_time=end_time-begin_time;
-								//System.out.println(jobDtolist.size()+"++"+delay_time+"^^^^^^^^"+jidongconfig.getDelayTime());
 								//如果小于持续时间说明不成立，删除缓存点 
 								if(delay_time<jidongconfig.getDelayTime())
 								{
@@ -281,7 +269,6 @@ public class TopProcessor {
 	
 	
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
-		System.out.println("陀螺预警持久化");
 //---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//
 		if(jobTimeSetMap.keySet()!=null)
 		{
@@ -293,7 +280,7 @@ public class TopProcessor {
 				{
 
 					for(String sequence:topExcePointDtoMapCach.keySet())
-					{	//System.out.println(sequence+"缓存中的异常点个数"+topExcePointDtoMapCach.get(sequence).size());
+					{
 						List<TopExceptionPointDto> ecxeptionpointlist =topExcePointDtoMapCach.get(sequence);
 						if (null != ecxeptionpointlist && ecxeptionpointlist.size() > 0) {
 						    Iterator it = ecxeptionpointlist.iterator();  
@@ -314,8 +301,6 @@ public class TopProcessor {
 					
 				}
 			}
-			//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00131").size()+"---------机动次数"+topjidongMap.get("陀螺1").size());
-			//System.out.println("异常点"+topExcePointDtoMap.get("sequence_00815").size()+"---------机动次数"+topjidongMap.get("陀螺2").size());
 	//---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//					
 			//特殊工况(机动次数)持久化
 			for (String topname : topjidongMap.keySet()){
@@ -339,7 +324,6 @@ public class TopProcessor {
 					jidongjob.setHadRead("0");
 					
 					String jonContext = JJSON.get().formatObject(jidongjob);
-					System.out.println("特殊工况："+jidongjob);
 					MongoPeristModel mpModel=new MongoPeristModel();
 					mpModel.setSeries(series);
 					mpModel.setStar(star);
@@ -377,7 +361,6 @@ public class TopProcessor {
 					excePoint.setStar(star);
 					excePoint.setHadRead("0");
 					String jonContext = JJSON.get().formatObject(excePoint);
-					System.out.println("异常点"+excePoint);
 					MongoPeristModel mpModel=new MongoPeristModel();
 					mpModel.setSeries(series);
 					mpModel.setStar(star);
