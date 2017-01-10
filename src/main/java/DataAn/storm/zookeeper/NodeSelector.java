@@ -846,7 +846,7 @@ public class NodeSelector implements Serializable{
 																	,Communication.class);
 									if(dest.getStatus().equals(NodeStatus.PROCESSING)){
 										ErrorMsg errorMsg=new ErrorMsg();
-										errorMsg.setMsg("数据处理超时...");
+										errorMsg.setMsg("Data processing timeout ...");
 										errorMsg.setSequence(dest.getSequence());
 										FlowUtils.setError(executor, errorMsg);
 										CommunicationUtils.get(executor).remove(dest);
@@ -862,8 +862,8 @@ public class NodeSelector implements Serializable{
 					}
 					
 				},
-				3,
-				3,
+				10,
+				10,
 				TimeUnit.MINUTES);
 	}
 	
