@@ -21,6 +21,12 @@ public class ExceptionPoint {
 	
 	private long endTime;// 结束时间截
 	
+	private String series;//星系列
+	
+	private String star;//星名称
+	
+	private String hadRead;//是否被查看过
+	
 	private String paramCode;// 参数Code
 	
 	private String paramValue;// 参数值
@@ -141,8 +147,32 @@ public class ExceptionPoint {
 	public String toString() {
 		return "ExceptionPoint [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
 				+ ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime=" + beginTime + ", endTime="
-				+ endTime + ", paramCode=" + paramCode + ", paramValue=" + paramValue + ", time=" + time + ", _time="
-				+ _time + ", _recordtime=" + _recordtime + "]";
+				+ endTime + ", series="+series+", star="+star+", paramCode=" + paramCode + ", paramValue=" + paramValue + ", time=" + time + ", _time="
+				+ _time + ", _recordtime=" + _recordtime + ",hadRead="+hadRead+"]";
+	}
+
+	public String getSeries() {
+		return series;
+	}
+
+	public void setSeries(String series) {
+		this.series = series;
+	}
+
+	public String getStar() {
+		return star;
+	}
+
+	public void setStar(String star) {
+		this.star = star;
+	}
+
+	public String getHadRead() {
+		return hadRead;
+	}
+
+	public void setHadRead(String hadRead) {
+		this.hadRead = hadRead;
 	}
 
 	

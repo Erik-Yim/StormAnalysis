@@ -1,6 +1,5 @@
 package DataAn.storm.exceptioncheck.model;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -12,6 +11,12 @@ public class ExceptionJob {
 	private String config;// 配置
 	
 	private String versions;// 一次csv上传的版本
+	
+	private String series;//星系列
+	
+	private String star;//星名称
+	
+	private String hadRead;//是否被查看过
 	
 	private String deviceType;// 设备类型
 
@@ -123,9 +128,33 @@ public class ExceptionJob {
 
 	@Override
 	public String toString() {
-		return "ExceptionJob [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
+		return "ExceptionJob [config=" + config + ", versions=" + versions + ",series="+series+", star="+star+",deviceType=" + deviceType
 				+ ", deviceName=" + deviceName + ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime="
-				+ beginTime + ", endTime=" + endTime + ", pointList=" + pointList + "]";
+				+ beginTime + ", endTime=" + endTime + ", pointList=" + pointList + ",hadRead="+hadRead+"]";
+	}
+
+	public String getSeries() {
+		return series;
+	}
+
+	public void setSeries(String series) {
+		this.series = series;
+	}
+
+	public String getStar() {
+		return star;
+	}
+
+	public void setStar(String star) {
+		this.star = star;
+	}
+
+	public String getHadRead() {
+		return hadRead;
+	}
+
+	public void setHadRead(String hadRead) {
+		this.hadRead = hadRead;
 	}
 
 	
