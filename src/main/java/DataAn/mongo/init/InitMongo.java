@@ -81,7 +81,8 @@ public class InitMongo {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("get zookeeper mongodbConfig Exception!");
+//			e.printStackTrace();
 		}
 		if(config == null || "".equals(config)){
 			System.out.println("get localhost mongodbConfig");
