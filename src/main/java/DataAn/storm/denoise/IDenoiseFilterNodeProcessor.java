@@ -52,22 +52,9 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 						}
 					}else if(devicename.equals("top")) //如果是陀螺
 					{
-						Map conf=new HashMap<>();
-						BaseConfig baseConfig=null;
-						baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
-						ZooKeeperNameKeys.setZooKeeperServer(conf, baseConfig.getZooKeeper());
-						ZooKeeperNameKeys.setNamespace(conf, baseConfig.getNamespace());
-						ZookeeperExecutor executor=new ZooKeeperClient()
-								.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
-								.namespace(ZooKeeperNameKeys.getNamespace(conf))
-								.build();
-						String path = "/cfg/topDenioseConfig";
-						byte[] bytes = executor.getPath(path);
-						String topDenioseConfig = new String(bytes, Charset.forName("utf-8"));
-						//获取所有的陀螺的x、y、z三个轴的角速度的sequence值,
-						List<ParameterDto> paramlist = DenoiseUtils.getParamtoDenoiseList(topDenioseConfig);
+						List<ParameterDto> paramlist = new IDenoisePropertyConfigStoreImpl().getParamList();
 						try{
-							if(paramlist.size()==0){
+							if(paramlist == null || paramlist.size()==0){
 								paramlist= DenoiseUtils.getParamtoDenoiseList();
 								System.out.println("从zookeeper获取陀螺去噪参数列表失败，将从本地获取");
 							}
