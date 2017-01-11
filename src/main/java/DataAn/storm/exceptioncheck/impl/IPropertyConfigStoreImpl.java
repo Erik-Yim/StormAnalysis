@@ -67,7 +67,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			if(parameterType.equals("flywheel"))
 				initializeFlywheel(context);
 			else if(parameterType.equals("top")){	
-				String path_topJobConfig="/conf/topjobConfig";
+				String path_topJobConfig="/cfg/topjobConfig";
 				byte[] topJobConfigbytes = executor.getPath(path_topJobConfig);
 				String topJobConfig=new String(topJobConfigbytes,Charset.forName("utf-8"));
 				context.put("topJobConfig",topJobConfig);

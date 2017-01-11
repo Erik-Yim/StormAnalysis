@@ -61,7 +61,7 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 								.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 								.namespace(ZooKeeperNameKeys.getNamespace(conf))
 								.build();
-						String path = "/conf/topDenioseConfig";
+						String path = "/cfg/topDenioseConfig";
 						byte[] bytes = executor.getPath(path);
 						String topDenioseConfig = new String(bytes, Charset.forName("utf-8"));
 						//获取所有的陀螺的x、y、z三个轴的角速度的sequence值,
