@@ -19,6 +19,11 @@ public class DenoiseUtils {
 				new TypeReference<ArrayList<ParameterDto>>() {});
 		return hierarchyModels;
 	};
+	public static List<ParameterDto> getParamtoDenoiseList(String topDenioseConfig) throws Exception{
+		List<ParameterDto> hierarchyModels=JJSON.get().parse(topDenioseConfig, 
+				new TypeReference<ArrayList<ParameterDto>>() {});
+		return hierarchyModels;
+	};
 	
 	private static byte[] getBytes(InputStream input) {
 	    ByteArrayOutputStream output = new ByteArrayOutputStream();
