@@ -37,9 +37,10 @@ public class ZkCommonConfigTest {
 				.connectString(ZooKeeperNameKeys.getZooKeeperServer(conf))
 				.namespace(ZooKeeperNameKeys.getNamespace(conf))
 				.build();
-		String path = "/cfg/serverConfig";
+		String path = "/cfg/topDenioseConfig";
 		byte[] bytes = executor.getPath(path);
-		String serverConfig = new String(bytes, Charset.forName("utf-8"));
+		String topDenoiseConfig = new String(bytes, Charset.forName("utf-8"));
+		System.out.println("去噪规则"+topDenoiseConfig);
 		
 		String path_topJobConfig="/cfg/topjobConfig";
 		byte[] topJobConfigbytes = executor.getPath(path_topJobConfig);
