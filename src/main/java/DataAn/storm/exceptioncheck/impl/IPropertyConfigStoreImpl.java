@@ -10,6 +10,8 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
+import DataAn.common.config.ZkCommonConfig;
 import DataAn.common.utils.HttpUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.galaxy.option.J9SeriesType;
@@ -61,10 +63,10 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			String serverConfig = new String(bytes, Charset.forName("utf-8"));
 			context.put("serverConfig", serverConfig);
 			String parameterType =  (String) context.get("device");
+			
 			if(parameterType.equals("flywheel"))
 				initializeFlywheel(context);
-			else if(parameterType.equals("top")){
-				
+			else if(parameterType.equals("top")){	
 				String path_topJobConfig="/conf/topjobConfig";
 				byte[] topJobConfigbytes = executor.getPath(path_topJobConfig);
 				String topJobConfig=new String(topJobConfigbytes,Charset.forName("utf-8"));
