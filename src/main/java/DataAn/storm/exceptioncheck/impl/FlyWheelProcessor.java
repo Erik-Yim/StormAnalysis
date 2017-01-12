@@ -8,9 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.lang3.StringUtils;
-
 import DataAn.common.utils.DateUtil;
 import DataAn.common.utils.JJSON;
 import DataAn.storm.BatchContext;
@@ -308,117 +306,99 @@ IExceptionCheckNodeProcessor {
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
 		//还有一些点没有处理
 		//判断一个参数的特殊工况
-		for (String paramCode : jobListMapCache.keySet()) {
-			LinkedList<PointInfo> jobListCache = jobListMapCache.get(paramCode);
-			//参数无特殊工况时，不执行
-			if(jobListCache == null || jobListCache.size() == 0)
-				continue;
-			//获取参数设备名称
-			String deviceName = paramCode_deviceName_map.get(paramCode);
-			//判断是否有此参数设备，有就执行设备特殊工况，无就不执行
-			if(StringUtils.isBlank(deviceName))
-				continue;
-			//获取设备的特殊工况配置
-			ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
-			//当参数异常不为空时往下执行
-			if(jobConfig == null)
-				continue;
-			PointInfo firstPoint = jobListCache.getFirst();
-			PointInfo lastPoint = jobListCache.getLast();
-			//收尾时间间隔(通过毫秒计算 )
-			long interval = lastPoint.get_time() - firstPoint.get_time();
-			//连续一段时间内
-			if(interval <= (jobConfig.getDelayTime() + 1000)){
-				//次数大于规定次数 记录一次特殊工况
-				if(jobListCache.size() > jobConfig.getCount()){
-					List<ExceptionJob> jobList = jobListMap.get(deviceName);
-					if(jobList == null){
-						jobList = new ArrayList<ExceptionJob>();
+		if(jobListMapCache != null && jobListMapCache.size() > 0){
+			for (String paramCode : jobListMapCache.keySet()) {
+				LinkedList<PointInfo> jobListCache = jobListMapCache.get(paramCode);
+				//参数无特殊工况时，不执行
+				if(jobListCache == null || jobListCache.size() == 0)
+					continue;
+				//获取参数设备名称
+				String deviceName = paramCode_deviceName_map.get(paramCode);
+				//判断是否有此参数设备，有就执行设备特殊工况，无就不执行
+				if(StringUtils.isBlank(deviceName))
+					continue;
+				//获取设备的特殊工况配置
+				ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
+				//当参数异常不为空时往下执行
+				if(jobConfig == null)
+					continue;
+				PointInfo firstPoint = jobListCache.getFirst();
+				PointInfo lastPoint = jobListCache.getLast();
+				//收尾时间间隔(通过毫秒计算 )
+				long interval = lastPoint.get_time() - firstPoint.get_time();
+				//连续一段时间内
+				if(interval <= (jobConfig.getDelayTime() + 1000)){
+					//次数大于规定次数 记录一次特殊工况
+					if(jobListCache.size() > jobConfig.getCount()){
+						List<ExceptionJob> jobList = jobListMap.get(deviceName);
+						if(jobList == null){
+							jobList = new ArrayList<ExceptionJob>();
+						}
+						Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
+						if(jobTimeSet == null){
+							jobTimeSet = new HashSet<String>();
+						}
+						List<PointInfo> pointList = new ArrayList<PointInfo>();
+						for (PointInfo pointInfo : jobListCache) {
+							jobTimeSet.add(pointInfo.getTime());
+							pointList.add(pointInfo);
+						}
+						ExceptionJob job = new ExceptionJob();
+						job.setVersions(versions);
+						job.setDeviceType(deviceType);
+						job.setDeviceName(deviceName);
+						job.setDatetime(firstPoint.getTime());
+						job.setBeginDate(firstPoint.getTime());
+						job.setBeginTime(firstPoint.get_time());
+						job.setEndDate(lastPoint.getTime());
+						job.setEndTime(lastPoint.get_time());
+						job.setPointList(pointList);
+						jobList.add(job);
+						//根据设备名称添加进集合
+						jobListMap.put(deviceName, jobList);
 					}
-					Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
-					if(jobTimeSet == null){
-						jobTimeSet = new HashSet<String>();
-					}
-					List<PointInfo> pointList = new ArrayList<PointInfo>();
-					for (PointInfo pointInfo : jobListCache) {
-						jobTimeSet.add(pointInfo.getTime());
-						pointList.add(pointInfo);
-					}
-					ExceptionJob job = new ExceptionJob();
-					job.setVersions(versions);
-					job.setDeviceType(deviceType);
-					job.setDeviceName(deviceName);
-					job.setDatetime(firstPoint.getTime());
-					job.setBeginDate(firstPoint.getTime());
-					job.setBeginTime(firstPoint.get_time());
-					job.setEndDate(lastPoint.getTime());
-					job.setEndTime(lastPoint.get_time());
-					job.setPointList(pointList);
-					jobList.add(job);
-					//根据设备名称添加进集合
-					jobListMap.put(deviceName, jobList);
-					//删除缓存数据集合
-					jobListMapCache.remove(paramCode);
 				}
 			}
 		}
 		
 		//判断一个参数的异常
-		int firstPoint = 0;
-		for (String paramCode : exceListMapCache.keySet()) {
-			LinkedList<PointInfo> exceListCache = exceListMapCache.get(paramCode);
-			if(exceListCache == null || exceListCache.size() == 0)
-				continue;
-			for (int i = 0; i < exceListCache.size(); i++) {
-				int lastPoint = i;
-				//获取异常配置
-				ExceptionPointConfig exceConfig = propertyConfigStoreImpl.getParamExceptionPointConfigByParamCode(new String[]{series,star,paramCode});
-				if(exceConfig == null)
+		if(exceListMapCache != null && exceListMapCache.size() > 0)
+			for (String paramCode : exceListMapCache.keySet()) {
+				int firstPoint = 0;
+				LinkedList<PointInfo> exceListCache = exceListMapCache.get(paramCode);
+				if(exceListCache == null || exceListCache.size() == 0)
 					continue;
-				//收尾时间间隔
-				long interval = exceListCache.get(lastPoint).get_time() - exceListCache.get(firstPoint).get_time();
-				//连续一段时间内
-				if((exceConfig.getDelayTime() <= interval) && (interval <= (exceConfig.getDelayTime() + 1000))){
-					//判断时间间隔连续标志
-					boolean flag = true;
-					for (int j = firstPoint+1; j <= lastPoint; j++) {
-						if(exceListCache.get(j).get_time() - exceListCache.get(j-1).get_time() > 1000){
-							flag = false;
-						}
-					}
-					//时间连续
-					if(flag){
-						String deviceName = paramCode_deviceName_map.get(paramCode);
-						if(deviceName == null || "".equals(deviceName))
-							continue;
-						Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
-						List<ExceptionPoint> exceList = exceListMap.get(paramCode);
-						if(exceList == null){
-							exceList = new ArrayList<ExceptionPoint>();
-						}
-						if(jobTimeSet == null || jobTimeSet.size() == 0){
-							//此参数对应的设备还没有特殊工况的情况下 直接添加
-							ExceptionPoint exce = null;
-							for (int j = firstPoint; j <= lastPoint; j++) {
-								exce = new ExceptionPoint();
-								exce.setVersions(versions);
-								exce.setDeviceType(deviceType);
-								exce.setDatetime(exceListCache.get(firstPoint).getTime());
-								exce.setBeginDate(exceListCache.get(firstPoint).getTime());
-								exce.setBeginTime(exceListCache.get(firstPoint).get_time());
-								exce.setEndDate(exceListCache.get(lastPoint).getTime());
-								exce.setEndTime(exceListCache.get(lastPoint).get_time());
-								exce.setParamCode(exceListCache.get(j).getParamCode());
-								exce.setParamValue(exceListCache.get(j).getParamValue());
-								exce.setTime(exceListCache.get(j).getTime());
-								exce.set_time(exceListCache.get(j).get_time());
-								exceList.add(exce);
+				for (int i = 0; i < exceListCache.size(); i++) {
+					int lastPoint = i;
+					//获取异常配置
+					ExceptionPointConfig exceConfig = propertyConfigStoreImpl.getParamExceptionPointConfigByParamCode(new String[]{series,star,paramCode});
+					if(exceConfig == null)
+						continue;
+					//收尾时间间隔
+					long interval = exceListCache.get(lastPoint).get_time() - exceListCache.get(firstPoint).get_time();
+					//连续一段时间内
+					if((exceConfig.getDelayTime() <= interval) && (interval <= (exceConfig.getDelayTime() + 1000))){
+						//判断时间间隔连续标志
+						boolean flag = true;
+						for (int j = firstPoint+1; j <= lastPoint; j++) {
+							if(exceListCache.get(j).get_time() - exceListCache.get(j-1).get_time() > 1000){
+								flag = false;
 							}
-						}else{
-							//此参数对应的设备存在特殊工况的情况下							
-							ExceptionPoint exce = null;
-							for (int j = firstPoint; j <= lastPoint; j++) {
-								if(!jobTimeSet.contains(exceListCache.get(j).getTime())){
+						}
+						//时间连续
+						if(flag){
+							String deviceName = paramCode_deviceName_map.get(paramCode);
+							if(deviceName == null || "".equals(deviceName))
+								continue;
+							Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
+							List<ExceptionPoint> exceList = exceListMap.get(paramCode);
+							if(exceList == null){
+								exceList = new ArrayList<ExceptionPoint>();
+							}
+							if(jobTimeSet == null || jobTimeSet.size() == 0){
+								//此参数对应的设备还没有特殊工况的情况下 直接添加
+								ExceptionPoint exce = null;
+								for (int j = firstPoint; j <= lastPoint; j++) {
 									exce = new ExceptionPoint();
 									exce.setVersions(versions);
 									exce.setDeviceType(deviceType);
@@ -433,26 +413,45 @@ IExceptionCheckNodeProcessor {
 									exce.set_time(exceListCache.get(j).get_time());
 									exceList.add(exce);
 								}
+							}else{
+								//此参数对应的设备存在特殊工况的情况下							
+								ExceptionPoint exce = null;
+								for (int j = firstPoint; j <= lastPoint; j++) {
+									if(!jobTimeSet.contains(exceListCache.get(j).getTime())){
+										exce = new ExceptionPoint();
+										exce.setVersions(versions);
+										exce.setDeviceType(deviceType);
+										exce.setDatetime(exceListCache.get(firstPoint).getTime());
+										exce.setBeginDate(exceListCache.get(firstPoint).getTime());
+										exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+										exce.setEndDate(exceListCache.get(lastPoint).getTime());
+										exce.setEndTime(exceListCache.get(lastPoint).get_time());
+										exce.setParamCode(exceListCache.get(j).getParamCode());
+										exce.setParamValue(exceListCache.get(j).getParamValue());
+										exce.setTime(exceListCache.get(j).getTime());
+										exce.set_time(exceListCache.get(j).get_time());
+										exceList.add(exce);
+									}
+								}
 							}
+							//根据参数名称添加进集合
+							exceListMap.put(paramCode, exceList);
+							//
+							firstPoint = lastPoint;
 						}
-						//根据参数名称添加进集合
-						exceListMap.put(paramCode, exceList);
-						//
-						firstPoint = lastPoint;
 					}
-				}
-				//计数点往前推
-				if(interval > (exceConfig.getDelayTime() + 1000)){
-					for (int j = firstPoint; j < lastPoint; j++) {
-						interval = exceListCache.get(i).get_time() - exceListCache.get(j).get_time();
-						if(interval < (exceConfig.getDelayTime() + 1000)){
-							firstPoint = j;
-							break;
+					//计数点往前推
+					if(interval > (exceConfig.getDelayTime() + 1000)){
+						for (int j = firstPoint; j < lastPoint; j++) {
+							interval = exceListCache.get(i).get_time() - exceListCache.get(j).get_time();
+							if(interval < (exceConfig.getDelayTime() + 1000)){
+								firstPoint = j;
+								break;
+							}
 						}
 					}
 				}
 			}
-		}
 		//Test 输出
 //		for (String deviceName : jobListMap.keySet()){
 //			List<ExceptionJob> jobList = jobListMap.get(deviceName);
@@ -484,7 +483,7 @@ IExceptionCheckNodeProcessor {
 			List<ExceptionJob> jobList = jobListMap.get(deviceName);
 			if(jobList == null || jobList.size() == 0)
 				continue;
-			System.out.println(deviceName + " 特殊工况size: " + jobList.size());
+			System.out.println("飞轮，" + deviceName + " 特殊工况size: " + jobList.size());
 			for (ExceptionJob exceptionJob : jobList) {
 				exceptionJob.set_recordtime(DateUtil.format(new Date()));
 				exceptionJob.setSeries(series);
@@ -506,7 +505,7 @@ IExceptionCheckNodeProcessor {
 			List<ExceptionPoint> exceList = exceListMap.get(paramCode);
 			if(exceList == null || exceList.size() == 0)
 				continue;
-			System.out.println(paramCode + " 异常size: " + exceList.size());
+			System.out.println("飞轮，" + paramCode + " 异常size: " + exceList.size());
 			for (ExceptionPoint exceptionPoint : exceList) {
 				exceptionPoint.set_recordtime(DateUtil.format(new Date()));
 				exceptionPoint.setSeries(series);
@@ -522,6 +521,7 @@ IExceptionCheckNodeProcessor {
 				simpleProducer.send(mpModel,communication.getPersistTopicPartition());
 			}
 		}
+		//清除缓存
 		jobListMap.clear();
 		jobTimeSetMap.clear();
 		jobListMapCache.clear();

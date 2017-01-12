@@ -216,7 +216,6 @@ public class TopProcessor {
 							List<TopJiDongJobDto> jobDtolist=topjidongDtosetMapCach.get(topname);
 							if(0==jobDtolist.size())//如果为空说明没有符合条件的点
 							{
-								
 							}
 							else{
 								long begin_time=jobDtolist.get(0).get_dateTime();
@@ -256,8 +255,6 @@ public class TopProcessor {
 									jobDtolist.clear();
 								}
 							}
-							
-							
 						}
 			}
 //***************************************陀螺特殊工况（机动次数）******************************//			
@@ -278,7 +275,6 @@ public class TopProcessor {
 				Set<TopTimeSpaceDto> jobTimeSet = jobTimeSetMap.get(topName);
 				for(TopTimeSpaceDto timespacedto: jobTimeSet)
 				{
-
 					for(String sequence:topExcePointDtoMapCach.keySet())
 					{
 						List<TopExceptionPointDto> ecxeptionpointlist =topExcePointDtoMapCach.get(sequence);
@@ -297,8 +293,6 @@ public class TopProcessor {
 						}
 						topExcePointDtoMap.put(sequence, ecxeptionpointlist);
 					}
-					
-					
 				}
 			}
 	//---------------------------------------判断陀螺异常点是否在机动的时间区间内-----------------------------//					
@@ -307,6 +301,7 @@ public class TopProcessor {
 				List<TopJiDongJobDto> jidonglist = topjidongMap.get(topname);
 				if(jidonglist == null || jidonglist.size() == 0)
 					continue;
+				System.out.println("陀螺，" + topname + " 特殊工况size: " + jidonglist.size());
 				for (TopJiDongJobDto jidongrecord : jidonglist) {
 					//
 					ExceptionJob jidongjob=new ExceptionJob();
@@ -341,8 +336,8 @@ public class TopProcessor {
 				List<TopExceptionPointDto> exceptionpointlist = topExcePointDtoMap.get(sequence);
 				if(exceptionpointlist == null || exceptionpointlist.size() == 0)
 					continue;
+				System.out.println("陀螺，" + sequence + " 异常size: " + exceptionpointlist.size());
 				for (TopExceptionPointDto exceptionpoint : exceptionpointlist) {
-					
 					ExceptionPoint excePoint =new ExceptionPoint();
 					//excePoint.setConfig(config);
 					excePoint.setVersions(exceptionpoint.getVersions());
@@ -370,10 +365,16 @@ public class TopProcessor {
 					simpleProducer.send(mpModel,communication.getPersistTopicPartition());
 					
 				}
+			}
 		}
-		
-		}
-		
+		//清除缓存
+		toppointconfigmap.clear();
+		topExcePointDtoMap.clear();
+		topExcePointDtoMapCach.clear();
+		topjobconfigmap.clear();
+		topjidongMap.clear();
+		topjidongDtosetMapCach.clear();
+		jobTimeSetMap.clear();
 	}
 	
 	public void setBatchContext(BatchContext batchContext) {
