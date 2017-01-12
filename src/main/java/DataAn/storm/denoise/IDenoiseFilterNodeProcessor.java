@@ -76,11 +76,9 @@ public interface IDenoiseFilterNodeProcessor extends Serializable {
 								{
 									if(param[i].equals(paramdto.getCode()))
 									{
-										if((Double.parseDouble(vals[i])<-2.2)|(2.2<Double.parseDouble(vals[i])))
-										{
-//											System.out.println("大小限制："+param[i]+":"+vals[i]);
-											invalid.add(param[i]);
-										}
+										if(vals[i].matches("^[-+]?(([0-9]+)((([.]{0})([0-9]*))|(([.]{1})([0-9]+))))$"))
+											if((Double.parseDouble(vals[i])<-2.2) || (2.2<Double.parseDouble(vals[i])))
+												invalid.add(param[i]);
 									}
 								}
 							}
