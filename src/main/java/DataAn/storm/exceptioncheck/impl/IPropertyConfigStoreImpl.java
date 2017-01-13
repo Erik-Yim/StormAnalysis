@@ -11,11 +11,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
-
+import DataAn.common.config.ZkCommonConfig;
 import DataAn.common.utils.HttpUtil;
 import DataAn.common.utils.JJSON;
-import DataAn.common.utils.JsonStringToObj;
-import DataAn.dto.ConfigPropertyDto;
 import DataAn.galaxy.option.J9SeriesType;
 import DataAn.galaxy.option.J9Series_Star_ParameterType;
 import DataAn.galaxy.option.SeriesType;
@@ -28,7 +26,6 @@ import DataAn.storm.exceptioncheck.model.ExceptionConfigModel;
 import DataAn.storm.exceptioncheck.model.ExceptionJobConfig;
 import DataAn.storm.exceptioncheck.model.ExceptionPointConfig;
 import DataAn.storm.exceptioncheck.model.TopExceptionPointConfig;
-import DataAn.storm.exceptioncheck.model.TopExceptionPointDto;
 import DataAn.storm.exceptioncheck.model.TopJiDongjobConfig;
 import DataAn.storm.exceptioncheck.model.TopJsondto;
 import DataAn.storm.exceptioncheck.model.TopJsonparamdto;
@@ -66,9 +63,14 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			String serverConfig = new String(bytes, Charset.forName("utf-8"));
 			context.put("serverConfig", serverConfig);
 			String parameterType =  (String) context.get("device");
+			
 			if(parameterType.equals("flywheel"))
 				initializeFlywheel(context);
-			else if(parameterType.equals("top")){
+			else if(parameterType.equals("top")){	
+				String path_topJobConfig="/cfg/topjobConfig";
+				byte[] topJobConfigbytes = executor.getPath(path_topJobConfig);
+				String topJobConfig=new String(topJobConfigbytes,Charset.forName("utf-8"));
+				context.put("topJobConfig",topJobConfig);
 				initializeTop(context);
 				
 			}
@@ -133,7 +135,20 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 				List<ExceptionJobConfig> exceConfigList = JJSON.get().parse(exceptionJobConfigObj.toString(), new TypeReference<List<ExceptionJobConfig>>(){});
 				//规则转化							
 				List<TopJsondto> toplist =new ArrayList<TopJsondto>();			
-				toplist = ExceptionUtils.getTopjidongcountList();		
+				//从json文件读取陀螺列表以及相应的参数列表
+				String topJobConfig=(String) context.get("topJobConfig");
+				toplist =ExceptionUtils.getTopjidongcountList(topJobConfig);
+				
+				try{
+					if(toplist.size()==0)
+					{
+						toplist=ExceptionUtils.getTopjidongcountList();
+						System.out.println("从zookeeper读取陀螺机动规则失败，将从本地读取");
+					}
+				}catch(Exception e){
+					
+				}
+					
 				for(TopJsondto temp:toplist)
 				{
 					String topName =temp.getTopname();

@@ -796,11 +796,12 @@ public class NodeSelector implements Serializable{
 							for(String worker:workers){
 								if(!strings.contains(worker)){
 									System.out.println(DateUtil.format(new Date()) + " worker : "+worker +" is shutdown");
-									//从zk上获取后台管理系统URL配置
-									String serverConfigPath = "/cfg/serverConfig";
-									byte[] serverConfigBytes = executor.getPath(serverConfigPath);
-									String serverConfigURL = new String(serverConfigBytes, Charset.forName("utf-8"));
-									HttpUtil.get(serverConfigURL + "/DataRemote/Communicate/updateServerStatus?workerId="+worker);
+									
+//									//从zk上获取后台管理系统URL配置
+//									String serverConfigPath = "/cfg/serverConfig";
+//									byte[] serverConfigBytes = executor.getPath(serverConfigPath);
+//									String serverConfigURL = new String(serverConfigBytes, Charset.forName("utf-8"));
+//									HttpUtil.get(serverConfigURL + "/DataRemote/Communicate/updateServerStatus?workerId="+worker);
 									
 								}
 							}

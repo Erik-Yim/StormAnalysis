@@ -55,6 +55,13 @@ public class ExceptionUtils {
 		return toplist;
 	};
 	
+	public static List<TopJsondto> getTopjidongcountList(String jsonString) throws Exception{
+		Map<String, Class<TopJsonparamdto>> classMap = new HashMap<String, Class<TopJsonparamdto>>();
+		classMap.put("jdparamlist", TopJsonparamdto.class);		
+		List<TopJsondto> toplist= JsonStringToObj.jsonArrayToListObject(jsonString,TopJsondto.class,classMap);
+		return toplist;
+	};
+	
 	private static byte[] getBytes(InputStream input) {
 	    ByteArrayOutputStream output = new ByteArrayOutputStream();
 	    byte[] buffer = new byte[4096];

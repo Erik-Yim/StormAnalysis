@@ -42,7 +42,7 @@ public class SpecialCoordinator
 //		for(Entry<String, Scope> entry:batchMeta.getTopicPartitionOffset().entrySet()){
 //			consumer.commitSync(entry.getKey(), entry.getValue().end);
 //		}
-		System.out.println("-------SpecialCoordinator   success ---------");
+//		System.out.println("-------SpecialCoordinator   success ---------");
 	}
 
 	@Override

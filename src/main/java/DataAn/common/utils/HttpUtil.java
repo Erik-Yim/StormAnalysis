@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Date;
 
 import org.apache.storm.shade.org.apache.http.HttpEntity;
 import org.apache.storm.shade.org.apache.http.client.ClientProtocolException;
@@ -34,9 +35,8 @@ public class HttpUtil {
 	    String content = null;
 	    try { 
 	      // 创建httpget.  
-	 
 	      HttpGet httpget = new HttpGet(url); 
-	      System.out.println("executing request " + httpget.getURI()); 
+	      System.out.println(DateUtil.format(new Date()) + " executing request " + httpget.getURI()); 
 	      // 执行get请求.  
 	      CloseableHttpResponse response = httpclient.execute(httpget); 
 	      try { 

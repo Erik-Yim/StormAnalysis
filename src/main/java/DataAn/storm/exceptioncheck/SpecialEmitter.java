@@ -135,6 +135,7 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
+		//TODO 初始化异常配置参数
 		Map context=new HashMap<>();
 		context.put("series", communication.getSeries());
 		context.put("star", communication.getStar());
