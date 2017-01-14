@@ -2,6 +2,7 @@ package DataAn.storm.denoise;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -147,7 +148,7 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		this.hasError = hasError;
 	}
 	
-	protected void wakeup() {
+	protected void wakeup() throws Exception {
 		final WorkerPathVal workerPathVal=
 				JJSON.get().parse(new String(executor.getPath(nodeWorker.path()), Charset.forName("utf-8"))
 						,WorkerPathVal.class);
@@ -156,6 +157,13 @@ public class KafkaDenoiseSpout extends BaseRichSpout {
 		communication.setWorkerId(workerId);
 		communication.setSequence(workerPathVal.getSequence());
 		prepare();
+		//TODO 初始化去噪配置参数 
+		Map<String,String> context=new HashMap<String,String>();
+		context.put("series", communication.getSeries());
+		context.put("star", communication.getStar());
+		context.put("device", communication.getName());
+		new IDenoisePropertyConfigStoreImpl().initialize(context);
+		
 		triggered = true;
 		topic=communication.getTemporaryTopicPartition();
 		final String path="/flow/"+communication.getSequence()+"/error";

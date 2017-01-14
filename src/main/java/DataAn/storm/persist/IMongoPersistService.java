@@ -84,12 +84,14 @@ public interface IMongoPersistService {
 				MongodbUtil mg = MongodbUtil.getInstance();
 				String databaseName = InitMongo.getDataBaseNameBySeriesAndStar(series, star);
 				for (String collectionStr : map.keySet()) {
-					long begin = System.currentTimeMillis();
-					System.out.println("begin save into----> "+ databaseName + "." + collectionStr + " collection size " + map.get(collectionStr).size());
+//					long begin = System.currentTimeMillis();
+//					System.out.println("begin save into----> "+ databaseName + "." + collectionStr + " collection size " + map.get(collectionStr).size());
+					
 					MongoCollection<Document> collection = mg.getCollection(databaseName, collectionStr);
 					collection.insertMany(map.get(collectionStr));
-					long end = System.currentTimeMillis();
-					System.out.println("end save into----> "+ databaseName + "." + collectionStr + " time : " + (end - begin) + " mm");
+					
+//					long end = System.currentTimeMillis();
+//					System.out.println("end save into----> "+ databaseName + "." + collectionStr + " time : " + (end - begin) + " mm");
 				}
 			}
 		}

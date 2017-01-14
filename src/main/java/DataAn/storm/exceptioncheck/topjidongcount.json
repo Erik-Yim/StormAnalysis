@@ -1,10 +1,34 @@
 [
 {
-	"topname":"AA",
+	"topname":"陀螺1a",
 	"jdparamlist":[
-	    			{"code":"sequence_00131","fullName":"F10W118:陀螺1X(00001)"},
-					{"code":"sequence_00133","fullName":"F10W118:陀螺1Y(00002)"},
-					{"code":"sequence_00135","fullName":"F10W118:陀螺1Z(00003)"}
+	    			{"code":"sequence_16016","fullName":"采集数据16：1a滚动陀螺信号输出（16016）"},
+					{"code":"sequence_16017","fullName":"采集数据17：1a俯仰陀螺信号输出（16017）"},
+					{"code":"sequence_16018","fullName":"采集数据18：1a偏航陀螺信号输出（16018）"}
+					]
+},
+{
+	"topname":"陀螺1b",
+	"jdparamlist":[
+	    			{"code":"sequence_16019","fullName":"采集数据19：1b滚动陀螺信号输出（16019）"},
+					{"code":"sequence_16020","fullName":"采集数据19：1b滚动陀螺信号输出（16020）"},
+					{"code":"sequence_16021","fullName":"采集数据19：1b滚动陀螺信号输出（16021）"}
+					]
+},
+{
+	"topname":"陀螺2",
+	"jdparamlist":[
+	    			{"code":"sequence_16022","fullName":"采集数据22：2滚动陀螺信号输出（16022）"},
+					{"code":"sequence_16023","fullName":"采集数据23：2俯仰陀螺信号输出（16023）"},
+					{"code":"sequence_16024","fullName":"采集数据24：2偏航陀螺信号输出（16024）"}
+					]
+},
+{
+	"topname":"陀螺",
+	"jdparamlist":[
+	    			{"code":"sequence_00131","fullName":"F0W53_54:滚动陀螺角速度(00131)"},
+					{"code":"sequence_00133","fullName":"F0W55_56:俯仰陀螺角速度(00133)"},
+					{"code":"sequence_00135","fullName":"F0W57_58:偏航陀螺角速度(00135)"}
 					]
 }
 ]

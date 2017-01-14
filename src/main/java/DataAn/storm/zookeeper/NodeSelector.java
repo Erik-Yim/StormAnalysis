@@ -796,11 +796,12 @@ public class NodeSelector implements Serializable{
 							for(String worker:workers){
 								if(!strings.contains(worker)){
 									System.out.println(DateUtil.format(new Date()) + " worker : "+worker +" is shutdown");
-									//从zk上获取后台管理系统URL配置
-									String serverConfigPath = "/cfg/serverConfig";
-									byte[] serverConfigBytes = executor.getPath(serverConfigPath);
-									String serverConfigURL = new String(serverConfigBytes, Charset.forName("utf-8"));
-									HttpUtil.get(serverConfigURL + "/DataRemote/Communicate/updateServerStatus?workerId="+worker);
+									
+//									//从zk上获取后台管理系统URL配置
+//									String serverConfigPath = "/cfg/serverConfig";
+//									byte[] serverConfigBytes = executor.getPath(serverConfigPath);
+//									String serverConfigURL = new String(serverConfigBytes, Charset.forName("utf-8"));
+//									HttpUtil.get(serverConfigURL + "/DataRemote/Communicate/updateServerStatus?workerId="+worker);
 									
 								}
 							}
@@ -846,7 +847,7 @@ public class NodeSelector implements Serializable{
 																	,Communication.class);
 									if(dest.getStatus().equals(NodeStatus.PROCESSING)){
 										ErrorMsg errorMsg=new ErrorMsg();
-										errorMsg.setMsg("数据处理超时...");
+										errorMsg.setMsg("Data processing timeout ...");
 										errorMsg.setSequence(dest.getSequence());
 										FlowUtils.setError(executor, errorMsg);
 										CommunicationUtils.get(executor).remove(dest);
@@ -862,8 +863,8 @@ public class NodeSelector implements Serializable{
 					}
 					
 				},
-				3,
-				3,
+				10,
+				10,
 				TimeUnit.MINUTES);
 	}
 	

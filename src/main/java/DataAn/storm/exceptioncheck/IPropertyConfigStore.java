@@ -31,23 +31,20 @@ public interface IPropertyConfigStore {
 	 * 一个系列 一个星 一个具体的参数的异常配置
 	 */
 	ExceptionPointConfig getParamExceptionPointConfigByParamCode(String ...args);
-	
-	
-	/**
-	 * @return
-	 * 返回所有需要被统计机动次数的陀螺名称和规则
-	 */
-	Map<String,TopJiDongjobConfig> getAllTopJiDongconfig(String ...args) throws Exception;
-	
+
+
 	/**
 	 * @param args
-	 * @return 一个文件所有被统计的陀螺的参数和规则
+	 * @return
+	 * 从 static series_start_map中读取陀螺异常点规则
 	 */
-	Map<String,TopExceptionPointConfig> getAllTopExceptionPointconfig(String ...args) throws Exception;
-
-
 	Map<String, TopJiDongjobConfig> gettopjidongrules(String[] args);
 
-
+	/**
+	 * 
+	 * @param args
+	 * @return 
+	 * 从static map中读取陀螺的异常点规则
+	 */
 	Map<String, TopExceptionPointConfig> gettoppointrules(String[] args);
 }
