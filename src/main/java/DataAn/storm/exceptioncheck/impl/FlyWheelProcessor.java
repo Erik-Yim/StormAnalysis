@@ -173,7 +173,7 @@ IExceptionCheckNodeProcessor {
 			//计数点往前推
 			if(interval > (jobConfig.getDelayTime() + 1000)){
 				
-				for (int i = jobListCache.size(); i > 0; i--) {
+				for (int i = jobListCache.size(); i > 1; i--) {
 					interval = jobListCache.get(i-1).get_time() - firstPoint.get_time();
 					//连续一段时间内
 					if((interval <= (jobConfig.getDelayTime() + 1000))){
