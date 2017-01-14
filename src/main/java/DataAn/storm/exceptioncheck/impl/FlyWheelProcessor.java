@@ -137,7 +137,8 @@ IExceptionCheckNodeProcessor {
 			//收尾时间间隔(通过毫秒计算 )
 			long interval = lastPoint.get_time() - firstPoint.get_time();
 			//连续一段时间内
-			if((jobConfig.getDelayTime() <= interval) && (interval <= (jobConfig.getDelayTime() + 1000))){
+//			if((jobConfig.getDelayTime() <= interval) && (interval <= (jobConfig.getDelayTime() + 1000))){
+			if(jobConfig.getDelayTime() < interval){
 				//次数大于规定次数 记录一次特殊工况
 				if(jobListCache.size() >= jobConfig.getCount()){
 					List<ExceptionJob> jobList = jobListMap.get(deviceName);
@@ -149,82 +150,106 @@ IExceptionCheckNodeProcessor {
 						jobTimeSet = new HashSet<String>();
 					}
 					List<PointInfo> pointList = new ArrayList<PointInfo>();
-					for (PointInfo pointInfo : jobListCache) {
-						jobTimeSet.add(pointInfo.getTime());
-						pointList.add(pointInfo);
+//					for (PointInfo pointInfo : jobListCache) {
+//						jobTimeSet.add(pointInfo.getTime());
+//						pointList.add(pointInfo);
+//					}
+					int size = jobListCache.size();
+					for (int j = 0; j < size; j++) {
+						PointInfo pointInfo = jobListCache.removeFirst();
+						interval = pointInfo.get_time() - firstPoint.get_time();
+						if(jobConfig.getDelayTime() >= interval){
+							jobTimeSet.add(pointInfo.getTime());
+							pointList.add(pointInfo);
+						}else{
+							jobListCache.addFirst(pointInfo);
+							break;
+						}
 					}
-					ExceptionJob job = new ExceptionJob();
-					job.setVersions(versions);
-					job.setDeviceType(deviceType);
-					job.setDeviceName(deviceName);
-					job.setDatetime(pointList.get(0).getTime());
-					job.setBeginDate(pointList.get(0).getTime());
-					job.setBeginTime(pointList.get(0).get_time());
-					job.setEndDate(pointList.get(pointList.size() - 1).getTime());
-					job.setEndTime(pointList.get(pointList.size() - 1).get_time());
-					job.setPointList(pointList);
-					jobList.add(job);
-					//根据设备名称添加进集合
-					jobListMap.put(deviceName, jobList);
-					//删除缓存数据集合
-					jobListMapCache.remove(paramCode);
+					
+					if(pointList.size() > 0){
+						ExceptionJob job = new ExceptionJob();
+						job.setVersions(versions);
+						job.setDeviceType(deviceType);
+						job.setDeviceName(deviceName);
+						job.setDatetime(pointList.get(0).getTime());
+						job.setBeginDate(pointList.get(0).getTime());
+						job.setBeginTime(pointList.get(0).get_time());
+						job.setEndDate(pointList.get(pointList.size() - 1).getTime());
+						job.setEndTime(pointList.get(pointList.size() - 1).get_time());
+						job.setPointList(pointList);
+						jobList.add(job);
+						//根据设备名称添加进集合
+						jobListMap.put(deviceName, jobList);
+						//删除缓存数据集合
+						//jobListMapCache.remove(paramCode);
+						jobListMapCache.put(paramCode, jobListCache);
+					}
 				}
 			}
 			//计数点往前推
-			if(interval > (jobConfig.getDelayTime() + 1000)){
+			if(interval > (jobConfig.getDelayTime()+1000)){
 				
+				boolean flag = false;
+				int validCount = 0;
 				for (int i = jobListCache.size(); i > 1; i--) {
 					interval = jobListCache.get(i-1).get_time() - firstPoint.get_time();
 					//连续一段时间内
-					if((interval <= (jobConfig.getDelayTime() + 1000))){
+					if((interval > jobConfig.getDelayTime())){
 						//次数大于规定次数 记录一次特殊工况
-						if(i >= jobConfig.getCount()){
-							List<ExceptionJob> jobList = jobListMap.get(deviceName);
-							if(jobList == null){
-								jobList = new ArrayList<ExceptionJob>();
-							}
-							Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
-							if(jobTimeSet == null){
-								jobTimeSet = new HashSet<String>();
-							}
-							List<PointInfo> pointList = new ArrayList<PointInfo>();
-							for (int j = 0; j <= i; j++) {
-								PointInfo pointInfo = jobListCache.removeFirst();
-								jobTimeSet.add(pointInfo.getTime());
-								pointList.add(pointInfo);
-							}	
-							
-							ExceptionJob job = new ExceptionJob();
-							job.setVersions(versions);
-							job.setDeviceType(deviceType);
-							job.setDeviceName(deviceName);
-							job.setDatetime(pointList.get(0).getTime());
-							job.setBeginDate(pointList.get(0).getTime());
-							job.setBeginTime(pointList.get(0).get_time());
-							job.setEndDate(pointList.get(pointList.size() - 1).getTime());
-							job.setEndTime(pointList.get(pointList.size() - 1).get_time());
-							job.setPointList(pointList);
-							jobList.add(job);
-							//根据设备名称添加进集合
-							jobListMap.put(deviceName, jobList);
-							//更新缓存数据集合
-							jobListMapCache.put(paramCode, jobListCache);
+						if((i-1) >= jobConfig.getCount()){
+							flag = true;
+							validCount = i-1;
+							break;
 						}
 					}
 				}
-				
-				firstPoint = jobListCache.getFirst();
-				lastPoint = jobListCache.getLast();
-				//收尾时间间隔(通过毫秒计算 )
-				interval = lastPoint.get_time() - firstPoint.get_time();
-				
-				
-				while(interval > (jobConfig.getDelayTime() + 1000)){
-					jobListCache.removeFirst();
-					firstPoint = jobListCache.getFirst();
-					interval = lastPoint.get_time() - firstPoint.get_time();
+				if(flag){
+					List<ExceptionJob> jobList = jobListMap.get(deviceName);
+					if(jobList == null){
+						jobList = new ArrayList<ExceptionJob>();
+					}
+					Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
+					if(jobTimeSet == null){
+						jobTimeSet = new HashSet<String>();
+					}
+					List<PointInfo> pointList = new ArrayList<PointInfo>();
+					for (int j = 0; j <= validCount; j++) {
+						PointInfo pointInfo = jobListCache.removeFirst();
+						jobTimeSet.add(pointInfo.getTime());
+						pointList.add(pointInfo);
+					}	
+					if(pointList.size() > 0){
+						ExceptionJob job = new ExceptionJob();
+						job.setVersions(versions);
+						job.setDeviceType(deviceType);
+						job.setDeviceName(deviceName);
+						job.setDatetime(pointList.get(0).getTime());
+						job.setBeginDate(pointList.get(0).getTime());
+						job.setBeginTime(pointList.get(0).get_time());
+						job.setEndDate(pointList.get(pointList.size() - 1).getTime());
+						job.setEndTime(pointList.get(pointList.size() - 1).get_time());
+						job.setPointList(pointList);
+						jobList.add(job);
+						//根据设备名称添加进集合
+						jobListMap.put(deviceName, jobList);
+						//更新缓存数据集合
+						jobListMapCache.put(paramCode, jobListCache);
+					}
 				}
-				jobListMapCache.put(paramCode, jobListCache);				
+				if(jobListCache != null && jobListCache.size() > 0){
+					firstPoint = jobListCache.getFirst();
+					lastPoint = jobListCache.getLast();
+					//收尾时间间隔(通过毫秒计算 )
+					interval = lastPoint.get_time() - firstPoint.get_time();
+					
+					while(interval > (jobConfig.getDelayTime() + 1000)){
+						jobListCache.removeFirst();
+						firstPoint = jobListCache.getFirst();
+						interval = lastPoint.get_time() - firstPoint.get_time();
+					}
+					jobListMapCache.put(paramCode, jobListCache);				
+				}
 			}
 		}
 		
@@ -329,7 +354,7 @@ IExceptionCheckNodeProcessor {
 				//连续一段时间内
 				if(interval <= (jobConfig.getDelayTime() + 1000)){
 					//次数大于规定次数 记录一次特殊工况
-					if(jobListCache.size() > jobConfig.getCount()){
+					if(jobListCache.size() >= jobConfig.getCount()){
 						List<ExceptionJob> jobList = jobListMap.get(deviceName);
 						if(jobList == null){
 							jobList = new ArrayList<ExceptionJob>();
@@ -343,19 +368,21 @@ IExceptionCheckNodeProcessor {
 							jobTimeSet.add(pointInfo.getTime());
 							pointList.add(pointInfo);
 						}
-						ExceptionJob job = new ExceptionJob();
-						job.setVersions(versions);
-						job.setDeviceType(deviceType);
-						job.setDeviceName(deviceName);
-						job.setDatetime(firstPoint.getTime());
-						job.setBeginDate(firstPoint.getTime());
-						job.setBeginTime(firstPoint.get_time());
-						job.setEndDate(lastPoint.getTime());
-						job.setEndTime(lastPoint.get_time());
-						job.setPointList(pointList);
-						jobList.add(job);
-						//根据设备名称添加进集合
-						jobListMap.put(deviceName, jobList);
+						if(pointList.size() > 0){
+							ExceptionJob job = new ExceptionJob();
+							job.setVersions(versions);
+							job.setDeviceType(deviceType);
+							job.setDeviceName(deviceName);
+							job.setDatetime(firstPoint.getTime());
+							job.setBeginDate(firstPoint.getTime());
+							job.setBeginTime(firstPoint.get_time());
+							job.setEndDate(lastPoint.getTime());
+							job.setEndTime(lastPoint.get_time());
+							job.setPointList(pointList);
+							jobList.add(job);
+							//根据设备名称添加进集合
+							jobListMap.put(deviceName, jobList);
+						}
 					}
 				}
 			}

@@ -79,8 +79,12 @@ public class DateUtilTest {
 	
 	@Test
 	public void test2(){
-		long _time = new Date().getTime();
-		System.out.println(new Date(_time));
+		String a = "aa";
+		String b = a;
+		for (int i = 0; i < 3; i++) {
+			b = i + "";
+			System.out.println("a: " + a + " b: " + b);
+		}
 	}
 	@Test
 	public void testgetjson(){
