@@ -48,6 +48,7 @@ public class TopProcessor {
 	private BatchContext batchContext;	
 	//临时变量，用于保存陀螺的上一条记录。
 	IDeviceRecord topTempRecord=null;
+	Map<String,String> lastRecordMap = new HashMap<String,String>();
 	
 	//每个参数的异常特点统计规则
 	Map<String,TopExceptionPointConfig> toppointconfigmap = new HashMap<>();
@@ -130,6 +131,12 @@ public class TopProcessor {
 		if( null==topTempRecord )
 	 	{
 			topTempRecord=deviceRecord;
+			String[] paramValues = deviceRecord.getPropertyVals();
+			String[] paramSequences = deviceRecord.getProperties();
+			for (int i = 0; i < paramSequences.length; i++) {
+				lastRecordMap.put(paramSequences[i], paramValues[i]);			
+			}
+			
 		}else{
 			String[] paramValues = deviceRecord.getPropertyVals();
 			String[] paramSequence = deviceRecord.getProperties();
@@ -182,7 +189,8 @@ public class TopProcessor {
 							{		
 								if(paramSequence[i].equals(jDparamlist.get(j)))
 								{
-									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(topTempRecord.getPropertyVals()[i]));					
+//									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(topTempRecord.getPropertyVals()[i]));					
+									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(lastRecordMap.get(paramSequence[i])));					
 									differenceValuelist.add(differenceValue);
 								}
 							}							
@@ -261,6 +269,11 @@ public class TopProcessor {
 
 	 	}
 		topTempRecord=deviceRecord;
+		String[] paramValues = deviceRecord.getPropertyVals();
+		String[] paramSequences = deviceRecord.getProperties();
+		for (int i = 0; i < paramSequences.length; i++) {
+			lastRecordMap.put(paramSequences[i], paramValues[i]);			
+		}
 		return null;
 	}
 	
@@ -309,7 +322,9 @@ public class TopProcessor {
 					jidongjob.setVersions(jidongrecord.getVersions());
 					jidongjob.setDeviceType(deviceType);
 					jidongjob.setDeviceName(jidongrecord.getTopname());
-					jidongjob.setBeginDate(DateUtil.format(jidongrecord.getBeginDate()));
+					String datetime = DateUtil.format(jidongrecord.getBeginDate());
+					jidongjob.setDatetime(datetime);
+					jidongjob.setBeginDate(datetime);
 					jidongjob.setBeginTime(jidongrecord.getBeginDate().getTime());
 					jidongjob.setEndDate(DateUtil.format(jidongrecord.getEndDate()));
 					jidongjob.setEndTime(jidongrecord.getEndDate().getTime());
@@ -341,8 +356,9 @@ public class TopProcessor {
 					ExceptionPoint excePoint =new ExceptionPoint();
 					//excePoint.setConfig(config);
 					excePoint.setVersions(exceptionpoint.getVersions());
-					excePoint.setDatetime(DateUtil.format(exceptionpoint.getBeginDate()));
-					excePoint.setBeginDate(DateUtil.format(exceptionpoint.getBeginDate()));
+					String datetime = DateUtil.format(exceptionpoint.getBeginDate());
+					excePoint.setDatetime(datetime);
+					excePoint.setBeginDate(datetime);
 					excePoint.setEndDate(DateUtil.format(exceptionpoint.getEndDate()));
 					excePoint.setBeginTime(exceptionpoint.getBeginDate().getTime());
 					excePoint.setEndTime(exceptionpoint.getEndDate().getTime());

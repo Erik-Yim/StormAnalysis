@@ -414,10 +414,10 @@ IExceptionCheckNodeProcessor {
 						}
 						//时间连续
 						if(flag){
+							Set<String> jobTimeSet = null;
 							String deviceName = paramCode_deviceName_map.get(paramCode);
-							if(deviceName == null || "".equals(deviceName))
-								continue;
-							Set<String> jobTimeSet = jobTimeSetMap.get(deviceName);
+							if(deviceName != null && !"".equals(deviceName))
+								jobTimeSet = jobTimeSetMap.get(deviceName);	
 							List<ExceptionPoint> exceList = exceListMap.get(paramCode);
 							if(exceList == null){
 								exceList = new ArrayList<ExceptionPoint>();
@@ -429,13 +429,13 @@ IExceptionCheckNodeProcessor {
 									exce = new ExceptionPoint();
 									exce.setVersions(versions);
 									exce.setDeviceType(deviceType);
-									exce.setDatetime(exceListCache.get(firstPoint).getTime());
 									exce.setBeginDate(exceListCache.get(firstPoint).getTime());
 									exce.setBeginTime(exceListCache.get(firstPoint).get_time());
 									exce.setEndDate(exceListCache.get(lastPoint).getTime());
 									exce.setEndTime(exceListCache.get(lastPoint).get_time());
 									exce.setParamCode(exceListCache.get(j).getParamCode());
 									exce.setParamValue(exceListCache.get(j).getParamValue());
+									exce.setDatetime(exceListCache.get(j).getTime());
 									exce.setTime(exceListCache.get(j).getTime());
 									exce.set_time(exceListCache.get(j).get_time());
 									exceList.add(exce);
@@ -448,13 +448,13 @@ IExceptionCheckNodeProcessor {
 										exce = new ExceptionPoint();
 										exce.setVersions(versions);
 										exce.setDeviceType(deviceType);
-										exce.setDatetime(exceListCache.get(firstPoint).getTime());
 										exce.setBeginDate(exceListCache.get(firstPoint).getTime());
 										exce.setBeginTime(exceListCache.get(firstPoint).get_time());
 										exce.setEndDate(exceListCache.get(lastPoint).getTime());
 										exce.setEndTime(exceListCache.get(lastPoint).get_time());
 										exce.setParamCode(exceListCache.get(j).getParamCode());
 										exce.setParamValue(exceListCache.get(j).getParamValue());
+										exce.setDatetime(exceListCache.get(j).getTime());
 										exce.setTime(exceListCache.get(j).getTime());
 										exce.set_time(exceListCache.get(j).get_time());
 										exceList.add(exce);

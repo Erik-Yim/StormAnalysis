@@ -35,8 +35,8 @@ public class IExceptionCheckNodeProcessorTest {
 		String fileName = "j9-04--2005-04-09.csv";
 		String filePath = "E:\\data\\flywheel\\2005\\01\\"+fileName;
 
-		String series = SeriesType.J9_SERIES.getName();
-		String star = J9SeriesType.STRA4.getValue();
+		String series = "j8";//SeriesType.J9_SERIES.getName();
+		String star = "01";//J9SeriesType.STRA4.getValue();
 		String paramType = J9Series_Star_ParameterType.FLYWHEEL.getValue();
 		String versions = UUIDGeneratorUtil.getUUID();
 		communication = new Communication();
