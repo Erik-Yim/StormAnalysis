@@ -328,6 +328,7 @@ public class TopProcessor {
 					jidongjob.setBeginTime(jidongrecord.getBeginDate().getTime());
 					jidongjob.setEndDate(DateUtil.format(jidongrecord.getEndDate()));
 					jidongjob.setEndTime(jidongrecord.getEndDate().getTime());
+					jidongjob.setDatetime(DateUtil.format(jidongrecord.getBeginDate()));
 					jidongjob.set_recordtime(DateUtil.format(new Date()));
 					jidongjob.setSeries(series);
 					jidongjob.setStar(star);
