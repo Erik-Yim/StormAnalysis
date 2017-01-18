@@ -94,8 +94,11 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			if(exceptionJobConfigObj != null){
 				List<ExceptionJobConfig> jobConfigList = JJSON.get().parse(exceptionJobConfigObj.toString(), new TypeReference<List<ExceptionJobConfig>>(){});
 				for (ExceptionJobConfig exceptionJobConfig : jobConfigList) {
-					paramCode_deviceName_map.put(exceptionJobConfig.getParamCode(), exceptionJobConfig.getDeviceName());
-					device_exceptionJobConfigs.put(exceptionJobConfig.getDeviceName(), exceptionJobConfig);
+					String deviceName = exceptionJobConfig.getDeviceName();
+					if(deviceName != null && !"".equals(deviceName) && !"null".equals(deviceName)){
+						paramCode_deviceName_map.put(exceptionJobConfig.getParamCode(), deviceName);
+						device_exceptionJobConfigs.put(deviceName, exceptionJobConfig);						
+					}
 				}
 			}
 			
@@ -104,7 +107,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			if(exceptionPointConfigObj != null){
 				List<ExceptionPointConfig> exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
 				for (ExceptionPointConfig exceConfig : exceConfigList) {
-					paramCode_deviceName_map.put(exceConfig.getParamCode(), exceConfig.getDeviceName());
+//					paramCode_deviceName_map.put(exceConfig.getParamCode(), exceConfig.getDeviceName());						
 					param_exceptionPointConfigs.put(exceConfig.getParamCode(), exceConfig);
 				}
 			}
@@ -243,7 +246,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			System.out.println("getParamCode_deviceName_map...");
 			System.out.println(args[0]+"_"+args[1]);
 			if(i==1)
-				System.out.println("无此设备配置");
+				System.out.println("无此设备名称与参数配置");
 			if(i==2)
 				System.out.println("无此星系配置");				
 		}
@@ -265,7 +268,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			System.out.println("getDeviceExceptionJobConfigByParamCode...");
 			System.out.println(args[0]+"_"+args[1] + " : " + args[2]);
 			if(i==1)
-				System.out.println("无此设备配置");
+				System.out.println("无此设备特殊工况配置");
 			if(i==2)
 				System.out.println("无此星系配置");				
 		}
@@ -278,7 +281,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		int i = 0;
 		ExceptionConfigModel ecfm =	series_start_map.get(args[0]+"_"+args[1]);
 		if(ecfm != null){
-			if(ecfm.getDevice_exceptionJobConfigs() != null){
+			if(ecfm.getParam_exceptionPointConfigs() != null){
 				return ecfm.getParam_exceptionPointConfigs().get(args[2]);
 			}else
 				i++;
@@ -288,7 +291,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			System.out.println("getParamExceptionPointConfigByParamCode...");
 			System.out.println(args[0]+"_"+args[1] + " : " + args[2]);
 			if(i==1)
-				System.out.println("无此设备配置");
+				System.out.println("无此参数异常配置");
 			if(i==2)
 				System.out.println("无此星系配置");				
 		}
