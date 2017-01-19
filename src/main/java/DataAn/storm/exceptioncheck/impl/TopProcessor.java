@@ -367,6 +367,7 @@ public class TopProcessor {
 					excePoint.setTime(exceptionpoint.getTime());
 					excePoint.set_time(exceptionpoint.get_time());
 					excePoint.setDeviceType(deviceType);
+					excePoint.setDeviceName(exceptionpoint.getTopNmae());
 					excePoint.set_recordtime(DateUtil.format(new Date()));
 					excePoint.setSeries(series);
 					excePoint.setStar(star);
