@@ -76,7 +76,13 @@ public interface IMongoPersistService {
 						if(doc.get("datetime") == null)
 							doc.put("datetime", new Date());
 						//标志数据当前状态为活跃状态1
-						doc.put("status", 1);
+						if(collectionStr.endsWith("job") || collectionStr.endsWith("exception")){
+							//设置异常和特殊工况数据为临时状态
+							doc.put("status", 3);
+						}else{
+							//设置数据为正常状态
+							doc.put("status", 1);							
+						}
 						list.add(doc);
 						map.put(collectionStr, list);
 					}

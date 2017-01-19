@@ -329,6 +329,7 @@ IExceptionCheckNodeProcessor {
 
 	@Override
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
+		System.out.println("begin flywheel persist...");
 		//还有一些点没有处理
 		//判断一个参数的特殊工况
 		if(jobListMapCache != null && jobListMapCache.size() > 0){
@@ -387,7 +388,7 @@ IExceptionCheckNodeProcessor {
 				}
 			}
 		}
-		
+		System.out.println("begin flywheel exception check...");
 		//判断一个参数的异常
 		if(exceListMapCache != null && exceListMapCache.size() > 0)
 			for (String paramCode : exceListMapCache.keySet()) {
@@ -418,49 +419,69 @@ IExceptionCheckNodeProcessor {
 							String deviceName = paramCode_deviceName_map.get(paramCode);
 							if(deviceName != null && !"".equals(deviceName))
 								jobTimeSet = jobTimeSetMap.get(deviceName);	
+							
 							List<ExceptionPoint> exceList = exceListMap.get(paramCode);
 							if(exceList == null){
 								exceList = new ArrayList<ExceptionPoint>();
 							}
-							if(jobTimeSet == null || jobTimeSet.size() == 0){
-								//此参数对应的设备还没有特殊工况的情况下 直接添加
-								ExceptionPoint exce = null;
-								for (int j = firstPoint; j <= lastPoint; j++) {
-									exce = new ExceptionPoint();
-									exce.setVersions(versions);
-									exce.setDeviceType(deviceType);
-									exce.setBeginDate(exceListCache.get(firstPoint).getTime());
-									exce.setBeginTime(exceListCache.get(firstPoint).get_time());
-									exce.setEndDate(exceListCache.get(lastPoint).getTime());
-									exce.setEndTime(exceListCache.get(lastPoint).get_time());
-									exce.setParamCode(exceListCache.get(j).getParamCode());
-									exce.setParamValue(exceListCache.get(j).getParamValue());
-									exce.setDatetime(exceListCache.get(j).getTime());
-									exce.setTime(exceListCache.get(j).getTime());
-									exce.set_time(exceListCache.get(j).get_time());
-									exceList.add(exce);
-								}
-							}else{
-								//此参数对应的设备存在特殊工况的情况下							
-								ExceptionPoint exce = null;
-								for (int j = firstPoint; j <= lastPoint; j++) {
-									if(!jobTimeSet.contains(exceListCache.get(j).getTime())){
-										exce = new ExceptionPoint();
-										exce.setVersions(versions);
-										exce.setDeviceType(deviceType);
-										exce.setBeginDate(exceListCache.get(firstPoint).getTime());
-										exce.setBeginTime(exceListCache.get(firstPoint).get_time());
-										exce.setEndDate(exceListCache.get(lastPoint).getTime());
-										exce.setEndTime(exceListCache.get(lastPoint).get_time());
-										exce.setParamCode(exceListCache.get(j).getParamCode());
-										exce.setParamValue(exceListCache.get(j).getParamValue());
-										exce.setDatetime(exceListCache.get(j).getTime());
-										exce.setTime(exceListCache.get(j).getTime());
-										exce.set_time(exceListCache.get(j).get_time());
-										exceList.add(exce);
-									}
-								}
+							//TODO 先不进行时间交叉校验
+//							if(jobTimeSet == null || jobTimeSet.size() == 0){
+//								//此参数对应的设备还没有特殊工况的情况下 直接添加
+//								ExceptionPoint exce = null;
+//								for (int j = firstPoint; j <= lastPoint; j++) {
+//									exce = new ExceptionPoint();
+//									exce.setVersions(versions);
+//									exce.setDeviceType(deviceType);
+//									exce.setBeginDate(exceListCache.get(firstPoint).getTime());
+//									exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+//									exce.setEndDate(exceListCache.get(lastPoint).getTime());
+//									exce.setEndTime(exceListCache.get(lastPoint).get_time());
+//									exce.setParamCode(exceListCache.get(j).getParamCode());
+//									exce.setParamValue(exceListCache.get(j).getParamValue());
+//									exce.setDatetime(exceListCache.get(j).getTime());
+//									exce.setTime(exceListCache.get(j).getTime());
+//									exce.set_time(exceListCache.get(j).get_time());
+//									exceList.add(exce);
+//								}
+//							}else{
+//								//此参数对应的设备存在特殊工况的情况下							
+//								ExceptionPoint exce = null;
+//								for (int j = firstPoint; j <= lastPoint; j++) {
+//									if(!jobTimeSet.contains(exceListCache.get(j).getTime())){
+//										exce = new ExceptionPoint();
+//										exce.setVersions(versions);
+//										exce.setDeviceType(deviceType);
+//										exce.setBeginDate(exceListCache.get(firstPoint).getTime());
+//										exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+//										exce.setEndDate(exceListCache.get(lastPoint).getTime());
+//										exce.setEndTime(exceListCache.get(lastPoint).get_time());
+//										exce.setParamCode(exceListCache.get(j).getParamCode());
+//										exce.setParamValue(exceListCache.get(j).getParamValue());
+//										exce.setDatetime(exceListCache.get(j).getTime());
+//										exce.setTime(exceListCache.get(j).getTime());
+//										exce.set_time(exceListCache.get(j).get_time());
+//										exceList.add(exce);
+//									}
+//								}
+//							}
+							//TODO 直接添加
+							ExceptionPoint exce = null;
+							for (int j = firstPoint; j <= lastPoint; j++) {
+								exce = new ExceptionPoint();
+								exce.setVersions(versions);
+								exce.setDeviceType(deviceType);
+								exce.setBeginDate(exceListCache.get(firstPoint).getTime());
+								exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+								exce.setEndDate(exceListCache.get(lastPoint).getTime());
+								exce.setEndTime(exceListCache.get(lastPoint).get_time());
+								exce.setParamCode(exceListCache.get(j).getParamCode());
+								exce.setParamValue(exceListCache.get(j).getParamValue());
+								exce.setDatetime(exceListCache.get(j).getTime());
+								exce.setTime(exceListCache.get(j).getTime());
+								exce.set_time(exceListCache.get(j).get_time());
+								exceList.add(exce);
 							}
+							
 							//根据参数名称添加进集合
 							exceListMap.put(paramCode, exceList);
 							//
@@ -505,7 +526,7 @@ IExceptionCheckNodeProcessor {
 //			}
 //		}
 		//持久化操作 
-		System.out.println("begin flywheel persist...");
+		System.out.println("begin flywheel persist,send data to kafka...");
 		for (String deviceName : jobListMap.keySet()){
 			List<ExceptionJob> jobList = jobListMap.get(deviceName);
 			if(jobList == null || jobList.size() == 0)
