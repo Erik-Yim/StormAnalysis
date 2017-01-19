@@ -470,6 +470,7 @@ IExceptionCheckNodeProcessor {
 								exce = new ExceptionPoint();
 								exce.setVersions(versions);
 								exce.setDeviceType(deviceType);
+								exce.setDeviceName(deviceName);
 								exce.setBeginDate(exceListCache.get(firstPoint).getTime());
 								exce.setBeginTime(exceListCache.get(firstPoint).get_time());
 								exce.setEndDate(exceListCache.get(lastPoint).getTime());

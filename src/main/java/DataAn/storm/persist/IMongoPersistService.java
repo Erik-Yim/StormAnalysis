@@ -91,7 +91,7 @@ public interface IMongoPersistService {
 				String databaseName = InitMongo.getDataBaseNameBySeriesAndStar(series, star);
 				for (String collectionStr : map.keySet()) {
 //					long begin = System.currentTimeMillis();
-//					System.out.println("begin save into----> "+ databaseName + "." + collectionStr + " collection size " + map.get(collectionStr).size());
+					System.out.println("begin save into----> "+ databaseName + "." + collectionStr + " collection size " + map.get(collectionStr).size());
 					
 					MongoCollection<Document> collection = mg.getCollection(databaseName, collectionStr);
 					collection.insertMany(map.get(collectionStr));

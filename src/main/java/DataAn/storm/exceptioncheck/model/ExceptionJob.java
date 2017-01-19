@@ -125,14 +125,6 @@ public class ExceptionJob {
 		this.pointList = pointList;
 	}
 
-
-	@Override
-	public String toString() {
-		return "ExceptionJob [config=" + config + ", versions=" + versions + ",series="+series+", star="+star+",deviceType=" + deviceType
-				+ ", deviceName=" + deviceName + ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime="
-				+ beginTime + ", endTime=" + endTime + ", pointList=" + pointList + ",hadRead="+hadRead+"]";
-	}
-
 	public String getSeries() {
 		return series;
 	}
@@ -156,9 +148,5 @@ public class ExceptionJob {
 	public void setHadRead(String hadRead) {
 		this.hadRead = hadRead;
 	}
-
-	
-
-	
 
 }

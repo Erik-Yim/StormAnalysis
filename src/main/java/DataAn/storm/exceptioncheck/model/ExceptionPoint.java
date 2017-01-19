@@ -12,6 +12,8 @@ public class ExceptionPoint {
 	private String versions;// 一次csv上传的版本
 	
 	private String deviceType;// 设备类型
+	
+	private String deviceName;// 设备名称 Xa
 
 	private String beginDate;// 开始时间--> yyyy-MM-dd HH:mm:ss
 	
@@ -61,6 +63,14 @@ public class ExceptionPoint {
 
 	public void setDeviceType(String deviceType) {
 		this.deviceType = deviceType;
+	}
+
+	public String getDeviceName() {
+		return deviceName;
+	}
+
+	public void setDeviceName(String deviceName) {
+		this.deviceName = deviceName;
 	}
 
 	public String getBeginDate() {
@@ -143,14 +153,6 @@ public class ExceptionPoint {
 		this._recordtime = _recordtime;
 	}
 
-	@Override
-	public String toString() {
-		return "ExceptionPoint [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
-				+ ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime=" + beginTime + ", endTime="
-				+ endTime + ", series="+series+", star="+star+", paramCode=" + paramCode + ", paramValue=" + paramValue + ", time=" + time + ", _time="
-				+ _time + ", _recordtime=" + _recordtime + ",hadRead="+hadRead+"]";
-	}
-
 	public String getSeries() {
 		return series;
 	}
@@ -175,7 +177,4 @@ public class ExceptionPoint {
 		this.hadRead = hadRead;
 	}
 
-	
-	
-	
 }

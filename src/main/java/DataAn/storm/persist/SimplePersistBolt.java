@@ -29,7 +29,7 @@ public class SimplePersistBolt extends BaseSimpleRichBolt {
 		System.out.println("begin insert many... ");
 		
 		if(mongoPeristModels != null && mongoPeristModels.size() > 0){
-			System.out.println("list size： " + mongoPeristModels.size());
+			//System.out.println("list size： " + mongoPeristModels.size());
 			mongoPersistService.persist(mongoPeristModels, getStormConf());
 //		Notify notify=mongoPeristModels.get(0).getNotify();			
 		}
