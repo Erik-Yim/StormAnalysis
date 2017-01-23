@@ -177,4 +177,13 @@ public class ExceptionPoint {
 		this.hadRead = hadRead;
 	}
 
+	@Override
+	public String toString() {
+		return "ExceptionPoint [config=" + config + ", versions=" + versions + ", deviceType=" + deviceType
+				+ ", deviceName=" + deviceName + ", beginDate=" + beginDate + ", endDate=" + endDate + ", beginTime="
+				+ beginTime + ", endTime=" + endTime + ", series=" + series + ", star=" + star + ", hadRead=" + hadRead
+				+ ", paramCode=" + paramCode + ", paramValue=" + paramValue + ", time=" + time + ", _time=" + _time
+				+ ", datetime=" + datetime + ", _recordtime=" + _recordtime + "]";
+	}
+
 }

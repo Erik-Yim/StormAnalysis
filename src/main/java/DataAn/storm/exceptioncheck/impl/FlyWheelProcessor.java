@@ -345,7 +345,6 @@ IExceptionCheckNodeProcessor {
 					continue;
 				//获取设备的特殊工况配置
 				ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
-				//当参数异常不为空时往下执行
 				if(jobConfig == null)
 					continue;
 				PointInfo firstPoint = jobListCache.getFirst();
@@ -392,119 +391,168 @@ IExceptionCheckNodeProcessor {
 		//判断一个参数的异常
 		if(exceListMapCache != null && exceListMapCache.size() > 0)
 			for (String paramCode : exceListMapCache.keySet()) {
-				int firstPoint = 0;
+				//获取异常配置
+				ExceptionPointConfig exceConfig = propertyConfigStoreImpl.getParamExceptionPointConfigByParamCode(new String[]{series,star,paramCode});
+				if(exceConfig == null)
+					continue;
 				LinkedList<PointInfo> exceListCache = exceListMapCache.get(paramCode);
 				if(exceListCache == null || exceListCache.size() == 0)
 					continue;
+				int firstPoint = 0;
+				int lastJobRecord = 0;
+				//用于跟特殊工况时间交叉
+				Set<String> jobTimeSet = null;
+				List<ExceptionJob> jobList = null;
+				String deviceName = paramCode_deviceName_map.get(paramCode);
+				if(deviceName != null && !"".equals(deviceName)){
+					jobTimeSet = jobTimeSetMap.get(deviceName);	
+					jobList = jobListMap.get(deviceName);
+				}
+				//获取设备的特殊工况配置
+				ExceptionJobConfig jobConfig = propertyConfigStoreImpl.getDeviceExceptionJobConfigByParamCode(new String[]{series,star,deviceName});
 				for (int i = 0; i < exceListCache.size(); i++) {
 					int lastPoint = i;
-					//获取异常配置
-					ExceptionPointConfig exceConfig = propertyConfigStoreImpl.getParamExceptionPointConfigByParamCode(new String[]{series,star,paramCode});
-					if(exceConfig == null)
-						continue;
 					//收尾时间间隔
 					long interval = exceListCache.get(lastPoint).get_time() - exceListCache.get(firstPoint).get_time();
+//					System.out.println("interval: " + interval);
 					//连续一段时间内
 					if((exceConfig.getDelayTime() <= interval) && (interval <= (exceConfig.getDelayTime() + 1000))){
+//					if(exceConfig.getDelayTime() == interval){
+//						System.out.println("firstPoint: " + firstPoint);
+//						System.out.println("lastPoint: " + lastPoint);
 						//判断时间间隔连续标志
 						boolean flag = true;
 						for (int j = firstPoint+1; j <= lastPoint; j++) {
 							if(exceListCache.get(j).get_time() - exceListCache.get(j-1).get_time() > 1000){
 								flag = false;
+								break;
 							}
 						}
 						//时间连续
-						if(flag){
-							Set<String> jobTimeSet = null;
-							String deviceName = paramCode_deviceName_map.get(paramCode);
-							if(deviceName != null && !"".equals(deviceName))
-								jobTimeSet = jobTimeSetMap.get(deviceName);	
-							
+						if(flag){						
+//							System.out.println("beginTime: " + exceListCache.get(firstPoint).getTime());
+//							System.out.println("endTime: " + exceListCache.get(lastPoint).getTime());
 							List<ExceptionPoint> exceList = exceListMap.get(paramCode);
 							if(exceList == null){
 								exceList = new ArrayList<ExceptionPoint>();
 							}
 							
-//							//TODO 时间交叉校验 时间记录比较少时校验
-//							if(jobTimeSet != null && 0 < jobTimeSet.size() && jobTimeSet.size() < 101){
-//								//此参数对应的设备存在特殊工况的情况下							
-//								ExceptionPoint exce = null;
-//								for (int j = firstPoint; j <= lastPoint; j++) {
-//									if(!jobTimeSet.contains(exceListCache.get(j).getTime())){
-//										exce = new ExceptionPoint();
-//										exce.setVersions(versions);
-//										exce.setDeviceType(deviceType);
-//										if(deviceName != null && !"".equals(deviceName))
-//											exce.setDeviceName(deviceName);
-//										exce.setBeginDate(exceListCache.get(firstPoint).getTime());
-//										exce.setBeginTime(exceListCache.get(firstPoint).get_time());
-//										exce.setEndDate(exceListCache.get(lastPoint).getTime());
-//										exce.setEndTime(exceListCache.get(lastPoint).get_time());
-//										exce.setParamCode(exceListCache.get(j).getParamCode());
-//										exce.setParamValue(exceListCache.get(j).getParamValue());
-//										exce.setDatetime(exceListCache.get(j).getTime());
-//										exce.setTime(exceListCache.get(j).getTime());
-//										exce.set_time(exceListCache.get(j).get_time());
-//										exceList.add(exce);
-//									}
-//								}								
-//							}else{
-//								//此参数对应的设备还没有特殊工况的情况下,或者特殊工况记录数比较多时，直接添加
-//								ExceptionPoint exce = null;
-//								for (int j = firstPoint; j <= lastPoint; j++) {
-//									exce = new ExceptionPoint();
-//									exce.setVersions(versions);
-//									exce.setDeviceType(deviceType);
-//									if(deviceName != null && !"".equals(deviceName))
-//										exce.setDeviceName(deviceName);
-//									exce.setBeginDate(exceListCache.get(firstPoint).getTime());
-//									exce.setBeginTime(exceListCache.get(firstPoint).get_time());
-//									exce.setEndDate(exceListCache.get(lastPoint).getTime());
-//									exce.setEndTime(exceListCache.get(lastPoint).get_time());
-//									exce.setParamCode(exceListCache.get(j).getParamCode());
-//									exce.setParamValue(exceListCache.get(j).getParamValue());
-//									exce.setDatetime(exceListCache.get(j).getTime());
-//									exce.setTime(exceListCache.get(j).getTime());
-//									exce.set_time(exceListCache.get(j).get_time());
-//									exceList.add(exce);
+							//TODO 时间交叉校验 时间记录比较少时校验
+//							if(jobTimeSet != null && jobTimeSet.size() > 0){
+							if(jobConfig != null && jobList != null && jobList.size() >= 0){
+								//此参数对应的设备存在特殊工况的情况下							
+								boolean checkJobAndExce = true;
+								
+//								if(jobConfig != null && jobList != null && jobList.size() >= 0){
 //								}
-//							}
-							
-							//TODO 直接添加
-							ExceptionPoint exce = null;
-							for (int j = firstPoint; j <= lastPoint; j++) {
-								exce = new ExceptionPoint();
-								exce.setVersions(versions);
-								exce.setDeviceType(deviceType);
-								if(deviceName != null && !"".equals(deviceName))
-									exce.setDeviceName(deviceName);
-								exce.setBeginDate(exceListCache.get(firstPoint).getTime());
-								exce.setBeginTime(exceListCache.get(firstPoint).get_time());
-								exce.setEndDate(exceListCache.get(lastPoint).getTime());
-								exce.setEndTime(exceListCache.get(lastPoint).get_time());
-								exce.setParamCode(exceListCache.get(j).getParamCode());
-								exce.setParamValue(exceListCache.get(j).getParamValue());
-								exce.setDatetime(exceListCache.get(j).getTime());
-								exce.setTime(exceListCache.get(j).getTime());
-								exce.set_time(exceListCache.get(j).get_time());
-								exceList.add(exce);
+								ExceptionJob exceptionJob = null;
+								for (int j = lastJobRecord; j < jobList.size(); j++) {
+									exceptionJob = jobList.get(j);
+									for (int k = firstPoint; k <= lastPoint; k++) {
+										if(exceptionJob.getBeginTime() < exceListCache.get(k).get_time() && 
+												exceListCache.get(k).get_time() < (exceptionJob.getBeginTime() + jobConfig.getDelayTime())){
+											checkJobAndExce = false;
+											lastJobRecord = j;
+											break;
+										}
+									}
+								}
+								if(checkJobAndExce){
+									ExceptionPoint exce = null;
+									for (int j = firstPoint; j <= lastPoint; j++) {
+//										if(!jobTimeSet.contains(exceListCache.get(j).getTime())){
+//										}
+										exce = new ExceptionPoint();
+										exce.setVersions(versions);
+										exce.setDeviceType(deviceType);
+										if(deviceName != null && !"".equals(deviceName))
+											exce.setDeviceName(deviceName);
+										exce.setBeginDate(exceListCache.get(firstPoint).getTime());
+										exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+										exce.setEndDate(exceListCache.get(lastPoint).getTime());
+										exce.setEndTime(exceListCache.get(lastPoint).get_time());
+										exce.setParamCode(exceListCache.get(j).getParamCode());
+										exce.setParamValue(exceListCache.get(j).getParamValue());
+										exce.setDatetime(exceListCache.get(j).getTime());
+										exce.setTime(exceListCache.get(j).getTime());
+										exce.set_time(exceListCache.get(j).get_time());
+										exceList.add(exce);
+									}
+									//根据参数名称添加进集合
+									exceListMap.put(paramCode, exceList);
+									//
+									firstPoint = lastPoint;
+								}
+							}else{
+								System.out.println("deviceName " + deviceName + " no job...");
+								//此参数对应的设备还没有特殊工况的情况下,或者特殊工况记录数比较多时，直接添加
+								ExceptionPoint exce = null;
+								for (int j = firstPoint; j <= lastPoint; j++) {
+									exce = new ExceptionPoint();
+									exce.setVersions(versions);
+									exce.setDeviceType(deviceType);
+									if(deviceName != null && !"".equals(deviceName))
+										exce.setDeviceName(deviceName);
+									exce.setBeginDate(exceListCache.get(firstPoint).getTime());
+									exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+									exce.setEndDate(exceListCache.get(lastPoint).getTime());
+									exce.setEndTime(exceListCache.get(lastPoint).get_time());
+									exce.setParamCode(exceListCache.get(j).getParamCode());
+									exce.setParamValue(exceListCache.get(j).getParamValue());
+									exce.setDatetime(exceListCache.get(j).getTime());
+									exce.setTime(exceListCache.get(j).getTime());
+									exce.set_time(exceListCache.get(j).get_time());
+									exceList.add(exce);
+								}
+								//根据参数名称添加进集合
+								exceListMap.put(paramCode, exceList);
+								//
+								firstPoint = lastPoint;
 							}
 							
-							//根据参数名称添加进集合
-							exceListMap.put(paramCode, exceList);
-							//
-							firstPoint = lastPoint;
+//							//TODO 直接添加
+//							ExceptionPoint exce = null;
+//							for (int j = firstPoint; j <= lastPoint; j++) {
+//								exce = new ExceptionPoint();
+//								exce.setVersions(versions);
+//								exce.setDeviceType(deviceType);
+//								if(deviceName != null && !"".equals(deviceName))
+//									exce.setDeviceName(deviceName);
+//								exce.setBeginDate(exceListCache.get(firstPoint).getTime());
+//								exce.setBeginTime(exceListCache.get(firstPoint).get_time());
+//								exce.setEndDate(exceListCache.get(lastPoint).getTime());
+//								exce.setEndTime(exceListCache.get(lastPoint).get_time());
+//								exce.setParamCode(exceListCache.get(j).getParamCode());
+//								exce.setParamValue(exceListCache.get(j).getParamValue());
+//								exce.setDatetime(exceListCache.get(j).getTime());
+//								exce.setTime(exceListCache.get(j).getTime());
+//								exce.set_time(exceListCache.get(j).get_time());
+//								exceList.add(exce);
+//							}
+							
 						}
 					}
 					//计数点往前推
-					if(interval > (exceConfig.getDelayTime() + 1000)){
+					if(interval > exceConfig.getDelayTime()){
 						for (int j = firstPoint; j < lastPoint; j++) {
-							interval = exceListCache.get(i).get_time() - exceListCache.get(j).get_time();
-							if(interval < (exceConfig.getDelayTime() + 1000)){
+							interval = exceListCache.get(lastPoint).get_time() - exceListCache.get(j).get_time();
+							if(interval < exceConfig.getDelayTime()){
 								firstPoint = j;
 								break;
 							}
 						}
+						
+//						PointInfo tempFirstPoint = exceListCache.getFirst();
+//						PointInfo tempLastPoint = exceListCache.getLast();
+//						//收尾时间间隔(通过毫秒计算 )
+//						interval = tempFirstPoint.get_time() - tempLastPoint.get_time();
+//						
+//						while(interval > (exceConfig.getDelayTime() + 1000)){
+//							exceListCache.removeFirst();
+//							tempFirstPoint = exceListCache.getFirst();
+//							interval = tempLastPoint.get_time() - tempFirstPoint.get_time();
+//						}
+//						jobListMapCache.put(paramCode, exceListCache);	
 					}
 				}
 			}
@@ -515,6 +563,8 @@ IExceptionCheckNodeProcessor {
 //				continue;
 //			System.out.println(deviceName + " 特殊工况size: " + jobList.size());
 //			for (ExceptionJob exceptionJob : jobList) {
+//				exceptionJob.setSeries(series);
+//				exceptionJob.setStar(star);
 //				System.out.println(exceptionJob);
 //				List<PointInfo> pointList = exceptionJob.getPointList();
 //				for (PointInfo pointInfo : pointList) {
@@ -529,6 +579,8 @@ IExceptionCheckNodeProcessor {
 //				continue;
 //			System.out.println(paramCode + " 异常size: " + exceList.size());
 //			for (ExceptionPoint exceptionPoint : exceList) {
+//				exceptionPoint.setSeries(series);
+//				exceptionPoint.setStar(star);
 //				String exceptinContext = JJSON.get().formatObject(exceptionPoint);
 //				System.out.println(exceptinContext);
 //			}

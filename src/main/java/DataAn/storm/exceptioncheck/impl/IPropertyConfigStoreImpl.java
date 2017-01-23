@@ -107,8 +107,10 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			if(exceptionPointConfigObj != null){
 				List<ExceptionPointConfig> exceConfigList = JJSON.get().parse(exceptionPointConfigObj.toString(), new TypeReference<List<ExceptionPointConfig>>(){});
 				for (ExceptionPointConfig exceConfig : exceConfigList) {
-//					paramCode_deviceName_map.put(exceConfig.getParamCode(), exceConfig.getDeviceName());						
 					param_exceptionPointConfigs.put(exceConfig.getParamCode(), exceConfig);
+					String deviceName = exceConfig.getDeviceName();
+					if(deviceName != null && !"".equals(deviceName) && !"null".equals(deviceName))
+						paramCode_deviceName_map.put(exceConfig.getParamCode(), exceConfig.getDeviceName());						
 				}
 			}
 			ExceptionConfigModel ecm =  new ExceptionConfigModel();

@@ -32,8 +32,8 @@ public class IExceptionCheckNodeProcessorTest {
 //		String fileName = "j9-05--2014-02-05.csv";
 //		String filePath = "E:\\data\\flywheel\\"+fileName;
 		
-		String fileName = "j9-04--2005-04-09.csv";
-		String filePath = "E:\\data\\flywheel\\2005\\01\\"+fileName;
+		String fileName = "j8-01--2015-01-22.csv";
+		String filePath = "E:\\data\\flywheel\\"+fileName;
 
 		String series = "j8";//SeriesType.J9_SERIES.getName();
 		String star = "01";//J9SeriesType.STRA4.getValue();
@@ -51,7 +51,7 @@ public class IExceptionCheckNodeProcessorTest {
 			context.put("series", series);
 			context.put("star", star);
 			context.put("device", paramType);
-			context.put("serverConfig", "192.168.0.158:8080");
+			//context.put("serverConfig", "192.168.0.158:8080");
 			new IPropertyConfigStoreImpl().initialize(context);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

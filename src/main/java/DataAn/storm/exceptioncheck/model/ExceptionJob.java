@@ -149,4 +149,12 @@ public class ExceptionJob {
 		this.hadRead = hadRead;
 	}
 
+	@Override
+	public String toString() {
+		return "ExceptionJob [config=" + config + ", versions=" + versions + ", series=" + series + ", star=" + star
+				+ ", hadRead=" + hadRead + ", deviceType=" + deviceType + ", deviceName=" + deviceName + ", beginDate="
+				+ beginDate + ", endDate=" + endDate + ", beginTime=" + beginTime + ", endTime=" + endTime
+				+ ", datetime=" + datetime + ", _recordtime=" + _recordtime + "]";
+	}
+
 }
