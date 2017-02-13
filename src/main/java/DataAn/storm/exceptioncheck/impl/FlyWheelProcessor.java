@@ -329,7 +329,7 @@ IExceptionCheckNodeProcessor {
 
 	@Override
 	public void persist(SimpleProducer simpleProducer,Communication communication) throws Exception {
-		System.out.println("begin flywheel persist...");
+		System.out.println("begin flywheel persist... " + DateUtil.format(new Date()));
 		//还有一些点没有处理
 		//判断一个参数的特殊工况
 		if(jobListMapCache != null && jobListMapCache.size() > 0){
@@ -398,6 +398,9 @@ IExceptionCheckNodeProcessor {
 				LinkedList<PointInfo> exceListCache = exceListMapCache.get(paramCode);
 				if(exceListCache == null || exceListCache.size() == 0)
 					continue;
+				
+				System.out.println(paramCode + " size: " + exceListCache.size());
+				
 				int firstPoint = 0;
 				int lastJobRecord = 0;
 				//用于跟特殊工况时间交叉
@@ -448,6 +451,7 @@ IExceptionCheckNodeProcessor {
 								ExceptionJob exceptionJob = null;
 								for (int j = lastJobRecord; j < jobList.size(); j++) {
 									exceptionJob = jobList.get(j);
+									
 									for (int k = firstPoint; k <= lastPoint; k++) {
 										if(exceptionJob.getBeginTime() < exceListCache.get(k).get_time() && 
 												exceListCache.get(k).get_time() < (exceptionJob.getBeginTime() + jobConfig.getDelayTime())){
@@ -456,6 +460,25 @@ IExceptionCheckNodeProcessor {
 											break;
 										}
 									}
+									if(!checkJobAndExce)
+										break;
+									
+//									if(exceptionJob.getBeginTime() < exceListCache.getFirst().get_time() && 
+//											exceListCache.getFirst().get_time() < (exceptionJob.getBeginTime() + jobConfig.getDelayTime())){
+//										checkJobAndExce = false;
+//										lastJobRecord = j;
+//										break;
+//									}
+//									if(exceptionJob.getBeginTime() < exceListCache.getLast().get_time() && 
+//											exceListCache.getLast().get_time() < (exceptionJob.getBeginTime() + jobConfig.getDelayTime())){
+//										checkJobAndExce = false;
+//										lastJobRecord = j;
+//										break;
+//									}
+//									if(exceptionJob.getBeginTime() > exceListCache.getLast().get_time()){
+//										checkJobAndExce = false;
+//										break;										
+//									}
 								}
 								if(checkJobAndExce){
 									ExceptionPoint exce = null;
@@ -529,6 +552,10 @@ IExceptionCheckNodeProcessor {
 //								exce.set_time(exceListCache.get(j).get_time());
 //								exceList.add(exce);
 //							}
+//							//根据参数名称添加进集合
+//							exceListMap.put(paramCode, exceList);
+//							//
+//							firstPoint = lastPoint;
 							
 						}
 					}
@@ -557,7 +584,11 @@ IExceptionCheckNodeProcessor {
 				}
 			}
 		//Test 输出
+//		int count = 0;
 //		for (String deviceName : jobListMap.keySet()){
+//			if(count == 20)
+//				break;
+//			count++;
 //			List<ExceptionJob> jobList = jobListMap.get(deviceName);
 //			if(jobList == null || jobList.size() == 0)
 //				continue;
@@ -574,6 +605,9 @@ IExceptionCheckNodeProcessor {
 //			}
 //		}
 //		for (String paramCode : exceListMap.keySet()) {
+//			if(count == 20)
+//				break;
+//			count++;
 //			List<ExceptionPoint> exceList = exceListMap.get(paramCode);
 //			if(exceList == null || exceList.size() == 0)
 //				continue;
@@ -585,6 +619,9 @@ IExceptionCheckNodeProcessor {
 //				System.out.println(exceptinContext);
 //			}
 //		}
+		
+		//时间交叉校验
+		
 		//持久化操作 
 		System.out.println("begin flywheel persist,send data to kafka...");
 		for (String deviceName : jobListMap.keySet()){
@@ -635,6 +672,8 @@ IExceptionCheckNodeProcessor {
 		jobListMapCache.clear();
 		exceListMap.clear();
 		exceListMapCache.clear();
+		
+		System.out.println("end flywheel persist " + DateUtil.format(new Date()));
 	}
 	
 	public void setBatchContext(BatchContext batchContext) {
