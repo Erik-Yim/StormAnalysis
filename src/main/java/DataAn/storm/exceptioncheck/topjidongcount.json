@@ -1,6 +1,8 @@
 [
 {
 	"topname":"陀螺1a",
+	"series":"j9",
+	"star":"02",
 	"jdparamlist":[
 	    			{"code":"sequence_16016","fullName":"采集数据16：1a滚动陀螺信号输出（16016）"},
 					{"code":"sequence_16017","fullName":"采集数据17：1a俯仰陀螺信号输出（16017）"},
@@ -8,6 +10,8 @@
 					]
 },
 {
+	"series":"j9",
+	"star":"02",
 	"topname":"陀螺1b",
 	"jdparamlist":[
 	    			{"code":"sequence_16019","fullName":"采集数据19：1b滚动陀螺信号输出（16019）"},
@@ -16,6 +20,8 @@
 					]
 },
 {
+	"series":"j9",
+	"star":"02",
 	"topname":"陀螺2",
 	"jdparamlist":[
 	    			{"code":"sequence_16022","fullName":"采集数据22：2滚动陀螺信号输出（16022）"},
@@ -24,6 +30,8 @@
 					]
 },
 {
+	"series":"j9",
+	"star":"02",
 	"topname":"陀螺",
 	"jdparamlist":[
 	    			{"code":"sequence_00131","fullName":"F0W53_54:滚动陀螺角速度(00131)"},
