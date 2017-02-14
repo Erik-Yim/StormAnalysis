@@ -130,6 +130,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		 //String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
 		String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+""); 
+		System.out.println(entity);
 		if(StringUtils.isNotBlank(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);						
 			//机动规则
@@ -198,6 +199,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 					expointconf.setParamCode(exceConfig.getParamCode());
 					expointconf.setMax(max);
 					expointconf.setMin(min);
+					System.out.println("设置陀螺名"+exceConfig.getParamCode()+"|"+topName);
 					expointconf.setTopName(topName);
 					toppointconfigmap.put(expointconf.getParamCode(), expointconf);	
 				}
