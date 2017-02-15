@@ -130,6 +130,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		 //String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getWarnValueByParam?series="+series+"&star="+star+"&parameterType="+parameterType+"");
 		Map<String,String> paramCode_deviceName_map = new HashMap<String,String>();
 		String entity = HttpUtil.get(serverConfig+"/DataRemote/Communicate/getExceptionJobConfigList?series="+series+"&star="+star+"&parameterType="+parameterType+""); 
+		entity = new String(entity.getBytes("iso8859-1"),"utf-8");
 		System.out.println(entity);
 		if(StringUtils.isNotBlank(entity)){
 			Map<String,Object> map = JJSON.get().parse(entity);						
