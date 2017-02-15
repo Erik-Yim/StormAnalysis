@@ -134,6 +134,32 @@ public class TopProcessor {
 			String[] paramValues = deviceRecord.getPropertyVals();
 			String[] paramSequences = deviceRecord.getProperties();
 			for (int i = 0; i < paramSequences.length; i++) {
+				//获取异常配置
+				TopExceptionPointConfig exceConfig = toppointconfigmap.get(paramSequences[i]);
+				if(exceConfig != null){
+					Double value=Math.abs(Double.parseDouble(paramValues[i]));
+					//判断异常点: 比最大值大、比最小值小
+					if((exceConfig.getMin() < value) && ( value < exceConfig.getMax())){
+						List<TopExceptionPointDto> exceListCache = topExcePointDtoMapCach.get(paramSequences[i]);
+						if(exceListCache == null){
+							exceListCache = new ArrayList<TopExceptionPointDto>();
+						}
+						TopExceptionPointDto point = new TopExceptionPointDto();
+						point.set_time(deviceRecord.get_time());
+						point.setTime(deviceRecord.getTime());
+						point.setParamCode(paramSequences[i]);
+						point.setParamValue(paramValues[i]);
+						point.setTopNmae(exceConfig.getTopName());
+						
+						point.setVersions(versions);
+						point.setBeginDate(DateUtil.format(deviceRecord.getTime()));
+						point.setEndDate(DateUtil.format(deviceRecord.getTime()));
+						point.setDeviceType(deviceType);
+						exceListCache.add(point);
+						topExcePointDtoMapCach.put(paramSequences[i], exceListCache);
+						topExcePointDtoMap.put(paramSequences[i], exceListCache);
+					}
+				}
 				lastRecordMap.put(paramSequences[i], paramValues[i]);			
 			}
 			
