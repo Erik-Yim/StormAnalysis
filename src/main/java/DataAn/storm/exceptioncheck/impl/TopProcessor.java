@@ -295,11 +295,12 @@ public class TopProcessor {
 						    Iterator it = ecxeptionpointlist.iterator();  
 						    while(it.hasNext()){
 						    	TopExceptionPointDto pointdto = (TopExceptionPointDto) it.next();
-						    	System.out.println("设备列表陀螺名字："+topName+"根据参数名获取到的陀螺名字："+pointdto.getTopNmae());
+						    	//System.out.println("设备列表陀螺名字："+topName+"根据参数名获取到的陀螺名字："+pointdto.getTopNmae());
 						        if (pointdto.getTopNmae().equals(topName)) {
 						        	if((pointdto.get_time()>timespacedto.getBegintime())&&(pointdto.get_time()<timespacedto.getEndtime()))
 									{
 						        		it.remove(); //移除该对象
+						        		//System.out.println("------------------移除");
 									}
 						        	
 						        }
