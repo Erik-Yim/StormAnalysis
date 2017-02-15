@@ -47,10 +47,13 @@ public class HttpUtil {
 	        System.out.println(response.getStatusLine()); 
 	        if (entity != null) { 
 	          // 打印响应内容长度  
-	        content = EntityUtils.toString(entity);
+	        //content = EntityUtils.toString(entity,"UTF-8");
+	        byte[] bytes = EntityUtils.toByteArray(entity);
+	        content = new String(bytes,"UTF-8");
 	          System.out.println("Response content length: " + entity.getContentLength()); 
 	          // 打印响应内容  
 	        //  System.out.println("Response content: " + EntityUtils.toString(entity)); 
+	            System.out.println("Response content: " + content); 
 	        } 	        	        
 	      } finally { 
 	        response.close(); 
