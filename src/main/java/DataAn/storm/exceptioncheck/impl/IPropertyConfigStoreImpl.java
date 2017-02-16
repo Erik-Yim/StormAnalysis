@@ -164,7 +164,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 						it.remove();
 					}
 				}
-					
+				System.out.println("陀螺列表的大小："+toplist.size());
 				for(TopJsondto temp:toplist)
 				{
 					String topName =temp.getTopname();
@@ -191,6 +191,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 					topjidongjobconfig.setDelayTime(delaytime);					
 					topjobconfigmap.put(topName, topjidongjobconfig);
 				}	
+				System.out.println("根据陀螺名称设置机动规则");
 			}
 					
 			//异常规则

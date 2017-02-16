@@ -99,6 +99,7 @@ public class TopProcessor {
 			for(Map.Entry<String, TopJiDongjobConfig> entry:topjobconfigmap.entrySet())
 			{	
 				topName = entry.getKey();
+				System.out.println("陀螺名字为："+topName);
 				List<TopJiDongJobDto>  OneTopJiDongJobdtolist = (List<TopJiDongJobDto>) topjidongDtosetMapCach.get(topName);				
 				if(OneTopJiDongJobdtolist==null){
 					OneTopJiDongJobdtolist = new ArrayList<TopJiDongJobDto>();
@@ -215,9 +216,18 @@ public class TopProcessor {
 							{		
 								if(paramSequence[i].equals(jDparamlist.get(j)))
 								{
-//									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(topTempRecord.getPropertyVals()[i]));					
-									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(lastRecordMap.get(paramSequence[i])));					
-									differenceValuelist.add(differenceValue);
+//									Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(topTempRecord.getPropertyVals()[i]));	
+									if(lastRecordMap.get(paramSequence[i])!=null){
+										try{
+											Double differenceValue=Math.abs(Double.parseDouble(paramValues[i])-Double.parseDouble(lastRecordMap.get(paramSequence[i])));
+											differenceValuelist.add(differenceValue);
+										}catch(Exception e){
+										}
+									}
+									else{
+										differenceValuelist.add(0.0);
+									}
+									
 								}
 							}							
 						}
@@ -297,8 +307,9 @@ public class TopProcessor {
 		topTempRecord=deviceRecord;
 		String[] paramValues = deviceRecord.getPropertyVals();
 		String[] paramSequences = deviceRecord.getProperties();
+		
 		for (int i = 0; i < paramSequences.length; i++) {
-			lastRecordMap.put(paramSequences[i], paramValues[i]);			
+			lastRecordMap.put(paramSequences[i], paramValues[i]);	
 		}
 		return null;
 	}
