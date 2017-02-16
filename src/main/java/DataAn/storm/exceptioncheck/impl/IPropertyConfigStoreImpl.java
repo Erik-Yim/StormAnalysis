@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sun.corba.se.impl.presentation.rmi.IDLTypeException;
+
 import DataAn.common.config.ZkCommonConfig;
 import DataAn.common.utils.HttpUtil;
 import DataAn.common.utils.JJSON;
@@ -143,8 +145,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 				List<TopJsondto> toplist =new ArrayList<TopJsondto>();			
 				//从json文件读取陀螺列表以及相应的参数列表
 				String topJobConfig=(String) context.get("topJobConfig");
-				toplist =ExceptionUtils.getTopjidongcountList(topJobConfig);
-				
+				toplist =ExceptionUtils.getTopjidongcountList(topJobConfig);				
 				try{
 					if(toplist.size()==0)
 					{
@@ -153,6 +154,15 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 					}
 				}catch(Exception e){
 					
+				}
+				Iterator<TopJsondto> it=toplist.iterator();
+				while(it.hasNext()){
+					TopJsondto top =it.next();
+					if(top.getSeries().equals(series) && top.getStar().equals(star)){
+					}
+					else{
+						it.remove();
+					}
 				}
 					
 				for(TopJsondto temp:toplist)
