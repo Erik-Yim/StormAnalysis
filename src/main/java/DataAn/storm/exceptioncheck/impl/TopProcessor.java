@@ -266,6 +266,7 @@ public class TopProcessor {
 								long end_time=jobDtolist.get(jobDtolist.size()-1).get_dateTime();
 								long delay_time=end_time-begin_time;
 								//如果小于持续时间说明不成立，删除缓存点 
+								//@See:IPropertyConfigStoreImpl.initializeTop()方法中设置持续时间的单位，将秒变成了毫秒
 								if(delay_time<jidongconfig.getDelayTime())
 								{
 									jobDtolist.clear();
