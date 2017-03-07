@@ -190,7 +190,7 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 					for (ExceptionJobConfig exceConfig : exceConfigList) {
 						max=exceConfig.getMax();
 						min=exceConfig.getMin();
-						delaytime =exceConfig.getDelayTime();
+						delaytime =exceConfig.getDelayTime()*1000;
 					}					
 					TopJiDongjobConfig topjidongjobconfig =new TopJiDongjobConfig();			
 					topjidongjobconfig.setParamslist(paramslist);
