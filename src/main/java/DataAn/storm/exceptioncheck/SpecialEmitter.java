@@ -326,9 +326,11 @@ public class SpecialEmitter implements Emitter<BatchMeta> {
 	
 	
 	private void emit(List<DefaultDeviceRecord> defaultDeviceRecords,BatchContext batchContext){
-		
-		for (DefaultDeviceRecord defaultDeviceRecord : defaultDeviceRecords) {
-			processor.process(defaultDeviceRecord);
+		IPropertyConfigStoreImpl propertyConfigStoreImpl = new IPropertyConfigStoreImpl();
+		if(propertyConfigStoreImpl.isExistConfigParam()){
+			for (DefaultDeviceRecord defaultDeviceRecord : defaultDeviceRecords) {
+				processor.process(defaultDeviceRecord);
+			}			
 		}
 	}
 	
