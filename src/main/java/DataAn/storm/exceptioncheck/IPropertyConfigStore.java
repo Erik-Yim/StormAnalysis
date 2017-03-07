@@ -13,6 +13,7 @@ public interface IPropertyConfigStore {
 
 	Map<String, ExceptionConfigModel> initialize(Map context) throws Exception;
 	
+	boolean isExistConfigParam();
 	
 	ExceptionCasePointConfig getPropertyConfigbyParam(String ...args);
 	

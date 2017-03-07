@@ -46,11 +46,12 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		testInit();
 	}
 	
+	
 	@Override
 	public Map<String, ExceptionConfigModel> initialize(Map context) throws Exception {
-		
+		if(series_start_map != null)
+			series_start_map.clear();			
 		if(context != null){
-			series_start_map.clear();
 			Map conf=new HashMap<>();
 			BaseConfig baseConfig=null;
 			baseConfig= StormUtils.getBaseConfig(BaseConfig.class);
@@ -81,6 +82,13 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 		return null;
 	}
 
+	@Override
+	public boolean isExistConfigParam() {
+		if(series_start_map != null && series_start_map.size() > 0)
+			return true;
+		return false;
+	}
+	
 	protected Map<String, ExceptionConfigModel> initializeFlywheel(Map context) throws Exception {
 		String series =  (String) context.get("series");
 		String star =  (String) context.get("star");
@@ -388,4 +396,5 @@ public class IPropertyConfigStoreImpl implements IPropertyConfigStore{
 			e.printStackTrace();
 		}
 	}
+
 }
